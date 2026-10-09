@@ -1,5 +1,5 @@
 name: EAS Build (Android APK)
-# Manual: Actions → "EAS Build (Android APK)" → Run workflow.
+# Manual (elige la rama al ejecutar): Actions → "EAS Build (Android APK)" → Run workflow.
 # Solo hace falta cuando cambian dependencias nativas o app.json. Los cambios de JS van por OTA.
 on:
   workflow_dispatch:

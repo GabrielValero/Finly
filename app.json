@@ -30,7 +30,7 @@
     },
     "owner": "gabriel-valero-team",
     "runtimeVersion": {
-      "policy": "appVersion"
+      "policy": "fingerprint"
     },
     "updates": {
       "url": "https://u.expo.dev/eaf3555d-fa92-490c-8537-8dd7af2d1e78"
