@@ -1,0 +1,22 @@
+name: EAS Update (OTA)
+# Publica el JS a la app instalada tras cada merge a main. Solo si CI pasó.
+on:
+  push:
+    branches: [main]
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm ci
+      - run: npm run typecheck && npm run lint && npm test
+      - run: eas update --channel preview --environment preview --message "${{ github.event.head_commit.message }}" --non-interactive

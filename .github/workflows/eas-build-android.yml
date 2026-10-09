@@ -1,0 +1,21 @@
+name: EAS Build (Android APK)
+# Manual: Actions → "EAS Build (Android APK)" → Run workflow.
+# Solo hace falta cuando cambian dependencias nativas o app.json. Los cambios de JS van por OTA.
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm ci
+      - run: eas build --platform android --profile preview --non-interactive --no-wait
