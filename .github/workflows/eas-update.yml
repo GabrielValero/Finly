@@ -13,10 +13,22 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Verificar EXPO_TOKEN
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::Falta el secreto EXPO_TOKEN (GitHub → Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
       - uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
       - run: npm ci
       - run: npm run typecheck && npm run lint && npm test
-      - run: eas update --channel preview --environment preview --message "${{ github.event.head_commit.message }}" --non-interactive
+      - name: Publicar update
+        env:
+          # Por env var, nunca interpolado en el shell (evita inyección vía mensaje de commit).
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+        run: eas update --channel preview --environment preview --message "$COMMIT_MSG" --non-interactive
