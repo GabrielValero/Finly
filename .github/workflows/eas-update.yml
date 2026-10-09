@@ -1,8 +1,8 @@
 name: EAS Update (OTA)
-# Publica el JS a la app instalada tras cada merge a main. Solo si CI pasó.
+# Publica el JS al canal `preview` (el APK de pruebas) tras cada merge a develop.
 on:
   push:
-    branches: [main]
+    branches: [develop]
 
 jobs:
   update:

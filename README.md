@@ -32,3 +32,19 @@ npm run db:generate   # tras cambiar el esquema
 ```
 
 No subir datos personales (Excel, backups): están en `.gitignore`.
+
+## Flujo de trabajo
+
+```
+feat/* ──PR──▶ develop ──(OTA automático al canal preview)──▶ tu teléfono
+                  │
+                  └──PR──▶ main  (versiones estables)
+```
+
+- Ramas de trabajo salen de `develop` (`feat/...`, `fix/...`) y vuelven por PR. El CI (typecheck, lint, tests) debe pasar.
+- Merge a `develop` → GitHub Actions publica un **update OTA** al canal `preview`. Cierra y abre la app para recibirlo.
+- **Build nuevo (APK)** solo si cambió algo nativo: dependencia con código nativo, plugins/permisos/ícono/splash en `app.json`, o upgrade de SDK.
+  Se lanza desde GitHub → Actions → "EAS Build (Android APK)" → Run workflow, o en local:
+  `npx eas-cli build --platform android --profile preview`
+- Update manual (sin pasar por CI): `npx eas-cli update --channel preview --environment preview --message "texto"`
+- `runtimeVersion` usa la política **fingerprint**: un update solo lo reciben los binarios con exactamente el mismo código nativo, así que una dependencia nativa nueva nunca rompe una app instalada.
