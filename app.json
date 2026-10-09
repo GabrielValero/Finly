@@ -23,6 +23,18 @@
       "favicon": "./assets/favicon.png"
     },
     "scheme": "finly",
+    "backgroundColor": "#0A0A0B",
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0A0A0B",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "resizeMode": "contain"
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "eaf3555d-fa92-490c-8537-8dd7af2d1e78"
