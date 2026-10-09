@@ -23,4 +23,14 @@ export default tseslint.config(
       }],
     },
   },
+  {
+    // Temas: ningún color hexadecimal fuera de utils/theme.ts. Los componentes usan roles semánticos.
+    files: ['src/components/**/*.{ts,tsx}', 'src/hooks/**/*.{ts,tsx}', 'src/app/**/*.{ts,tsx}', 'App.tsx'],
+    rules: {
+      'no-restricted-syntax': ['error', {
+        selector: "Literal[value=/^#[0-9a-fA-F]{3,8}$/]",
+        message: 'Nada de colores hex en la UI: usa theme.colors.* (ver utils/theme.ts).',
+      }],
+    },
+  },
 );
