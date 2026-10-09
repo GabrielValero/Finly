@@ -13,6 +13,14 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Verificar EXPO_TOKEN
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::Falta el secreto EXPO_TOKEN (GitHub → Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
       - uses: expo/expo-github-action@v8
         with:
           eas-version: latest
