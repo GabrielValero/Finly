@@ -54,6 +54,11 @@ export interface Theme {
 export const TOKENS = {
   space: { 4: 4, 8: 8, 12: 12, 16: 16, 20: 20, 24: 24, 32: 32 },
   radius: { 8: 8, 12: 12, 16: 16, 20: 20, 24: 24, full: 999 },
+  /** Nombres de familia tal como los registra expo-font (ver hooks/useAppFonts). */
+  font: {
+    sans: { regular: 'Geist_400Regular', medium: 'Geist_500Medium', bold: 'Geist_700Bold' },
+    mono: { regular: 'GeistMono_400Regular', medium: 'GeistMono_500Medium', bold: 'GeistMono_700Bold' },
+  },
 } as const;
 
 export type Tokens = typeof TOKENS;

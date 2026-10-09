@@ -7,6 +7,7 @@ export const accountInputSchema = z.object({
   icon: z.string().min(1),
   color: z.string().nullable().default(null),
   openingMinor: z.number().int().default(0),
+  includeInTotal: z.boolean().default(true),
 });
 
 export type AccountInput = z.infer<typeof accountInputSchema>;

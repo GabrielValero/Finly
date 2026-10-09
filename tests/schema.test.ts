@@ -1,8 +1,9 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-const sqlText = readFileSync(new URL('../drizzle/0000_init.sql', import.meta.url), 'utf8');
+const dir = new URL('../drizzle/', import.meta.url);
+const sqlText = readdirSync(dir).filter((f) => f.endsWith('.sql')).sort().map((f) => readFileSync(new URL(f, dir), 'utf8')).join('\n--> statement-breakpoint\n');
 
 let db: DatabaseSync;
 beforeEach(() => {
