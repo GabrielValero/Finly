@@ -22,6 +22,18 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "scheme": "finly"
+    "scheme": "finly",
+    "extra": {
+      "eas": {
+        "projectId": "eaf3555d-fa92-490c-8537-8dd7af2d1e78"
+      }
+    },
+    "owner": "gabriel-valero-team",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/eaf3555d-fa92-490c-8537-8dd7af2d1e78"
+    }
   }
 }
