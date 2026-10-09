@@ -3,11 +3,13 @@ import { StatusBar } from 'expo-status-bar';
 import { Text, View } from 'react-native';
 import migrations from './drizzle/migrations';
 import { db } from './src/data/db';
+import { useAutoUpdate } from './src/hooks/useAutoUpdate';
 import { useTheme, useThemedStyles } from './src/hooks/useTheme';
 
 // Placeholder de Fase A/B: confirma BD, migraciones y tema en el teléfono.
 export default function App() {
   const { success, error } = useMigrations(db, migrations);
+  useAutoUpdate();
   const theme = useTheme();
   const styles = useThemedStyles((t) => ({
     root: { flex: 1, backgroundColor: t.colors.bg, alignItems: 'center', justifyContent: 'center' },
