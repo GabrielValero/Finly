@@ -1,0 +1,20 @@
+{
+  "defaultShape": "h",
+  "defaultColor": "naranja",
+  "markColor": "#FBF1E6",
+  "shapes": [
+    { "id": "a", "name": "Clásica" },
+    { "id": "b", "name": "Suave" },
+    { "id": "c", "name": "Pétalo" },
+    { "id": "d", "name": "Hoja" },
+    { "id": "e", "name": "Serif" },
+    { "id": "f", "name": "Cristal" },
+    { "id": "g", "name": "Contorno" },
+    { "id": "h", "name": "Impulso" }
+  ],
+  "colors": [
+    { "id": "naranja", "name": "Naranja", "background": "#DF6D35" },
+    { "id": "verde", "name": "Verde", "background": "#14573E" },
+    { "id": "indigo", "name": "Índigo", "background": "#171B3F" }
+  ]
+}
