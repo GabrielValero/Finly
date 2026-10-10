@@ -19,6 +19,8 @@ interface Props {
   disabledHint?: string;
   onSelect: (id: string) => void;
   onClose: () => void;
+  /** Si se pasa, aparece "Sin categoría" para quitar la elegida. */
+  onClear?: () => void;
   /** Botón "+" del encabezado: nueva categoría. */
   onNew: () => void;
   /** Fila "+ Nueva subcategoría" de un grupo abierto. */
@@ -42,7 +44,7 @@ function Radio({ selected }: { selected: boolean }) {
   return <View style={[styles.ring, selected ? styles.on : null]}>{selected ? <Icon name="check" size={14} color="onAccent" /> : null}</View>;
 }
 
-function PickerBody({ categories, selectedId, disabledIds, disabledHint, onSelect, onClose, onNew, onNewSub }: Omit<Props, 'visible'>) {
+function PickerBody({ categories, selectedId, disabledIds, disabledHint, onSelect, onClear, onClose, onNew, onNewSub }: Omit<Props, 'visible'>) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const vm = useCategoryPicker({ categories, selectedId, disabledIds });
@@ -64,6 +66,7 @@ function PickerBody({ categories, selectedId, disabledIds, disabledHint, onSelec
     addSub: { flexDirection: 'row', alignItems: 'center', gap: t.space[8], paddingVertical: t.space[12], paddingLeft: t.space[32] + t.space[8] },
     empty: { alignItems: 'center', gap: t.space[16], paddingVertical: t.space[32] },
     disabled: { opacity: 0.4 },
+    clear: { alignSelf: 'flex-start', paddingVertical: t.space[4] },
   }));
 
   // El separador arranca donde empieza el texto de la fila (como en el diseño de referencia).
@@ -100,6 +103,11 @@ function PickerBody({ categories, selectedId, disabledIds, disabledHint, onSelec
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        {onClear && selectedId ? (
+          <PressableScale onPress={onClear} style={styles.clear} accessibilityLabel="Quitar categoría">
+            <AppText variant="small" color="expense">Quitar categoría</AppText>
+          </PressableScale>
+        ) : null}
         {vm.rows.length === 0 ? (
           <View style={styles.empty}>
             <AppText variant="small" color="textMuted" align="center">{vm.searching ? `Sin resultados para “${vm.query.trim()}”` : 'Aún no hay categorías de este tipo'}</AppText>

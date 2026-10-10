@@ -7,7 +7,9 @@ import { newId } from '../utils/ids';
 import { buildTransfer } from '../utils/transactions';
 import { convertAtRate, transferDifferenceVes } from '../utils/transfers';
 import { useAmountBuffer } from './useAmountBuffer';
-import { useAccountsWithBalance, useLatestRate } from './useData';
+import { categoryPath } from '../utils/categories';
+import { useCreatedCategory } from './useCreatedCategory';
+import { useAccountsWithBalance, useCategoryRows, useLatestRate } from './useData';
 import { useMovementDetails } from './useMovementDetails';
 
 type Side = 'from' | 'to';
@@ -21,6 +23,8 @@ export function useTransferForm() {
   const inBuf = useAmountBuffer();
   const details = useMovementDetails();
 
+  const categories = useCategoryRows();
+  const [categoryId, setCategoryId] = useState<string | null>(null);
   const [fromId, setFromId] = useState<string | null>(null);
   const [toId, setToId] = useState<string | null>(null);
   const [active, setActive] = useState<Side>('from');
@@ -32,6 +36,14 @@ export function useTransferForm() {
     const chosen = accounts.find((a) => a.id === toId && a.id !== from?.id);
     return chosen ?? accounts.find((a) => a.id !== from?.id) ?? null;
   }, [accounts, toId, from]);
+
+  // Solo categorías de gasto: la transferencia cuenta en el presupuesto como un gasto, por su pata de salida.
+  const expenseCategories = useMemo(() => categories.filter((c) => c.kind === 'expense'), [categories]);
+  const category = expenseCategories.find((c) => c.id === categoryId) ?? null;
+  const categoryLabel = category ? (categoryPath(category.name, expenseCategories.find((c) => c.id === category.parentId)?.name ?? null) ?? category.name) : null;
+  useCreatedCategory(categories, (created) => {
+    if (created.kind === 'expense') setCategoryId(created.id);
+  });
 
   const sameCurrency = !!from && !!to && from.currency === to.currency;
 
@@ -85,7 +97,7 @@ export function useTransferForm() {
     try {
       const legs = buildTransfer({ from, to, outMinor, inMinor, transferId: newId() });
       const now = new Date();
-      const base = { categoryId: null, concept: details.concept.trim(), note: null, listedAmountMinor: null, listedCurrency: null, deletedAt: null, updatedAt: now, occurredAt: details.occurredAt };
+      const base = { categoryId: category?.id ?? null, concept: details.concept.trim(), note: null, listedAmountMinor: null, listedCurrency: null, deletedAt: null, updatedAt: now, occurredAt: details.occurredAt };
       await insertTransfer([
         { ...base, id: newId(), ...legs[0] },
         { ...base, id: newId(), ...legs[1] },
@@ -95,7 +107,7 @@ export function useTransferForm() {
       setError(e instanceof MoneyError || e instanceof Error ? e.message : 'No se pudo transferir');
       setSaving(false);
     }
-  }, [from, to, outMinor, inMinor, details.concept, details.occurredAt, router]);
+  }, [from, to, outMinor, inMinor, details.concept, details.occurredAt, category, router]);
 
   const label = (a: typeof from) => (a ? `${a.name} · ${a.currency}` : 'Elige una cuenta');
   const money = (a: typeof from, display: string) => (a?.currency === 'VES' ? `Bs ${display}` : `$${display}`);
@@ -119,6 +131,13 @@ export function useTransferForm() {
     pressKey: press,
     rateCard,
     warning: insufficient ? 'El origen quedará en negativo' : null,
+    categoryLabel,
+    pickerCategories: expenseCategories.map((c) => ({ id: c.id, name: c.name, icon: c.icon, parentId: c.parentId })),
+    selectedCategoryId: category?.id ?? null,
+    selectCategory: setCategoryId,
+    clearCategory: () => setCategoryId(null),
+    openNewCategory: () => router.push({ pathname: '/category/[id]', params: { id: 'new', kind: 'expense', pick: '1' } }),
+    openNewSubcategoryOf: (parentId: string) => router.push({ pathname: '/category/[id]', params: { id: 'new', kind: 'expense', parentId, pick: '1' } }),
     detailsLabel: details.concept.trim() ? details.concept.trim() : '+ Concepto, fecha',
     details,
     canSave,

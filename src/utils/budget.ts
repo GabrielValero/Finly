@@ -8,6 +8,25 @@ export interface BudgetItemLite {
   isFixed: boolean;
 }
 
+/** Lo mínimo de un movimiento para saber si cuenta en el presupuesto y como qué. */
+export interface BudgetableRow {
+  kind: 'income' | 'expense' | 'transfer';
+  /** Con signo, en la moneda de la cuenta. */
+  amountMinor: number;
+  categoryId: string | null;
+}
+
+/**
+ * Cómo cuenta un movimiento en el presupuesto (null = no cuenta).
+ * - Gasto/ingreso: tal cual.
+ * - Transferencia: solo si tiene categoría, y una sola vez, por su pata de salida, como gasto.
+ *   La pata de entrada nunca cuenta, para no duplicar el monto.
+ */
+export function budgetKind(row: BudgetableRow): CategoryKind | null {
+  if (row.kind !== 'transfer') return row.kind;
+  return row.categoryId !== null && row.amountMinor < 0 ? 'expense' : null;
+}
+
 export interface BudgetCategory {
   id: string;
   parentId: string | null;
@@ -46,7 +65,7 @@ export function itemResolver(items: readonly BudgetItemLite[], categories: reado
 }
 
 /** Los movimientos que cuentan para una partida (mismo reparto que el total). */
-export function txsOfItem<T extends Pick<BudgetTx, 'kind' | 'categoryId'>>(
+export function txsOfItem<T extends BudgetableRow>(
   itemId: string,
   items: readonly BudgetItemLite[],
   categories: readonly BudgetCategory[],
@@ -54,7 +73,10 @@ export function txsOfItem<T extends Pick<BudgetTx, 'kind' | 'categoryId'>>(
   isExcluded: (tx: T) => boolean,
 ): T[] {
   const find = itemResolver(items, categories);
-  return txs.filter((tx) => !isExcluded(tx) && find(tx)?.id === itemId);
+  return txs.filter((tx) => {
+    const kind = budgetKind(tx);
+    return kind !== null && !isExcluded(tx) && find({ kind, categoryId: tx.categoryId })?.id === itemId;
+  });
 }
 
 /**

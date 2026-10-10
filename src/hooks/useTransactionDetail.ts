@@ -1,12 +1,14 @@
 import { useRouter } from 'expo-router';
 import { Alert } from 'react-native';
-import { softDeleteTransaction } from '../data/repos/transactions';
+import { useMemo } from 'react';
+import { setTransferCategory, softDeleteTransaction } from '../data/repos/transactions';
 import { categoryPath } from '../utils/categories';
 import { formatDateTimeLong } from '../utils/dates';
 import { formatMinor, formatMoney, formatRate } from '../utils/money';
 import { usdEquivalent } from '../utils/transactions';
 import { latestTransfer } from '../utils/transfers';
-import { useTagsOfTransaction, useTransactionById, useTransferLegs } from './useData';
+import { useCreatedCategory } from './useCreatedCategory';
+import { useCategoryRows, useTagsOfTransaction, useTransactionById, useTransferLegs } from './useData';
 
 function safeUsd(tx: Parameters<typeof usdEquivalent>[0]): number | null {
   try {
@@ -21,6 +23,13 @@ export function useTransactionDetail(id: string) {
   const tx = useTransactionById(id);
   const tags = useTagsOfTransaction(id);
   const legs = useTransferLegs(tx?.transferId ?? null);
+  const categories = useCategoryRows();
+  const expenseCategories = useMemo(() => categories.filter((c) => c.kind === 'expense'), [categories]);
+  const transferId = tx?.transferId ?? null;
+  // Categoría recién creada desde el selector de esta pantalla: se asigna sola a la transferencia.
+  useCreatedCategory(categories, (created) => {
+    if (transferId && created.kind === 'expense') void setTransferCategory(transferId, created.id, new Date());
+  });
 
   if (!tx || tx.deletedAt) return { found: false as const, close: () => router.back() };
 
@@ -64,11 +73,23 @@ export function useTransactionDetail(id: string) {
             { label: 'HACIA', value: transfer.toName },
           ]
         : [{ label: 'CUENTA', value: tx.accountName }]),
-      ...(path ? [{ label: 'CATEGORÍA', value: path }] : []),
+      ...(path && !isTransfer ? [{ label: 'CATEGORÍA', value: path }] : []),
       ...(tx.concept.trim() ? [{ label: 'CONCEPTO', value: tx.concept.trim() }] : []),
       ...(tags.length > 0 ? [{ label: 'ETIQUETAS', value: tags.map((t) => `#${t.name}`).join(' ') }] : []),
       ...(tx.note ? [{ label: 'NOTA', value: tx.note }] : []),
     ],
+    /** Solo transferencias: la categoría hace que cuenten en el presupuesto (como gasto, por la pata de salida). */
+    transferCategory: isTransfer && tx.transferId
+      ? {
+          label: path ?? 'Sin categoría',
+          hasCategory: tx.categoryId !== null,
+          categories: expenseCategories.map((c) => ({ id: c.id, name: c.name, icon: c.icon, parentId: c.parentId })),
+          selectedId: tx.categoryId,
+          set: (categoryId: string | null) => void setTransferCategory(tx.transferId!, categoryId, new Date()),
+          openNew: () => router.push({ pathname: '/category/[id]', params: { id: 'new', kind: 'expense', pick: '1' } }),
+          openNewSub: (parentId: string) => router.push({ pathname: '/category/[id]', params: { id: 'new', kind: 'expense', parentId, pick: '1' } }),
+        }
+      : null,
     close: () => router.back(),
     edit: () => router.push({ pathname: '/capture', params: { editId: tx.id } }),
     duplicate: () => router.push({ pathname: '/capture', params: { duplicateId: tx.id } }),

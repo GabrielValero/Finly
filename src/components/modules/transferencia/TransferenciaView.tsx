@@ -5,6 +5,7 @@ import { useTransferForm } from '../../../hooks/useTransferForm';
 import { useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
 import { Button } from '../../shared/Button';
+import { CategoryPickerModal } from '../../shared/CategoryPickerModal';
 import { Icon } from '../../shared/Icon';
 import { Keypad } from '../../shared/Keypad';
 import { OptionList } from '../../shared/OptionList';
@@ -18,6 +19,7 @@ export function TransferenciaView() {
   const insets = useSafeAreaInsets();
   const [picker, setPicker] = useState<'from' | 'to' | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [categoryOpen, setCategoryOpen] = useState(false);
   const styles = useThemedStyles((t) => ({
     body: { flex: 1, paddingHorizontal: t.space[16], gap: t.space[12] },
     topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -93,6 +95,11 @@ export function TransferenciaView() {
             </View>
           ) : null}
 
+          <PressableScale onPress={() => setCategoryOpen(true)} style={styles.optional}>
+            <AppText variant="bodyRegular" color={vm.categoryLabel ? 'text' : 'textMuted'} numberOfLines={1}>{vm.categoryLabel ?? '+ Categoría (cuenta en el presupuesto)'}</AppText>
+          </PressableScale>
+          {vm.categoryLabel ? <AppText variant="small" color="textMuted">Cuenta como gasto en el presupuesto. Si luego gastas ese dinero con la misma categoría, se contaría dos veces.</AppText> : null}
+
           <PressableScale onPress={() => setDetailsOpen(true)} style={styles.optional}>
             <AppText variant="bodyRegular" color="textMuted" numberOfLines={1}>{vm.detailsLabel}</AppText>
           </PressableScale>
@@ -116,6 +123,28 @@ export function TransferenciaView() {
           }}
         />
       </SheetModal>
+      <CategoryPickerModal
+        visible={categoryOpen}
+        categories={vm.pickerCategories}
+        selectedId={vm.selectedCategoryId}
+        onSelect={(id) => {
+          vm.selectCategory(id);
+          setCategoryOpen(false);
+        }}
+        onClear={() => {
+          vm.clearCategory();
+          setCategoryOpen(false);
+        }}
+        onClose={() => setCategoryOpen(false)}
+        onNew={() => {
+          setCategoryOpen(false);
+          vm.openNewCategory();
+        }}
+        onNewSub={(parentId) => {
+          setCategoryOpen(false);
+          vm.openNewSubcategoryOf(parentId);
+        }}
+      />
       <DetallesModal visible={detailsOpen} onClose={() => setDetailsOpen(false)} details={vm.details} />
     </ScreenTemplate>
   );
