@@ -1,8 +1,10 @@
+import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { deriveTheme } from '../utils/theme';
 import { useThemeList } from './useTheme';
 
 export function useThemeSettings() {
+  const router = useRouter();
   const { seeds, activeId, setThemeId } = useThemeList();
   const items = useMemo(
     () =>
@@ -12,5 +14,5 @@ export function useThemeSettings() {
       }),
     [seeds, activeId],
   );
-  return { items, select: setThemeId };
+  return { items, select: setThemeId, openCategories: () => router.push('/categories') };
 }

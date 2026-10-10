@@ -77,3 +77,24 @@ export function formatDateTimeLong(iso: string): string {
 export function recentMonths(current: string, count: number): string[] {
   return Array.from({ length: count }, (_, i) => addMonths(current, -i));
 }
+
+/** Mueve la fecha `delta` días conservando la hora. */
+export function shiftDay(iso: string, delta: number): string {
+  const { y, m, d } = parseDay(dayOf(iso));
+  const date = new Date(Date.UTC(y, m - 1, d + delta));
+  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}${iso.slice(10)}`;
+}
+
+/** "HH:mm" válido (24 h). */
+export function isValidTime(text: string): boolean {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(text);
+}
+
+/** Cambia la hora de un ISO local ("HH:mm"); segundos a 00. */
+export function withTime(iso: string, time: string): string {
+  return `${dayOf(iso)}T${time}:00`;
+}
+
+export function timeOf(iso: string): string {
+  return iso.slice(11, 16);
+}

@@ -1,8 +1,9 @@
-import { and, desc, eq, gte, isNull, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, isNotNull, isNull, lt, sql } from 'drizzle-orm';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useMemo } from 'react';
 import { db } from '../data/db';
-import { accounts, categories, exchangeRates, transactions } from '../data/schema';
+import { alias } from 'drizzle-orm/sqlite-core';
+import { accounts, categories, exchangeRates, tags, transactions, transactionTags } from '../data/schema';
 import { monthBounds } from '../utils/dates';
 import type { RateRecord } from '../utils/rates';
 
@@ -25,6 +26,8 @@ export function useAccountsWithBalance() {
 }
 
 export type AccountWithBalance = ReturnType<typeof useAccountsWithBalance>[number];
+
+const parentCategories = alias(categories, 'parent_categories');
 
 export function useCategoryRows() {
   const { data } = useLiveQuery(db.select().from(categories).where(isNull(categories.archivedAt)).orderBy(categories.name));
@@ -53,7 +56,10 @@ const txColumns = {
   rateSource: transactions.rateSource,
   listedAmountMinor: transactions.listedAmountMinor,
   listedCurrency: transactions.listedCurrency,
+  transferId: transactions.transferId,
   categoryName: categories.name,
+  categoryParentName: parentCategories.name,
+  parentExcludeFromReports: parentCategories.excludeFromReports,
   categoryIcon: categories.icon,
   excludeFromReports: categories.excludeFromReports,
   accountName: accounts.name,
@@ -67,6 +73,7 @@ export function useMonthTransactions(month: string) {
       .from(transactions)
       .innerJoin(accounts, eq(accounts.id, transactions.accountId))
       .leftJoin(categories, eq(categories.id, transactions.categoryId))
+      .leftJoin(parentCategories, eq(parentCategories.id, categories.parentId))
       .where(and(gte(transactions.occurredAt, from), lt(transactions.occurredAt, to), isNull(transactions.deletedAt)))
       .orderBy(desc(transactions.occurredAt)),
     [month],
@@ -81,6 +88,7 @@ export function useTransactionById(id: string) {
       .from(transactions)
       .innerJoin(accounts, eq(accounts.id, transactions.accountId))
       .leftJoin(categories, eq(categories.id, transactions.categoryId))
+      .leftJoin(parentCategories, eq(parentCategories.id, categories.parentId))
       .where(eq(transactions.id, id)),
     [id],
   );
@@ -88,3 +96,82 @@ export function useTransactionById(id: string) {
 }
 
 export type TxRow = ReturnType<typeof useMonthTransactions>[number];
+
+/** Todas las categorías, incluidas archivadas (para resolver movimientos viejos). */
+export function useAllCategoryRows() {
+  const { data } = useLiveQuery(db.select().from(categories).orderBy(categories.name));
+  return data;
+}
+
+/** Movimientos vivos por categoría (solo propios; el padre suma sus hijas en la capa de hooks). */
+export function useCategoryUsage(): Map<string, number> {
+  const { data } = useLiveQuery(
+    db
+      .select({ categoryId: transactions.categoryId, n: sql<number>`count(*)` })
+      .from(transactions)
+      .where(and(isNull(transactions.deletedAt), isNotNull(transactions.categoryId)))
+      .groupBy(transactions.categoryId),
+  );
+  return useMemo(() => new Map(data.map((r) => [r.categoryId!, Number(r.n)])), [data]);
+}
+
+export function useTags() {
+  const { data } = useLiveQuery(db.select().from(tags).orderBy(tags.name));
+  return data;
+}
+
+export function useTagsOfTransaction(id: string) {
+  const { data } = useLiveQuery(
+    db
+      .select({ id: tags.id, name: tags.name })
+      .from(transactionTags)
+      .innerJoin(tags, eq(tags.id, transactionTags.tagId))
+      .where(eq(transactionTags.transactionId, id))
+      .orderBy(tags.name),
+    [id],
+  );
+  return data;
+}
+
+/** Patas vivas de una transferencia (cuenta, monto, moneda). */
+export function useTransferLegs(transferId: string | null) {
+  const { data } = useLiveQuery(
+    db
+      .select({
+        id: transactions.id,
+        transferId: transactions.transferId,
+        occurredAt: transactions.occurredAt,
+        amountMinor: transactions.amountMinor,
+        accountCurrency: transactions.accountCurrency,
+        accountName: accounts.name,
+        rateScaled: transactions.rateScaled,
+      })
+      .from(transactions)
+      .innerJoin(accounts, eq(accounts.id, transactions.accountId))
+      .where(and(eq(transactions.transferId, transferId ?? ''), isNull(transactions.deletedAt))),
+    [transferId],
+  );
+  return data;
+}
+
+/** Últimas patas de transferencia (para la tarjeta "Última transferencia"). */
+export function useRecentTransferLegs() {
+  const { data } = useLiveQuery(
+    db
+      .select({
+        id: transactions.id,
+        transferId: transactions.transferId,
+        occurredAt: transactions.occurredAt,
+        amountMinor: transactions.amountMinor,
+        accountCurrency: transactions.accountCurrency,
+        accountName: accounts.name,
+        rateScaled: transactions.rateScaled,
+      })
+      .from(transactions)
+      .innerJoin(accounts, eq(accounts.id, transactions.accountId))
+      .where(and(eq(transactions.kind, 'transfer'), isNull(transactions.deletedAt)))
+      .orderBy(desc(transactions.occurredAt))
+      .limit(6),
+  );
+  return data;
+}

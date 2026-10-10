@@ -4,7 +4,9 @@ import { useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
 import { Button } from '../../shared/Button';
 import { Card } from '../../shared/Card';
+import { Icon } from '../../shared/Icon';
 import { IconBadge } from '../../shared/IconBadge';
+import { PressableScale } from '../../shared/PressableScale';
 import { ScreenTemplate } from '../../template/ScreenTemplate';
 
 function AccountCard({ a }: { a: AccountCardVm }) {
@@ -36,6 +38,8 @@ export function CuentasView() {
     scroll: { paddingHorizontal: t.space[16], paddingBottom: t.space[32], gap: t.space[12] },
     group: { paddingTop: t.space[8] },
     empty: { alignItems: 'center', gap: t.space[16], paddingVertical: t.space[32] },
+    transfer: { height: 56, borderRadius: t.radius[20], borderWidth: 1, borderColor: t.colors.border, backgroundColor: t.colors.surface, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: t.space[8] },
+    lastRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: t.space[8] },
   }));
   return (
     <ScreenTemplate title="Cuentas" titleStyle="large" right={{ icon: 'plus', onPress: vm.openNew }}>
@@ -45,6 +49,12 @@ export function CuentasView() {
           <AppText variant="balance">{vm.totalLabel}</AppText>
           {vm.totalNote ? <AppText variant="small" color="warning">{vm.totalNote}</AppText> : null}
         </Card>
+        {vm.canTransfer ? (
+          <PressableScale onPress={vm.openTransfer} style={styles.transfer}>
+            <Icon name="transfer" size={20} color="accent" />
+            <AppText variant="button">Transferir entre cuentas</AppText>
+          </PressableScale>
+        ) : null}
         {vm.isEmpty ? (
           <View style={styles.empty}>
             <AppText variant="small" color="textMuted" align="center">Aún no tienes cuentas.</AppText>
@@ -59,6 +69,18 @@ export function CuentasView() {
           <View style={styles.group}><AppText variant="label" color="textMuted">Bolívares · VES</AppText></View>
         ) : null}
         {vm.ves.map((a) => <AccountCard key={a.id} a={a} />)}
+        {vm.lastTransfer ? (
+          <>
+            <View style={styles.group}><AppText variant="label" color="textMuted">Última transferencia</AppText></View>
+            <Card>
+              <View style={styles.lastRow}>
+                <AppText variant="heading" numberOfLines={1}>{vm.lastTransfer.route}</AppText>
+                <AppText variant="amount">{vm.lastTransfer.amounts}</AppText>
+              </View>
+              {vm.lastTransfer.rate ? <AppText variant="caption" color="textMuted">{vm.lastTransfer.rate}</AppText> : null}
+            </Card>
+          </>
+        ) : null}
       </ScrollView>
     </ScreenTemplate>
   );

@@ -23,6 +23,9 @@ const REGISTRY: Record<string, Glyph> = {
   close: { lib: 'feather', name: 'x' },
   back: { lib: 'feather', name: 'chevron-left' },
   chevronDown: { lib: 'feather', name: 'chevron-down' },
+  chevronRight: { lib: 'feather', name: 'chevron-right' },
+  chevronLeft: { lib: 'feather', name: 'chevron-left' },
+  swap: { lib: 'feather', name: 'arrow-down' },
   check: { lib: 'feather', name: 'check' },
   backspace: { lib: 'feather', name: 'delete' },
   list: { lib: 'feather', name: 'list' },
@@ -30,6 +33,7 @@ const REGISTRY: Record<string, Glyph> = {
   sliders: { lib: 'feather', name: 'sliders' },
 };
 
+export const CATEGORY_ICON_KEYS = ['cart', 'food', 'bus', 'heart', 'home', 'phone', 'coffee', 'briefcase', 'wallet', 'cash'] as const;
 export const ACCOUNT_ICON_KEYS = ['cash', 'bank', 'wallet', 'dollar', 'phone', 'briefcase'] as const;
 
 interface Props {

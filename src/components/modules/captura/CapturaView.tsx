@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { ScrollView, TextInput, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLocalSearchParams } from 'expo-router';
 import { useCaptureForm } from '../../../hooks/useCaptureForm';
 import { useTheme, useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
@@ -14,13 +15,15 @@ import { Segmented } from '../../shared/Segmented';
 import { SelectRow } from '../../shared/SelectRow';
 import { SheetModal } from '../../shared/SheetModal';
 import { ScreenTemplate } from '../../template/ScreenTemplate';
+import { DetallesModal } from './DetallesModal';
 
 export function CapturaView() {
-  const vm = useCaptureForm();
+  const params = useLocalSearchParams<{ editId?: string; duplicateId?: string }>();
+  const vm = useCaptureForm({ editId: params.editId, duplicateId: params.duplicateId });
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [accountPicker, setAccountPicker] = useState(false);
-  const [conceptOpen, setConceptOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const styles = useThemedStyles((t) => ({
     body: { flex: 1, paddingHorizontal: t.space[16], gap: t.space[12] },
     topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -30,7 +33,7 @@ export function CapturaView() {
     seg: { width: 140 },
     chips: { gap: t.space[8], paddingRight: t.space[16] },
     conceptBox: { minHeight: 48, borderRadius: t.radius[16], backgroundColor: t.colors.surface, paddingHorizontal: t.space[16], justifyContent: 'center' },
-    input: { color: t.colors.text, fontFamily: t.font.sans.regular, fontSize: 16, paddingVertical: t.space[12] },
+    subLabel: { paddingTop: t.space[4] },
     keypad: { marginTop: 'auto' },
   }));
 
@@ -77,32 +80,36 @@ export function CapturaView() {
             ))}
           </ScrollView>
 
-          <PressableScale onPress={() => setConceptOpen(true)} style={styles.conceptBox}>
-            {conceptOpen ? (
-              <TextInput
-                autoFocus
-                value={vm.concept}
-                onChangeText={vm.setConcept}
-                placeholder="Concepto"
-                placeholderTextColor={theme.colors.textMuted}
-                style={styles.input}
-                maxLength={120}
-                returnKeyType="done"
-                onSubmitEditing={() => setConceptOpen(false)}
-              />
-            ) : (
-              <AppText variant="bodyRegular" color="textMuted">{vm.concept ? vm.concept : '+  Concepto (opcional)'}</AppText>
-            )}
+          {vm.subcategories.length > 0 ? (
+            <View style={styles.subLabel}>
+              <AppText variant="label" color="textMuted">SUBCATEGORÍA (OPCIONAL)</AppText>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+                {vm.subcategories.map((c) => (
+                  <CategoryChip key={c.id} label={c.name} icon={c.icon} selected={c.id === vm.subcategoryId} onPress={() => vm.selectSubcategory(c.id)} />
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
+
+          <PressableScale onPress={() => setDetailsOpen(true)} style={styles.conceptBox}>
+            <AppText variant="bodyRegular" color={vm.hasDetails ? 'text' : 'textMuted'} numberOfLines={1}>{vm.detailsLabel}</AppText>
           </PressableScale>
 
           {vm.error ? <AppText variant="small" color="expense">{vm.error}</AppText> : null}
-          <Button label="Guardar" onPress={() => void vm.save()} disabled={!vm.canSave} />
+          <Button label={vm.isEdit ? 'Guardar cambios' : 'Guardar'} onPress={() => void vm.save()} disabled={!vm.canSave} />
         </ScrollView>
 
         <View style={styles.keypad}>
           <Keypad onKey={vm.pressKey} />
         </View>
       </View>
+
+      <DetallesModal
+        visible={detailsOpen}
+        onClose={() => setDetailsOpen(false)}
+        details={vm.details}
+        tags={{ list: vm.tags, toggle: vm.toggleTag, add: vm.addTag }}
+      />
 
       <SheetModal visible={accountPicker} title="CUENTA" onClose={() => setAccountPicker(false)}>
         <OptionList
