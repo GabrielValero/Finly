@@ -1,8 +1,9 @@
 import { and, desc, eq, isNotNull, isNull, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/sqlite-core';
 import { useMemo } from 'react';
 import { db } from '../data/db';
 import { monthTransactionsQuery, transactionByIdQuery } from '../data/queries';
-import { accounts, categories, exchangeRates, tags, transactions, transactionTags } from '../data/schema';
+import { accounts, budgetItems, budgets, categories, exchangeRates, tags, transactions, transactionTags } from '../data/schema';
 import { usePreferences } from '../store/preferences';
 import { pickLatestRate, type RateRecord } from '../utils/rates';
 import { useDbQuery } from './useDbQuery';
@@ -158,4 +159,32 @@ export function useDataCounts() {
   );
   const r = rows[0];
   return { accounts: Number(r?.accounts ?? 0), movements: Number(r?.movements ?? 0), categories: Number(r?.categories ?? 0), tags: Number(r?.tags ?? 0) };
+}
+
+const budgetParents = alias(categories, 'budget_parent');
+
+/** Partidas del presupuesto de un mes, con los datos de su categoría. */
+export function useBudgetItems(month: string) {
+  return useDbQuery(
+    () =>
+      db
+        .select({
+          id: budgetItems.id,
+          categoryId: budgetItems.categoryId,
+          kind: budgetItems.kind,
+          plannedMinor: budgetItems.plannedMinor,
+          isFixed: budgetItems.isFixed,
+          categoryName: categories.name,
+          categoryIcon: categories.icon,
+          parentName: budgetParents.name,
+        })
+        .from(budgetItems)
+        .innerJoin(budgets, eq(budgets.id, budgetItems.budgetId))
+        .innerJoin(categories, eq(categories.id, budgetItems.categoryId))
+        .leftJoin(budgetParents, eq(budgetParents.id, categories.parentId))
+        .where(eq(budgets.month, month))
+        .orderBy(categories.name),
+    ['budgets', 'budget_items', 'categories'],
+    [month],
+  );
 }

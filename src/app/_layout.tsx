@@ -2,8 +2,10 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { LockScreen } from '../components/template/LockScreen';
 import { FatalError } from '../components/template/FatalError';
 import { useAppFonts } from '../hooks/useAppFonts';
+import { useAppLock } from '../hooks/useAppLock';
 import { useAutoUpdate } from '../hooks/useAutoUpdate';
 import { useBootstrap } from '../hooks/useBootstrap';
 import { useTheme } from '../hooks/useTheme';
@@ -16,6 +18,7 @@ export default function RootLayout() {
   const fontsReady = useAppFonts();
   const { ready, error } = useBootstrap();
   useAutoUpdate();
+  const lock = useAppLock();
 
   const done = (fontsReady && ready) || error !== null;
   useEffect(() => {
@@ -36,12 +39,15 @@ export default function RootLayout() {
         <Stack.Screen name="account/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="transfer" options={{ presentation: 'modal' }} />
         <Stack.Screen name="category/[id]" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="budget/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="categories/index" />
         <Stack.Screen name="movement/[id]" />
         <Stack.Screen name="settings/delete-data" />
         <Stack.Screen name="settings/rates" />
+        <Stack.Screen name="settings/backup" />
         <Stack.Screen name="settings/theme" />
       </Stack>
+      {lock.locked ? <LockScreen onUnlock={() => void lock.unlock()} busy={lock.checking} /> : null}
     </>
   );
 }

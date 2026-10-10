@@ -1,5 +1,5 @@
-import { PlaceholderView } from '../../components/modules/ajustes/PlaceholderView';
+import { PresupuestoView } from '../../components/modules/presupuesto/PresupuestoView';
 
 export default function PresupuestoRoute() {
-  return <PlaceholderView title="Presupuesto" />;
+  return <PresupuestoView />;
 }

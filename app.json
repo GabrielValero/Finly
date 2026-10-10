@@ -34,6 +34,12 @@
           "imageWidth": 160,
           "resizeMode": "contain"
         }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Permitir a Finly usar Face ID para desbloquear la app."
+        }
       ]
     ],
     "extra": {

@@ -13,6 +13,12 @@ interface PreferencesState {
   lastAccountId: string | null;
   /** Fuente de la tasa que se propone al registrar movimientos en Bs. */
   defaultRateSource: RateSource;
+  /** ISO del último respaldo compartido (null si nunca). */
+  lastBackupAt: string | null;
+  setLastBackupAt: (iso: string) => void;
+  /** Pedir huella/PIN del teléfono al abrir la app. */
+  lockEnabled: boolean;
+  setLockEnabled: (on: boolean) => void;
   setDefaultRateSource: (source: RateSource) => void;
   setLastAccountId: (id: string) => void;
   clearLastAccount: () => void;
@@ -35,6 +41,10 @@ export const usePreferences = create<PreferencesState>()(
       customThemes: [],
       lastAccountId: null,
       defaultRateSource: 'bcv',
+      lastBackupAt: null,
+      setLastBackupAt: (lastBackupAt) => set({ lastBackupAt }),
+      lockEnabled: false,
+      setLockEnabled: (lockEnabled) => set({ lockEnabled }),
       setDefaultRateSource: (defaultRateSource) => set({ defaultRateSource }),
       setLastAccountId: (lastAccountId) => set({ lastAccountId }),
       clearLastAccount: () => set({ lastAccountId: null }),
