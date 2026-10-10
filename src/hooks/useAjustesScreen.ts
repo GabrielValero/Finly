@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useBackupStatus } from './useBackupScreen';
+import { useCurrentIconLabel } from './useAppIconSettings';
 import { useLockSetting } from './useAppLock';
 import { useThemeList } from './useTheme';
 import { useAccountsWithBalance, useCategoryRows, useLatestRate } from './useData';
@@ -19,6 +20,7 @@ export function useAjustesScreen() {
   const { seeds, activeId } = useThemeList();
   const backup = useBackupStatus();
   const lock = useLockSetting();
+  const iconLabel = useCurrentIconLabel();
   const today = dayOf(toLocalIso(new Date()));
   return {
     rateValue: rate ? `${formatRate(rate.rateScaled)} · ${formatAge(rate.validFrom, today)}` : 'Sin tasa',
@@ -35,6 +37,8 @@ export function useAjustesScreen() {
     openRates: () => router.push('/settings/rates'),
     openAccounts: () => router.navigate('/cuentas'),
     openCategories: () => router.push('/categories'),
+    iconValue: iconLabel,
+    openAppIcon: () => router.push('/settings/app-icon'),
     openTheme: () => router.push('/settings/theme'),
     openDeleteData: () => router.push('/settings/delete-data'),
   };

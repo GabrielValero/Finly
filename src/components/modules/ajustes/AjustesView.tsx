@@ -35,7 +35,8 @@ export function AjustesView() {
         <Card style={styles.card}>
           <SettingsRow label="Moneda base" value="USD" />
           <SettingsRow label="Bloqueo con huella" value={vm.lockValue} onPress={vm.toggleLock} />
-          <SettingsRow label="Tema" value={vm.themeValue} onPress={vm.openTheme} last />
+          <SettingsRow label="Tema" value={vm.themeValue} onPress={vm.openTheme} />
+          <SettingsRow label="Ícono de la app" value={vm.iconValue} onPress={vm.openAppIcon} last />
         </Card>
         {vm.lockError ? <AppText variant="small" color="expense">{vm.lockError}</AppText> : null}
       </ScrollView>

@@ -46,6 +46,7 @@ export default function RootLayout() {
         <Stack.Screen name="settings/rates" />
         <Stack.Screen name="settings/backup" />
         <Stack.Screen name="settings/theme" />
+        <Stack.Screen name="settings/app-icon" />
       </Stack>
       {lock.locked ? <LockScreen onUnlock={() => void lock.unlock()} busy={lock.checking} /> : null}
     </>
