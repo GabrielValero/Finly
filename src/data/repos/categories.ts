@@ -47,8 +47,8 @@ export async function updateCategory(id: string, fields: CategoryFields): Promis
 
 /** Archiva la categoría y sus subcategorías; los movimientos viejos conservan la referencia. */
 export async function archiveCategory(id: string, now: Date): Promise<void> {
-  await db.transaction(async (tx) => {
-    await tx.update(categories).set({ archivedAt: now, updatedAt: now }).where(eq(categories.parentId, id));
-    await tx.update(categories).set({ archivedAt: now, updatedAt: now }).where(eq(categories.id, id));
+  db.transaction((tx) => {
+    tx.update(categories).set({ archivedAt: now, updatedAt: now }).where(eq(categories.parentId, id)).run();
+    tx.update(categories).set({ archivedAt: now, updatedAt: now }).where(eq(categories.id, id)).run();
   });
 }

@@ -42,3 +42,16 @@ describe('latestTransfer', () => {
     expect(latestTransfer([leg({})])).toBeNull();
   });
 });
+
+import { collapseTransfers } from '../src/utils/transfers';
+
+describe('collapseTransfers', () => {
+  const t = (id: string, transferId: string | null, amountMinor: number, accountName = 'A') => ({ id, transferId, amountMinor, accountCurrency: 'USD' as const, accountName });
+  it('une las dos patas en un solo movimiento, conservando el orden', () => {
+    const items = collapseTransfers([t('g', null, -100), t('in', 'x', 4000, 'Banesco'), t('out', 'x', -50, 'Binance'), t('h', null, -5)]);
+    expect(items.map((i) => (i.type === 'transfer' ? `T:${i.id}` : i.row.id))).toEqual(['g', 'T:out', 'h']);
+  });
+  it('una pata huérfana queda como fila normal', () => {
+    expect(collapseTransfers([t('solo', 'y', -50)])).toEqual([{ type: 'tx', row: t('solo', 'y', -50) }]);
+  });
+});

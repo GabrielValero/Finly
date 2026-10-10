@@ -7,6 +7,7 @@ import { formatMinor, formatMoney, formatRate } from '../utils/money';
 import { portfolioTotal } from '../utils/portfolio';
 import { groupByDay, monthTotals } from '../utils/summary';
 import { usdEquivalent } from '../utils/transactions';
+import { collapseTransfers } from '../utils/transfers';
 import { useAccountsWithBalance, useLatestRate, useMonthTransactions, type TxRow } from './useData';
 
 export interface MovementRowVm {
@@ -54,6 +55,20 @@ function toRow(tx: TxRow): MovementRowVm {
   };
 }
 
+/** Una transferencia es un solo movimiento en el historial: sale de A y llega a B. */
+function toTransferRow(out: TxRow, incoming: TxRow): MovementRowVm {
+  const sameMoney = out.accountCurrency === incoming.accountCurrency && -out.amountMinor === incoming.amountMinor;
+  return {
+    id: out.id,
+    icon: 'transfer',
+    title: out.concept.trim() || `${out.accountName} → ${incoming.accountName}`,
+    subtitle: 'TRANSFERENCIA',
+    amount: formatMoney(-out.amountMinor, out.accountCurrency),
+    tone: 'default',
+    caption: sameMoney ? null : `→ ${formatMoney(incoming.amountMinor, incoming.accountCurrency)}`,
+  };
+}
+
 export function useMovementsScreen() {
   const router = useRouter();
   const month = useUi((s) => s.selectedMonth);
@@ -83,7 +98,7 @@ export function useMovementsScreen() {
     const groups: MovementGroupVm[] = groupByDay(rows).map((g) => {
       const dayTotal = monthTotals(g.items, excluded);
       const dayNet = dayTotal.incomeUsdMinor - dayTotal.expenseUsdMinor;
-      return { day: g.day, label: formatDayLabel(g.day, today), total: signedUsd(dayNet), rows: g.items.map(toRow) };
+      return { day: g.day, label: formatDayLabel(g.day, today), total: signedUsd(dayNet), rows: collapseTransfers(g.items).map((item) => (item.type === 'transfer' ? toTransferRow(item.out, item.incoming) : toRow(item.row))) };
     });
 
     const staleDays = rate ? daysBetween(rate.validFrom, today) : null;

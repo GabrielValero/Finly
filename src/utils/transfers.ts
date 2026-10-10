@@ -68,3 +68,45 @@ export function latestTransfer(rows: readonly TransferLegRow[]): TransferSummary
     rateScaled: out.rateScaled,
   };
 }
+
+export interface CollapsibleTx {
+  id: string;
+  transferId: string | null;
+  amountMinor: number;
+  accountCurrency: Currency;
+  accountName: string;
+}
+
+export type CollapsedItem<T extends CollapsibleTx> =
+  | { type: 'tx'; row: T }
+  | { type: 'transfer'; /** id de la pata de salida (la que abre el detalle) */ id: string; out: T; incoming: T };
+
+/**
+ * En el historial una transferencia es UN movimiento, aunque se guarde en dos filas.
+ * Si falta una de las patas (dato incompleto) la fila queda tal cual.
+ */
+export function collapseTransfers<T extends CollapsibleTx>(rows: readonly T[]): CollapsedItem<T>[] {
+  const byTransfer = new Map<string, T[]>();
+  for (const r of rows) {
+    if (r.transferId) byTransfer.set(r.transferId, [...(byTransfer.get(r.transferId) ?? []), r]);
+  }
+  const done = new Set<string>();
+  const items: CollapsedItem<T>[] = [];
+  for (const r of rows) {
+    if (!r.transferId) {
+      items.push({ type: 'tx', row: r });
+      continue;
+    }
+    if (done.has(r.transferId)) continue;
+    const legs = byTransfer.get(r.transferId) ?? [];
+    const out = legs.find((l) => l.amountMinor < 0);
+    const incoming = legs.find((l) => l.amountMinor > 0);
+    if (out && incoming) {
+      done.add(r.transferId);
+      items.push({ type: 'transfer', id: out.id, out, incoming });
+    } else {
+      items.push({ type: 'tx', row: r });
+    }
+  }
+  return items;
+}

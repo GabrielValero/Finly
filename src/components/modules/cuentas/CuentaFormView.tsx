@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, Switch, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNewAccountForm } from '../../../hooks/useNewAccountForm';
+import { useAccountForm } from '../../../hooks/useAccountForm';
 import { useTheme, useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
 import { Button } from '../../shared/Button';
@@ -14,8 +14,8 @@ import { Segmented } from '../../shared/Segmented';
 import { SheetModal } from '../../shared/SheetModal';
 import { ScreenTemplate } from '../../template/ScreenTemplate';
 
-export function NuevaCuentaView() {
-  const vm = useNewAccountForm();
+export function CuentaFormView({ id }: { id?: string }) {
+  const vm = useAccountForm(id);
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [keypad, setKeypad] = useState(false);
@@ -30,11 +30,12 @@ export function NuevaCuentaView() {
     iconBtn: { width: 52, height: 52, borderRadius: t.radius[16], backgroundColor: t.colors.surface2, borderWidth: 2, borderColor: t.colors.surface2, alignItems: 'center', justifyContent: 'center' },
     iconSelected: { borderColor: t.colors.accent },
     balanceBox: { backgroundColor: t.colors.surface, borderRadius: t.radius[16], borderWidth: 1, borderColor: t.colors.border, padding: t.space[16], gap: t.space[8] },
+    archive: { alignItems: 'center', paddingVertical: t.space[12] },
     toggle: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   }));
 
   return (
-    <ScreenTemplate title="NUEVA CUENTA" left="close" onLeft={vm.close}>
+    <ScreenTemplate title={vm.title} left="close" onLeft={vm.close}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Card>
           <View style={styles.preview}>
@@ -44,7 +45,7 @@ export function NuevaCuentaView() {
               <AppText variant="caption" color="textMuted">{vm.currency}</AppText>
             </View>
             <View style={styles.right}>
-              <AppText variant="amount">{vm.balanceLabel}</AppText>
+              <AppText variant="amount" numberOfLines={1}>{vm.balanceLabel}</AppText>
               <AppText variant="caption" color="textMuted">Vista previa</AppText>
             </View>
           </View>
@@ -56,8 +57,8 @@ export function NuevaCuentaView() {
         </View>
 
         <AppText variant="label" color="textMuted">Moneda</AppText>
-        <Segmented options={[{ value: 'USD', label: 'USD' }, { value: 'VES', label: 'VES' }]} value={vm.currency} onChange={vm.setCurrency} />
-        <AppText variant="small" color="textMuted">No se puede cambiar cuando ya tiene movimientos.</AppText>
+        <Segmented options={[{ value: 'USD', label: 'USD' }, { value: 'VES', label: 'VES' }]} value={vm.currency} onChange={vm.setCurrency} disabled={vm.currencyLocked} />
+        <AppText variant="small" color="textMuted">{vm.currencyLocked ? 'No se puede cambiar: la cuenta ya tiene movimientos.' : 'No se podrá cambiar cuando tenga movimientos.'}</AppText>
 
         <AppText variant="label" color="textMuted">Ícono</AppText>
         <View style={styles.icons}>
@@ -70,7 +71,7 @@ export function NuevaCuentaView() {
 
         <PressableScale onPress={() => setKeypad(true)} style={styles.balanceBox}>
           <AppText variant="label" color="textMuted">Saldo actual de la cuenta</AppText>
-          <AppText variant="balance">{vm.currency === 'USD' ? '$ ' : 'Bs '}{vm.balance.display}</AppText>
+          <AppText variant="balance" fit>{vm.balanceDisplay ?? `${vm.currency === 'USD' ? '$ ' : 'Bs '}${vm.balance.display}`}</AppText>
         </PressableScale>
 
         <View style={styles.toggle}>
@@ -84,12 +85,15 @@ export function NuevaCuentaView() {
         </View>
 
         {vm.error ? <AppText variant="small" color="expense">{vm.error}</AppText> : null}
-        <Button label="Crear cuenta" onPress={() => void vm.save()} disabled={!vm.canSave} />
+        {vm.canArchive ? (
+          <PressableScale onPress={vm.confirmArchive} style={styles.archive}><AppText variant="body" color="expense">Archivar cuenta</AppText></PressableScale>
+        ) : null}
+        <Button label={vm.submitLabel} onPress={() => void vm.save()} disabled={!vm.canSave} />
       </ScrollView>
 
       <SheetModal visible={keypad} title="SALDO ACTUAL" onClose={() => setKeypad(false)}>
         <AppText variant="display" align="center">{vm.balance.display}</AppText>
-        <Keypad onKey={vm.balance.press} />
+        <Keypad onKey={vm.pressBalance} />
         <Button label="Listo" onPress={() => setKeypad(false)} />
       </SheetModal>
     </ScreenTemplate>

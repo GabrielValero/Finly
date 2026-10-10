@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { formatDateTimeLong, isValidTime, shiftDay, timeOf, toLocalIso, withTime } from '../utils/dates';
+import { dayOf, formatDateTimeLong, isValidTime, shiftDay, timeOf, toLocalIso, withDay, withTime } from '../utils/dates';
 
 /** Concepto + fecha/hora de un movimiento (compartido por captura y transferencia). */
 export function useMovementDetails() {
@@ -17,6 +17,8 @@ export function useMovementDetails() {
     setConcept,
     occurredAt,
     setOccurredAt,
+    day: dayOf(occurredAt),
+    setDay: (day: string) => setOccurredAt((iso) => withDay(iso, day)),
     dateLabel: formatDateTimeLong(occurredAt),
     shiftDate: (delta: number) => setOccurredAt((iso) => shiftDay(iso, delta)),
     resetDateToNow: () => setOccurredAt(toLocalIso(new Date())),

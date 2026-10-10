@@ -13,8 +13,8 @@ export function DetalleView({ id }: { id: string }) {
   const styles = useThemedStyles((t) => ({
     scroll: { paddingHorizontal: t.space[16], paddingBottom: t.space[32], gap: t.space[16] },
     hero: { alignItems: 'center', gap: t.space[8], paddingVertical: t.space[8] },
-    split: { flexDirection: 'row', gap: t.space[32] },
-    col: { gap: t.space[4] },
+    split: { flexDirection: 'row', gap: t.space[16] },
+    col: { gap: t.space[4], flex: 1, minWidth: 0 },
     divider: { height: 1, backgroundColor: t.colors.border, marginVertical: t.space[12] },
     actions: { flexDirection: 'row', gap: t.space[8] },
     action: { flex: 1 },
@@ -34,8 +34,8 @@ export function DetalleView({ id }: { id: string }) {
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.hero}>
           <IconBadge icon={vm.icon} size={60} />
-          <AppText variant="heading">{vm.title}</AppText>
-          <AppText variant="display">{vm.bigAmount}</AppText>
+          <AppText variant="heading" align="center" numberOfLines={2}>{vm.title}</AppText>
+          <AppText variant="display" fit>{vm.bigAmount}</AppText>
           <AppText variant="caption" color="textMuted">{vm.dateLabel}</AppText>
         </View>
 
@@ -44,17 +44,17 @@ export function DetalleView({ id }: { id: string }) {
             <View style={styles.split}>
               <View style={styles.col}>
                 <AppText variant="label" color="textMuted">{vm.rateCard.listedLabel}</AppText>
-                <AppText variant="amountMid">{vm.rateCard.listed}</AppText>
+                <AppText variant="amountMid" fit>{vm.rateCard.listed}</AppText>
               </View>
               <View style={styles.col}>
                 <AppText variant="label" color="textMuted">{vm.rateCard.paidLabel}</AppText>
-                <AppText variant="amountMid">{vm.rateCard.paid}</AppText>
+                <AppText variant="amountMid" fit>{vm.rateCard.paid}</AppText>
               </View>
             </View>
             <View style={styles.divider} />
             <View style={styles.rateRow}>
               <AppText variant="label" color="textMuted">TASA USADA</AppText>
-              <AppText variant="amount" color="accent">{vm.rateCard.rate}</AppText>
+              <AppText variant="amount" color="accent" numberOfLines={1}>{vm.rateCard.rate}</AppText>
             </View>
           </Card>
         ) : null}

@@ -28,7 +28,9 @@ export function useTransactionDetail(id: string) {
   const isTransfer = tx.kind === 'transfer';
   const transfer = isTransfer ? latestTransfer(legs) : null;
   const sign = tx.amountMinor < 0 ? '-' : '+';
-  const bigAmount = usd === null ? formatMoney(tx.amountMinor, tx.accountCurrency) : `${sign}${formatMoney(Math.abs(usd), 'USD')}`;
+  const bigAmount = transfer
+    ? formatMoney(transfer.outMinor, transfer.outCurrency)
+    : usd === null ? formatMoney(tx.amountMinor, tx.accountCurrency) : `${sign}${formatMoney(Math.abs(usd), 'USD')}`;
 
   // Tarjeta de conversión: solo si hubo moneda/tasa de por medio.
   const rateCard = tx.rateScaled
@@ -51,7 +53,7 @@ export function useTransactionDetail(id: string) {
     found: true as const,
     isTransfer,
     icon: isTransfer ? 'transfer' : (tx.categoryIcon ?? 'wallet'),
-    title: tx.concept.trim() || (isTransfer ? 'Transferencia' : (tx.categoryName ?? 'Movimiento')),
+    title: tx.concept.trim() || (transfer ? `${transfer.fromName} → ${transfer.toName}` : isTransfer ? 'Transferencia' : (tx.categoryName ?? 'Movimiento')),
     bigAmount,
     dateLabel: formatDateTimeLong(tx.occurredAt),
     rateCard,

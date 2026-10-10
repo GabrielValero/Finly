@@ -98,3 +98,24 @@ export function withTime(iso: string, time: string): string {
 export function timeOf(iso: string): string {
   return iso.slice(11, 16);
 }
+
+export const MONTH_NAMES = MONTHS_LONG;
+export const WEEKDAY_INITIALS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'] as const;
+
+/** Semanas (lunes a domingo) de un mes "YYYY-MM"; null rellena los huecos de los extremos. */
+export function monthGrid(month: string): (string | null)[][] {
+  const [y, m] = month.split('-').map(Number) as [number, number];
+  const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const firstWeekday = (new Date(Date.UTC(y, m - 1, 1)).getUTCDay() + 6) % 7; // lunes = 0
+  const cells: (string | null)[] = Array.from({ length: firstWeekday }, () => null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(`${month}-${pad(d)}`);
+  while (cells.length % 7 !== 0) cells.push(null);
+  const weeks: (string | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+  return weeks;
+}
+
+/** Cambia el día de un ISO local conservando la hora. */
+export function withDay(iso: string, day: string): string {
+  return `${day}${iso.slice(10)}`;
+}
