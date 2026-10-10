@@ -1,82 +1,30 @@
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useUi } from '../store/ui';
 import { isExcluded } from '../utils/categories';
-import { addMonths, dayOf, daysBetween, formatDayLabel, formatMonthLabel, recentMonths, toLocalIso } from '../utils/dates';
+import { addMonths, dayOf, daysBetween, formatMonthLabel, recentMonths, toLocalIso } from '../utils/dates';
 import { formatMinor, formatMoney, formatRate } from '../utils/money';
 import { portfolioTotal } from '../utils/portfolio';
-import { groupByDay, monthTotals } from '../utils/summary';
-import { usdEquivalent } from '../utils/transactions';
-import { collapseTransfers } from '../utils/transfers';
+import { buildMovementGroups } from '../utils/movementRows';
+import { monthTotals } from '../utils/summary';
 import { useAccountsWithBalance, useLatestRate, useMonthTransactions, type TxRow } from './useData';
 
-export interface MovementRowVm {
-  id: string;
-  icon: string;
-  title: string;
-  subtitle: string;
-  amount: string;
-  tone: 'default' | 'income';
-  caption: string | null;
-}
-
-export interface MovementGroupVm {
-  day: string;
-  label: string;
-  total: string;
-  rows: MovementRowVm[];
-}
-
-/** Valor en USD si se puede calcular (Bs sin tasa -> null). */
-function safeUsd(tx: TxRow): number | null {
-  try {
-    return usdEquivalent(tx);
-  } catch {
-    return null;
-  }
-}
-
-function signedUsd(minor: number): string {
-  return `${minor > 0 ? '+' : ''}${formatMoney(minor, 'USD')}`;
-}
-
-function toRow(tx: TxRow): MovementRowVm {
-  const usd = safeUsd(tx);
-  const isTransfer = tx.kind === 'transfer';
-  const originalInBs = tx.listedCurrency === 'VES' || (tx.accountCurrency === 'VES' && tx.listedCurrency === null);
-  return {
-    id: tx.id,
-    icon: isTransfer ? 'transfer' : (tx.categoryIcon ?? 'wallet'),
-    title: tx.concept.trim() || (isTransfer ? 'Transferencia' : (tx.categoryName ?? 'Movimiento')),
-    subtitle: tx.accountName.toUpperCase(),
-    amount: usd === null ? formatMoney(tx.amountMinor, tx.accountCurrency) : signedUsd(usd),
-    tone: tx.kind === 'income' || (isTransfer && tx.amountMinor > 0) ? 'income' : 'default',
-    caption: originalInBs ? 'en Bs' : null,
-  };
-}
-
-/** Una transferencia es un solo movimiento en el historial: sale de A y llega a B. */
-function toTransferRow(out: TxRow, incoming: TxRow): MovementRowVm {
-  const sameMoney = out.accountCurrency === incoming.accountCurrency && -out.amountMinor === incoming.amountMinor;
-  return {
-    id: out.id,
-    icon: 'transfer',
-    title: out.concept.trim() || `${out.accountName} → ${incoming.accountName}`,
-    subtitle: 'TRANSFERENCIA',
-    amount: formatMoney(-out.amountMinor, out.accountCurrency),
-    tone: 'default',
-    caption: sameMoney ? null : `→ ${formatMoney(incoming.amountMinor, incoming.accountCurrency)}`,
-  };
-}
+export type { MovementGroupVm, MovementRowVm } from '../utils/movementRows';
 
 export function useMovementsScreen() {
   const router = useRouter();
   const month = useUi((s) => s.selectedMonth);
   const setSelectedMonth = useUi((s) => s.setSelectedMonth);
 
-  const rows = useMonthTransactions(month);
-  const previousRows = useMonthTransactions(addMonths(month, -1));
+  const allRows = useMonthTransactions(month);
+  const allPreviousRows = useMonthTransactions(addMonths(month, -1));
   const accounts = useAccountsWithBalance();
+  /** null = todas las cuentas. */
+  const [accountFilter, setAccountFilter] = useState<string | null>(null);
+  const filterAccount = accounts.find((a) => a.id === accountFilter) ?? null;
+  const filterId = filterAccount?.id ?? null;
+  const rows = useMemo(() => (filterId ? allRows.filter((r) => r.accountId === filterId) : allRows), [allRows, filterId]);
+  const previousRows = useMemo(() => (filterId ? allPreviousRows.filter((r) => r.accountId === filterId) : allPreviousRows), [allPreviousRows, filterId]);
   const rate = useLatestRate();
 
   const today = dayOf(toLocalIso(new Date()));
@@ -95,11 +43,7 @@ export function useMovementsScreen() {
     const prevNet = prevTotals.incomeUsdMinor - prevTotals.expenseUsdMinor;
     const delta = previousRows.length > 0 ? net - prevNet : null;
 
-    const groups: MovementGroupVm[] = groupByDay(rows).map((g) => {
-      const dayTotal = monthTotals(g.items, excluded);
-      const dayNet = dayTotal.incomeUsdMinor - dayTotal.expenseUsdMinor;
-      return { day: g.day, label: formatDayLabel(g.day, today), total: signedUsd(dayNet), rows: collapseTransfers(g.items).map((item) => (item.type === 'transfer' ? toTransferRow(item.out, item.incoming) : toRow(item.row))) };
-    });
+    const groups = buildMovementGroups(rows, { mode: 'usd', today, excluded });
 
     const staleDays = rate ? daysBetween(rate.validFrom, today) : null;
     const banner =
@@ -114,9 +58,14 @@ export function useMovementsScreen() {
       months: recentMonths(currentMonth, 12).map((m) => ({ value: m, label: formatMonthLabel(m) })),
       selectedMonth: month,
       rateLabel: rate ? `Bs ${formatRate(rate.rateScaled)} / $` : 'Sin tasa',
-      balanceLabel: `$ ${formatMinor(portfolio.usdMinor)}`,
-      balanceNote: portfolio.missingRate ? 'Hay saldo en Bs sin valorar: falta la tasa' : null,
+      balanceTitle: filterAccount ? `Saldo de ${filterAccount.name}` : 'Balance total',
+      balanceLabel: filterAccount ? formatMoney(filterAccount.balanceMinor, filterAccount.currency) : `$ ${formatMinor(portfolio.usdMinor)}`,
+      balanceNote: !filterAccount && portfolio.missingRate ? 'Hay saldo en Bs sin valorar: falta la tasa' : null,
       deltaLabel: delta === null ? null : `${delta >= 0 ? '+' : '-'}${formatMoney(Math.abs(delta), 'USD')} vs mes pasado`,
+      accountChips: [{ id: null as string | null, name: 'Todas' }, ...accounts.map((a) => ({ id: a.id as string | null, name: a.name }))],
+      accountFilter: filterId,
+      setAccountFilter,
+      filterName: filterAccount?.name ?? null,
       deltaPositive: delta === null ? true : delta >= 0,
       expenseLabel: formatMoney(totals.expenseUsdMinor, 'USD'),
       incomeLabel: formatMoney(totals.incomeUsdMinor, 'USD'),
@@ -124,11 +73,12 @@ export function useMovementsScreen() {
       groups,
       hasAccounts: accounts.length > 0,
       isEmpty: rows.length === 0,
+      hasAnyRows: allRows.length > 0,
       setMonth: setSelectedMonth,
       openCapture: () => router.push('/capture'),
       openRate: () => router.push('/rate'),
       openNewAccount: () => router.push('/account/new'),
       openDetail: (id: string) => router.push({ pathname: '/movement/[id]', params: { id } }),
     };
-  }, [rows, previousRows, accounts, rate, month, today, currentMonth, setSelectedMonth, router]);
+  }, [rows, previousRows, allRows, accounts, filterAccount, filterId, rate, month, today, currentMonth, setSelectedMonth, router]);
 }

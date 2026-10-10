@@ -42,6 +42,8 @@ export default function RootLayout() {
         <Stack.Screen name="budget/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="categories/index" />
         <Stack.Screen name="movement/[id]" />
+        <Stack.Screen name="account-movements/[id]" />
+        <Stack.Screen name="budget-movements/[id]" />
         <Stack.Screen name="settings/delete-data" />
         <Stack.Screen name="settings/rates" />
         <Stack.Screen name="settings/backup" />

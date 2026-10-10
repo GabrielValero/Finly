@@ -30,22 +30,46 @@ export interface Allocation {
 }
 
 /**
+ * Regla única de reparto: un movimiento va a la partida de su categoría o, si no hay, a la de su categoría padre.
+ * La usan el total de cada partida y la lista de sus movimientos, para que nunca se contradigan.
+ */
+export function itemResolver(items: readonly BudgetItemLite[], categories: readonly BudgetCategory[]) {
+  const itemOf = new Map<string, BudgetItemLite>();
+  for (const it of items) itemOf.set(`${it.kind}:${it.categoryId}`, it);
+  const parentOf = new Map(categories.map((c) => [c.id, c.parentId]));
+  return (tx: Pick<BudgetTx, 'kind' | 'categoryId'>): BudgetItemLite | undefined => {
+    if (tx.kind === 'transfer' || !tx.categoryId) return undefined;
+    const own = itemOf.get(`${tx.kind}:${tx.categoryId}`);
+    const parentId = parentOf.get(tx.categoryId);
+    return own ?? (parentId ? itemOf.get(`${tx.kind}:${parentId}`) : undefined);
+  };
+}
+
+/** Los movimientos que cuentan para una partida (mismo reparto que el total). */
+export function txsOfItem<T extends Pick<BudgetTx, 'kind' | 'categoryId'>>(
+  itemId: string,
+  items: readonly BudgetItemLite[],
+  categories: readonly BudgetCategory[],
+  txs: readonly T[],
+  isExcluded: (tx: T) => boolean,
+): T[] {
+  const find = itemResolver(items, categories);
+  return txs.filter((tx) => !isExcluded(tx) && find(tx)?.id === itemId);
+}
+
+/**
  * Reparte los movimientos del mes entre las partidas del presupuesto.
  * Cada movimiento va a la partida más específica: la de su categoría, o si no hay, la de su categoría padre.
  * Las transferencias y las categorías excluidas no cuentan.
  */
 export function allocateSpending(items: readonly BudgetItemLite[], txs: readonly BudgetTx[], categories: readonly BudgetCategory[]): Allocation {
-  const itemOf = new Map<string, BudgetItemLite>();
-  for (const it of items) itemOf.set(`${it.kind}:${it.categoryId}`, it);
-  const parentOf = new Map(categories.map((c) => [c.id, c.parentId]));
+  const find = itemResolver(items, categories);
   const byItem = new Map<string, number>(items.map((i) => [i.id, 0]));
   const unplanned = { expense: 0, income: 0 };
 
   for (const tx of txs) {
     if (tx.kind === 'transfer' || tx.excluded) continue;
-    const own = tx.categoryId ? itemOf.get(`${tx.kind}:${tx.categoryId}`) : undefined;
-    const parentId = tx.categoryId ? parentOf.get(tx.categoryId) : null;
-    const item = own ?? (parentId ? itemOf.get(`${tx.kind}:${parentId}`) : undefined);
+    const item = find(tx);
     if (item) byItem.set(item.id, (byItem.get(item.id) ?? 0) + tx.usdMinor);
     else unplanned[tx.kind] += tx.usdMinor;
   }

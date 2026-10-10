@@ -3,7 +3,8 @@ import { useMemo } from 'react';
 import { Alert } from 'react-native';
 import { copyBudgetFromPrevious } from '../data/repos/budgets';
 import { useUi } from '../store/ui';
-import { allocateSpending, budgetTotals, itemStatus, progressOf, type BudgetTx, type ItemStatus } from '../utils/budget';
+import { allocateSpending, budgetTotals, itemStatus, progressOf, type BudgetTx } from '../utils/budget';
+import { STATUS_STYLE, statusLabel } from '../utils/budgetDisplay';
 import { categoryPath, isExcluded } from '../utils/categories';
 import { dayOf, formatMonthLabel, monthOf, recentMonths, toLocalIso } from '../utils/dates';
 import { formatMoney } from '../utils/money';
@@ -27,23 +28,6 @@ function usdMagnitude(tx: TxRow): number {
   } catch {
     return 0;
   }
-}
-
-const STATUS_STYLE: Record<ItemStatus, { statusColor: BudgetRowVm['statusColor']; barColor: BudgetRowVm['barColor'] }> = {
-  paid: { statusColor: 'income', barColor: 'income' },
-  partial: { statusColor: 'accent', barColor: 'accent' },
-  pending: { statusColor: 'textMuted', barColor: 'surface2' },
-  ok: { statusColor: 'textMuted', barColor: 'accent' },
-  near: { statusColor: 'accent', barColor: 'accent' },
-  over: { statusColor: 'expense', barColor: 'expense' },
-};
-
-function statusLabel(kind: 'income' | 'expense', isFixed: boolean, status: ItemStatus, remainingMinor: number): string {
-  if (kind === 'income') return status === 'paid' ? 'RECIBIDO' : status === 'partial' ? 'PARCIAL' : 'PENDIENTE';
-  if (isFixed) return status === 'paid' ? 'PAGADO' : status === 'partial' ? 'PARCIAL' : 'PENDIENTE';
-  if (status === 'over') return 'TE PASASTE';
-  if (status === 'near') return 'CERCA DEL LÍMITE';
-  return `QUEDAN ${formatMoney(remainingMinor, 'USD')}`;
 }
 
 export function usePresupuestoScreen() {
@@ -114,6 +98,6 @@ export function usePresupuestoScreen() {
     ...view,
     copyPrevious,
     openAdd: () => router.push({ pathname: '/budget/[id]', params: { id: 'new', month } }),
-    openItem: (id: string) => router.push({ pathname: '/budget/[id]', params: { id, month } }),
+    openItem: (id: string) => router.push({ pathname: '/budget-movements/[id]', params: { id, month } }),
   };
 }

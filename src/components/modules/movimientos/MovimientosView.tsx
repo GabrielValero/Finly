@@ -5,6 +5,7 @@ import { useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
 import { Banner } from '../../shared/Banner';
 import { Card } from '../../shared/Card';
+import { Chip } from '../../shared/Chip';
 import { Fab } from '../../shared/Fab';
 import { Icon } from '../../shared/Icon';
 import { OptionList } from '../../shared/OptionList';
@@ -24,6 +25,7 @@ export function MovimientosView() {
     pill: { height: 28, paddingHorizontal: t.space[12], borderRadius: t.radius.full, backgroundColor: t.colors.surface, justifyContent: 'center' },
     balance: { gap: t.space[8] },
     divider: { height: 1, backgroundColor: t.colors.border, marginVertical: t.space[8] },
+    chips: { flexDirection: 'row', gap: t.space[8], paddingRight: t.space[16] },
     summary: { flexDirection: 'row' },
     summaryCol: { flex: 1, gap: t.space[4], minWidth: 0, paddingRight: t.space[8] },
     day: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: t.space[8] },
@@ -45,7 +47,7 @@ export function MovimientosView() {
 
         <Card>
           <View style={styles.balance}>
-            <AppText variant="label" color="textMuted">Balance total</AppText>
+            <AppText variant="label" color="textMuted" numberOfLines={1}>{vm.balanceTitle}</AppText>
             <AppText variant="balance" fit>{vm.balanceLabel}</AppText>
             {vm.balanceNote ? <AppText variant="small" color="warning">{vm.balanceNote}</AppText> : null}
             {vm.deltaLabel ? <AppText variant="small" color={vm.deltaPositive ? 'income' : 'expense'}>{vm.deltaLabel}</AppText> : null}
@@ -63,6 +65,14 @@ export function MovimientosView() {
           </View>
         </Card>
 
+        {vm.accountChips.length > 2 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+            {vm.accountChips.map((c) => (
+              <Chip key={c.id ?? 'all'} label={c.name} selected={c.id === vm.accountFilter} onPress={() => vm.setAccountFilter(c.id)} />
+            ))}
+          </ScrollView>
+        ) : null}
+
         {vm.banner ? <Banner text={vm.banner} action="ACTUALIZAR" onPress={vm.openRate} /> : null}
 
         {!vm.hasAccounts ? (
@@ -73,7 +83,7 @@ export function MovimientosView() {
           </View>
         ) : vm.isEmpty ? (
           <View style={styles.empty}>
-            <AppText variant="heading" align="center">Sin movimientos este mes</AppText>
+            <AppText variant="heading" align="center">{vm.filterName ? `Sin movimientos de ${vm.filterName} este mes` : 'Sin movimientos este mes'}</AppText>
             <AppText variant="small" color="textMuted" align="center">Toca + para registrar el primero.</AppText>
           </View>
         ) : (
