@@ -9,13 +9,14 @@ import { IconBadge } from '../../shared/IconBadge';
 import { PressableScale } from '../../shared/PressableScale';
 import { ScreenTemplate } from '../../template/ScreenTemplate';
 
-function AccountCard({ a }: { a: AccountCardVm }) {
+function AccountCard({ a, onPress }: { a: AccountCardVm; onPress: () => void }) {
   const styles = useThemedStyles((t) => ({
     row: { flexDirection: 'row', alignItems: 'center', gap: t.space[16] },
-    texts: { flex: 1, gap: t.space[4] },
-    right: { alignItems: 'flex-end', gap: t.space[4] },
+    texts: { flex: 1, gap: t.space[4], minWidth: 0 },
+    right: { alignItems: 'flex-end', gap: t.space[4], maxWidth: '45%' },
   }));
   return (
+    <PressableScale onPress={onPress} accessibilityLabel={`Editar ${a.name}`}>
     <Card>
       <View style={styles.row}>
         <IconBadge icon={a.icon} />
@@ -24,11 +25,12 @@ function AccountCard({ a }: { a: AccountCardVm }) {
           <AppText variant="caption" color="textMuted">{a.meta}</AppText>
         </View>
         <View style={styles.right}>
-          <AppText variant="amount">{a.balance}</AppText>
-          {a.equivalent ? <AppText variant="caption" color="textMuted">{a.equivalent}</AppText> : null}
+          <AppText variant="amount" fit>{a.balance}</AppText>
+          {a.equivalent ? <AppText variant="caption" color="textMuted" numberOfLines={1}>{a.equivalent}</AppText> : null}
         </View>
       </View>
     </Card>
+    </PressableScale>
   );
 }
 
@@ -39,14 +41,14 @@ export function CuentasView() {
     group: { paddingTop: t.space[8] },
     empty: { alignItems: 'center', gap: t.space[16], paddingVertical: t.space[32] },
     transfer: { height: 56, borderRadius: t.radius[20], borderWidth: 1, borderColor: t.colors.border, backgroundColor: t.colors.surface, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: t.space[8] },
-    lastRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: t.space[8] },
+    lastBlock: { gap: t.space[4] },
   }));
   return (
     <ScreenTemplate title="Cuentas" titleStyle="large" right={{ icon: 'plus', onPress: vm.openNew }}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Card>
           <AppText variant="label" color="textMuted">Patrimonio total</AppText>
-          <AppText variant="balance">{vm.totalLabel}</AppText>
+          <AppText variant="balance" fit>{vm.totalLabel}</AppText>
           {vm.totalNote ? <AppText variant="small" color="warning">{vm.totalNote}</AppText> : null}
         </Card>
         {vm.canTransfer ? (
@@ -64,18 +66,18 @@ export function CuentasView() {
         {vm.usd.length > 0 ? (
           <View style={styles.group}><AppText variant="label" color="textMuted">Dólares · USD</AppText></View>
         ) : null}
-        {vm.usd.map((a) => <AccountCard key={a.id} a={a} />)}
+        {vm.usd.map((a) => <AccountCard key={a.id} a={a} onPress={() => vm.openEdit(a.id)} />)}
         {vm.ves.length > 0 ? (
           <View style={styles.group}><AppText variant="label" color="textMuted">Bolívares · VES</AppText></View>
         ) : null}
-        {vm.ves.map((a) => <AccountCard key={a.id} a={a} />)}
+        {vm.ves.map((a) => <AccountCard key={a.id} a={a} onPress={() => vm.openEdit(a.id)} />)}
         {vm.lastTransfer ? (
           <>
             <View style={styles.group}><AppText variant="label" color="textMuted">Última transferencia</AppText></View>
             <Card>
-              <View style={styles.lastRow}>
-                <AppText variant="heading" numberOfLines={1}>{vm.lastTransfer.route}</AppText>
-                <AppText variant="amount">{vm.lastTransfer.amounts}</AppText>
+              <View style={styles.lastBlock}>
+                <AppText variant="heading" numberOfLines={2}>{vm.lastTransfer.route}</AppText>
+                <AppText variant="amount" fit>{vm.lastTransfer.amounts}</AppText>
               </View>
               {vm.lastTransfer.rate ? <AppText variant="caption" color="textMuted">{vm.lastTransfer.rate}</AppText> : null}
             </Card>

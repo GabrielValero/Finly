@@ -15,6 +15,9 @@ import { useAccountsWithBalance, useAllCategoryRows, useLatestRate, useTags, use
 
 export type CaptureKind = 'expense' | 'income';
 
+/** Cuántas categorías caben en la fila antes del botón "Más". */
+const VISIBLE_CATEGORIES = 5;
+
 interface Options {
   /** Edita este movimiento (conserva su tasa congelada y su fecha). */
   editId?: string;
@@ -90,6 +93,36 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
   const subs = useMemo(() => (parent ? activeCategories.filter((c) => c.parentId === parent.id) : []), [activeCategories, parent]);
   const sub = subs.find((c) => c.id === subId) ?? null;
   const category = sub ?? parent;
+
+  const shownParents = useMemo(() => {
+    const first = parents.slice(0, VISIBLE_CATEGORIES);
+    // Si la elegida quedó fuera de la fila, se sube al frente para que siempre se vea.
+    return parent && !first.some((c) => c.id === parent.id) ? [parent, ...first.slice(0, VISIBLE_CATEGORIES - 1)] : first;
+  }, [parents, parent]);
+
+  const categoryOptions = useMemo(
+    () =>
+      parents.flatMap((p) => [
+        { value: p.id, label: p.name },
+        ...activeCategories.filter((c) => c.parentId === p.id).map((c) => ({ value: c.id, label: `${p.name} › ${c.name}` })),
+      ]),
+    [parents, activeCategories],
+  );
+
+  const selectAnyCategory = useCallback(
+    (id: string) => {
+      const picked = activeCategories.find((c) => c.id === id);
+      if (!picked) return;
+      if (picked.parentId) {
+        setParentId(picked.parentId);
+        setSubId(picked.id);
+      } else {
+        setParentId(picked.id);
+        setSubId(null);
+      }
+    },
+    [activeCategories],
+  );
 
   const setKind = useCallback((next: CaptureKind) => {
     setKindState(next);
@@ -201,6 +234,16 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
     kind,
     setKind,
     kindLabel: kind === 'expense' ? 'Gasto' : 'Ingreso',
+    kindOptions: [
+      { value: 'expense', label: 'Gasto' },
+      { value: 'income', label: 'Ingreso' },
+      // Editar un movimiento no puede convertirlo en transferencia.
+      ...(isEdit ? [] : [{ value: 'transfer', label: 'Transferencia entre cuentas' }]),
+    ],
+    selectKind: (value: string) => {
+      if (value === 'transfer') router.replace('/transfer');
+      else setKind(value === 'income' ? 'income' : 'expense');
+    },
     amountDisplay: amount.display,
     pressKey: amount.press,
     currency,
@@ -218,7 +261,12 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
     },
     hasAccounts: accounts.length > 0,
     openNewAccount: () => router.push('/account/new'),
-    categories: parents.map((c) => ({ id: c.id, name: c.name, icon: c.icon })),
+    categories: shownParents.map((c) => ({ id: c.id, name: c.name, icon: c.icon })),
+    hasMoreCategories: parents.length > VISIBLE_CATEGORIES || activeCategories.some((c) => c.parentId && parents.some((p) => p.id === c.parentId)),
+    categoryOptions,
+    selectedCategoryValue: category?.id ?? null,
+    selectAnyCategory,
+    openNewCategory: () => router.push({ pathname: '/category/[id]', params: { id: 'new', kind } }),
     categoryId: parent?.id ?? null,
     selectCategory: (id: string) => {
       setParentId(id);

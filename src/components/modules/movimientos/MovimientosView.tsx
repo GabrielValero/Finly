@@ -25,7 +25,7 @@ export function MovimientosView() {
     balance: { gap: t.space[8] },
     divider: { height: 1, backgroundColor: t.colors.border, marginVertical: t.space[8] },
     summary: { flexDirection: 'row' },
-    summaryCol: { flex: 1, gap: t.space[4] },
+    summaryCol: { flex: 1, gap: t.space[4], minWidth: 0, paddingRight: t.space[8] },
     day: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: t.space[8] },
     empty: { alignItems: 'center', gap: t.space[16], paddingVertical: t.space[32] },
   }));
@@ -46,7 +46,7 @@ export function MovimientosView() {
         <Card>
           <View style={styles.balance}>
             <AppText variant="label" color="textMuted">Balance total</AppText>
-            <AppText variant="balance">{vm.balanceLabel}</AppText>
+            <AppText variant="balance" fit>{vm.balanceLabel}</AppText>
             {vm.balanceNote ? <AppText variant="small" color="warning">{vm.balanceNote}</AppText> : null}
             {vm.deltaLabel ? <AppText variant="small" color={vm.deltaPositive ? 'income' : 'expense'}>{vm.deltaLabel}</AppText> : null}
           </View>
@@ -54,11 +54,11 @@ export function MovimientosView() {
           <View style={styles.summary}>
             <View style={styles.summaryCol}>
               <AppText variant="label" color="textMuted">Gastos</AppText>
-              <AppText variant="amountMid">{vm.expenseLabel}</AppText>
+              <AppText variant="amountMid" fit>{vm.expenseLabel}</AppText>
             </View>
             <View style={styles.summaryCol}>
               <AppText variant="label" color="textMuted">Ingresos</AppText>
-              <AppText variant="amountMid" color="income">{vm.incomeLabel}</AppText>
+              <AppText variant="amountMid" color="income" fit>{vm.incomeLabel}</AppText>
             </View>
           </View>
         </Card>

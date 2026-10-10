@@ -17,8 +17,8 @@ export interface RowMovimientoProps {
 export function RowMovimiento({ icon, title, subtitle, amount, tone, caption, onPress }: RowMovimientoProps) {
   const styles = useThemedStyles((t) => ({
     row: { flexDirection: 'row', alignItems: 'center', gap: t.space[16], paddingVertical: t.space[8] },
-    texts: { flex: 1, gap: t.space[4] },
-    right: { alignItems: 'flex-end', gap: t.space[4] },
+    texts: { flex: 1, gap: t.space[4], minWidth: 0 },
+    right: { alignItems: 'flex-end', gap: t.space[4], maxWidth: '45%' },
   }));
   return (
     <PressableScale onPress={onPress} style={styles.row}>
@@ -28,8 +28,8 @@ export function RowMovimiento({ icon, title, subtitle, amount, tone, caption, on
         <AppText variant="caption" color="textMuted" numberOfLines={1}>{subtitle}</AppText>
       </View>
       <View style={styles.right}>
-        <AppText variant="amount" color={tone === 'income' ? 'income' : 'text'}>{amount}</AppText>
-        {caption ? <AppText variant="small" color="textMuted">{caption}</AppText> : null}
+        <AppText variant="amount" color={tone === 'income' ? 'income' : 'text'} fit>{amount}</AppText>
+        {caption ? <AppText variant="small" color="textMuted" numberOfLines={1}>{caption}</AppText> : null}
       </View>
     </PressableScale>
   );

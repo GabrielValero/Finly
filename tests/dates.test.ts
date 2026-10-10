@@ -57,3 +57,22 @@ describe('enteredFromTx', () => {
     expect(enteredFromTx({ amountMinor: -516, accountCurrency: 'USD', listedAmountMinor: null, listedCurrency: null })).toEqual({ minor: 516, currency: 'USD' });
   });
 });
+
+import { monthGrid, withDay } from '../src/utils/dates';
+
+describe('monthGrid', () => {
+  it('octubre 2026 empieza en jueves y tiene 31 días en semanas de lunes a domingo', () => {
+    const weeks = monthGrid('2026-10');
+    expect(weeks.every((w) => w.length === 7)).toBe(true);
+    expect(weeks[0]).toEqual([null, null, null, '2026-10-01', '2026-10-02', '2026-10-03', '2026-10-04']);
+    expect(weeks.flat().filter(Boolean)).toHaveLength(31);
+    expect(weeks.at(-1)!.filter(Boolean).at(-1)).toBe('2026-10-31');
+  });
+  it('febrero bisiesto y mes que empieza en lunes', () => {
+    expect(monthGrid('2028-02').flat().filter(Boolean)).toHaveLength(29);
+    expect(monthGrid('2026-06')[0]![0]).toBe('2026-06-01');
+  });
+  it('withDay conserva la hora', () => {
+    expect(withDay('2026-10-09T08:14:00', '2026-09-30')).toBe('2026-09-30T08:14:00');
+  });
+});

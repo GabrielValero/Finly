@@ -11,11 +11,13 @@ interface Props {
   color?: ThemeColorKey;
   align?: TextStyle['textAlign'];
   numberOfLines?: number;
+  /** Reduce la fuente para que quepa en una línea (montos grandes). */
+  fit?: boolean;
   children: ReactNode;
 }
 
 /** Texto con la tipografía del diseño (Geist / Geist Mono) y colores semánticos del tema. */
-export function AppText({ variant = 'body', color = 'text', align, numberOfLines, children }: Props) {
+export function AppText({ variant = 'body', color = 'text', align, numberOfLines, fit, children }: Props) {
   const t = useTheme();
   const { sans, mono } = t.font;
   const variants: Record<TextVariant, TextStyle> = {
@@ -33,7 +35,13 @@ export function AppText({ variant = 'body', color = 'text', align, numberOfLines
     button: { fontFamily: sans.bold, fontSize: 17 },
   };
   return (
-    <Text numberOfLines={numberOfLines} style={[variants[variant], { color: t.colors[color] }, align ? { textAlign: align } : null]}>
+    <Text
+      numberOfLines={fit ? 1 : numberOfLines}
+      adjustsFontSizeToFit={fit}
+      minimumFontScale={fit ? 0.5 : undefined}
+      maxFontSizeMultiplier={1.3}
+      style={[variants[variant], { color: t.colors[color], flexShrink: 1 }, align ? { textAlign: align } : null]}
+    >
       {children}
     </Text>
   );

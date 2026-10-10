@@ -24,12 +24,14 @@ export function CapturaView() {
   const insets = useSafeAreaInsets();
   const [accountPicker, setAccountPicker] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [kindPicker, setKindPicker] = useState(false);
+  const [categoryPicker, setCategoryPicker] = useState(false);
   const styles = useThemedStyles((t) => ({
     body: { flex: 1, paddingHorizontal: t.space[16], gap: t.space[12] },
     topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     close: { width: 40, height: 40, borderRadius: t.radius.full, backgroundColor: t.colors.surface, alignItems: 'center', justifyContent: 'center' },
     kind: { flexDirection: 'row', alignItems: 'center', gap: t.space[8], height: 36, paddingHorizontal: t.space[16], borderRadius: t.radius.full, backgroundColor: t.colors.surface },
-    center: { alignItems: 'center', gap: t.space[8] },
+    center: { alignItems: 'center', gap: t.space[8], paddingHorizontal: t.space[8] },
     seg: { width: 140 },
     chips: { gap: t.space[8], paddingRight: t.space[16] },
     conceptBox: { minHeight: 48, borderRadius: t.radius[16], backgroundColor: t.colors.surface, paddingHorizontal: t.space[16], justifyContent: 'center' },
@@ -44,7 +46,7 @@ export function CapturaView() {
           <PressableScale onPress={vm.close} style={styles.close} accessibilityLabel="Cerrar">
             <Icon name="close" size={20} />
           </PressableScale>
-          <PressableScale onPress={() => vm.setKind(vm.kind === 'expense' ? 'income' : 'expense')} style={styles.kind}>
+          <PressableScale onPress={() => setKindPicker(true)} style={styles.kind} accessibilityLabel="Tipo de movimiento">
             <AppText variant="label">{vm.kindLabel}</AppText>
             <Icon name="chevronDown" size={16} color="textMuted" />
           </PressableScale>
@@ -59,7 +61,7 @@ export function CapturaView() {
                 onChange={vm.setCurrency}
               />
             </View>
-            <AppText variant="display">{vm.amountDisplay}</AppText>
+            <AppText variant="display" fit>{vm.amountDisplay}</AppText>
             {vm.preview ? <AppText variant="bodyRegular" color="textMuted">{vm.preview}</AppText> : null}
             {vm.rateLabel ? (
               <PressableScale onPress={vm.openRate}>
@@ -78,6 +80,7 @@ export function CapturaView() {
             {vm.categories.map((c) => (
               <CategoryChip key={c.id} label={c.name} icon={c.icon} selected={c.id === vm.categoryId} onPress={() => vm.selectCategory(c.id)} />
             ))}
+            {vm.hasMoreCategories ? <CategoryChip label="Más" icon="plus" selected={false} onPress={() => setCategoryPicker(true)} /> : null}
           </ScrollView>
 
           {vm.subcategories.length > 0 ? (
@@ -110,6 +113,36 @@ export function CapturaView() {
         details={vm.details}
         tags={{ list: vm.tags, toggle: vm.toggleTag, add: vm.addTag }}
       />
+
+      <SheetModal visible={kindPicker} title="TIPO" onClose={() => setKindPicker(false)}>
+        <OptionList
+          options={vm.kindOptions}
+          selected={vm.kind}
+          onSelect={(value) => {
+            setKindPicker(false);
+            vm.selectKind(value);
+          }}
+        />
+      </SheetModal>
+
+      <SheetModal visible={categoryPicker} title="CATEGORÍA" onClose={() => setCategoryPicker(false)}>
+        <OptionList
+          options={vm.categoryOptions}
+          selected={vm.selectedCategoryValue}
+          onSelect={(id) => {
+            vm.selectAnyCategory(id);
+            setCategoryPicker(false);
+          }}
+        />
+        <Button
+          label="Nueva categoría"
+          variant="outline"
+          onPress={() => {
+            setCategoryPicker(false);
+            vm.openNewCategory();
+          }}
+        />
+      </SheetModal>
 
       <SheetModal visible={accountPicker} title="CUENTA" onClose={() => setAccountPicker(false)}>
         <OptionList

@@ -25,8 +25,8 @@ export function TransferenciaView() {
     kind: { height: 36, paddingHorizontal: t.space[16], borderRadius: t.radius.full, backgroundColor: t.colors.surface, justifyContent: 'center' },
     box: { backgroundColor: t.colors.surface, borderRadius: t.radius[20], borderWidth: 1, borderColor: t.colors.border, padding: t.space[16], gap: t.space[8] },
     boxActive: { borderColor: t.colors.accent, borderWidth: 2 },
-    boxHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    selector: { flexDirection: 'row', alignItems: 'center', gap: t.space[4] },
+    boxHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: t.space[12] },
+    selector: { flexDirection: 'row', alignItems: 'center', gap: t.space[4], flexShrink: 1, minWidth: 0 },
     swapRow: { alignItems: 'center', marginVertical: -t.space[4] },
     swap: { width: 36, height: 36, borderRadius: t.radius.full, backgroundColor: t.colors.surface2, alignItems: 'center', justifyContent: 'center' },
     rateBox: { backgroundColor: t.colors.surface2, borderRadius: t.radius[16], padding: t.space[16], gap: t.space[4] },
@@ -60,11 +60,11 @@ export function TransferenciaView() {
             <View style={styles.boxHead}>
               <AppText variant="label" color="textMuted">DESDE</AppText>
               <PressableScale onPress={() => setPicker('from')} style={styles.selector}>
-                <AppText variant="heading">{vm.fromLabel}</AppText>
+                <AppText variant="heading" numberOfLines={1}>{vm.fromLabel}</AppText>
                 <Icon name="chevronDown" size={16} color="textMuted" />
               </PressableScale>
             </View>
-            <AppText variant="display">{vm.fromAmount}</AppText>
+            <AppText variant="display" fit>{vm.fromAmount}</AppText>
           </PressableScale>
 
           <View style={styles.swapRow}>
@@ -75,11 +75,11 @@ export function TransferenciaView() {
             <View style={styles.boxHead}>
               <AppText variant="label" color="textMuted">HACIA</AppText>
               <PressableScale onPress={() => setPicker('to')} style={styles.selector}>
-                <AppText variant="heading">{vm.toLabel}</AppText>
+                <AppText variant="heading" numberOfLines={1}>{vm.toLabel}</AppText>
                 <Icon name="chevronDown" size={16} color="textMuted" />
               </PressableScale>
             </View>
-            <AppText variant="display">{vm.toAmount}</AppText>
+            <AppText variant="display" fit>{vm.toAmount}</AppText>
             {vm.convertHint ? <AppText variant="caption" color="textMuted">{vm.convertHint}</AppText> : null}
           </PressableScale>
 
@@ -87,7 +87,7 @@ export function TransferenciaView() {
             <View style={styles.rateBox}>
               <View style={styles.rateHead}>
                 <AppText variant="label" color="textMuted">TASA OBTENIDA</AppText>
-                <AppText variant="amount" color="accent">{vm.rateCard.value}</AppText>
+                <AppText variant="amount" color="accent" numberOfLines={1}>{vm.rateCard.value}</AppText>
               </View>
               <AppText variant="caption" color="textMuted">{vm.rateCard.note}</AppText>
             </View>

@@ -1,5 +1,5 @@
-import { NuevaCuentaView } from '../../components/modules/cuentas/NuevaCuentaView';
+import { CuentaFormView } from '../../components/modules/cuentas/CuentaFormView';
 
 export default function NewAccountRoute() {
-  return <NuevaCuentaView />;
+  return <CuentaFormView />;
 }

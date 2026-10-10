@@ -13,7 +13,7 @@ export function CategoriasView() {
   const styles = useThemedStyles((t) => ({
     scroll: { paddingHorizontal: t.space[16], paddingBottom: t.space[32], gap: t.space[12] },
     row: { flexDirection: 'row', alignItems: 'center', gap: t.space[16], paddingVertical: t.space[4] },
-    texts: { flex: 1, gap: t.space[4] },
+    texts: { flex: 1, gap: t.space[4], minWidth: 0 },
     panel: { backgroundColor: t.colors.surface, borderRadius: t.radius[16], borderWidth: 1, borderColor: t.colors.border, paddingHorizontal: t.space[16], paddingVertical: t.space[8] },
     subRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', height: 36 },
     link: { height: 32, justifyContent: 'center' },
@@ -43,7 +43,7 @@ export function CategoriasView() {
                 <View style={styles.panel}>
                   {c.children.map((s) => (
                     <PressableScale key={s.id} onPress={() => vm.openEdit(s.id)} style={styles.subRow}>
-                      <AppText variant="bodyRegular">{s.name}</AppText>
+                      <AppText variant="bodyRegular" numberOfLines={1}>{s.name}</AppText>
                       <AppText variant="caption" color="textMuted">{s.count}</AppText>
                     </PressableScale>
                   ))}
