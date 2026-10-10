@@ -1,4 +1,4 @@
-import { count } from 'drizzle-orm';
+import { count, eq } from 'drizzle-orm';
 import { db } from '../db';
 import { categories, type Category } from '../schema';
 import { newId } from '../../utils/ids';
@@ -25,4 +25,30 @@ export async function seedDefaultCategories(): Promise<void> {
   await db.insert(categories).values(
     DEFAULTS.map((c) => ({ ...c, id: newId(), color: null, parentId: null, excludeFromReports: false, updatedAt: now })),
   );
+}
+
+export interface CategoryFields {
+  name: string;
+  icon: string;
+  kind: 'income' | 'expense';
+  parentId: string | null;
+  excludeFromReports: boolean;
+}
+
+export async function insertCategory(fields: CategoryFields): Promise<string> {
+  const id = newId();
+  await db.insert(categories).values({ ...fields, id, color: null, archivedAt: null, updatedAt: new Date() });
+  return id;
+}
+
+export async function updateCategory(id: string, fields: CategoryFields): Promise<void> {
+  await db.update(categories).set({ ...fields, updatedAt: new Date() }).where(eq(categories.id, id));
+}
+
+/** Archiva la categoría y sus subcategorías; los movimientos viejos conservan la referencia. */
+export async function archiveCategory(id: string, now: Date): Promise<void> {
+  await db.transaction(async (tx) => {
+    await tx.update(categories).set({ archivedAt: now, updatedAt: now }).where(eq(categories.parentId, id));
+    await tx.update(categories).set({ archivedAt: now, updatedAt: now }).where(eq(categories.id, id));
+  });
 }

@@ -16,6 +16,8 @@ export function DetalleView({ id }: { id: string }) {
     split: { flexDirection: 'row', gap: t.space[32] },
     col: { gap: t.space[4] },
     divider: { height: 1, backgroundColor: t.colors.border, marginVertical: t.space[12] },
+    actions: { flexDirection: 'row', gap: t.space[8] },
+    action: { flex: 1 },
     rateRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   }));
 
@@ -28,7 +30,7 @@ export function DetalleView({ id }: { id: string }) {
   }
 
   return (
-    <ScreenTemplate title="DETALLE" left="back" onLeft={vm.close} bottomInset>
+    <ScreenTemplate title="DETALLE" left="back" onLeft={vm.close} right={vm.isTransfer ? null : { label: 'EDITAR', onPress: vm.edit }} bottomInset>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.hero}>
           <IconBadge icon={vm.icon} size={60} />
@@ -63,7 +65,10 @@ export function DetalleView({ id }: { id: string }) {
           ))}
         </Card>
 
-        <Button label="Eliminar" variant="danger" onPress={vm.confirmDelete} />
+        <View style={styles.actions}>
+          {vm.isTransfer ? null : <View style={styles.action}><Button label="Duplicar" variant="outline" onPress={vm.duplicate} /></View>}
+          <View style={styles.action}><Button label="Eliminar" variant="danger" onPress={vm.confirmDelete} /></View>
+        </View>
       </ScrollView>
     </ScreenTemplate>
   );

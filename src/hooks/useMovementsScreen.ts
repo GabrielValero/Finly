@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { useUi } from '../store/ui';
+import { isExcluded } from '../utils/categories';
 import { addMonths, dayOf, daysBetween, formatDayLabel, formatMonthLabel, recentMonths, toLocalIso } from '../utils/dates';
 import { formatMinor, formatMoney, formatRate } from '../utils/money';
 import { portfolioTotal } from '../utils/portfolio';
@@ -67,8 +68,9 @@ export function useMovementsScreen() {
   const currentMonth = today.slice(0, 7);
 
   return useMemo(() => {
-    const excluded = new Set(rows.filter((r) => r.excludeFromReports && r.categoryId).map((r) => r.categoryId!));
-    const prevExcluded = new Set(previousRows.filter((r) => r.excludeFromReports && r.categoryId).map((r) => r.categoryId!));
+    const excludedOf = (list: readonly TxRow[]) => new Set(list.filter((r) => r.categoryId && isExcluded(r.excludeFromReports, r.parentExcludeFromReports)).map((r) => r.categoryId!));
+    const excluded = excludedOf(rows);
+    const prevExcluded = excludedOf(previousRows);
     const totals = monthTotals(rows, excluded);
     const prevTotals = monthTotals(previousRows, prevExcluded);
 

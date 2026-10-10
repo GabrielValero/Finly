@@ -41,3 +41,10 @@ export function bufferToRate(buffer: string): number {
   if (clean === '' || /^0(,0*)?$/.test(clean)) return 0;
   return parseRate(clean);
 }
+
+/** Unidades menores -> buffer del teclado ("12,5", "7"). Inverso de bufferToMinor. */
+export function minorToBuffer(minor: number): string {
+  const whole = Math.floor(minor / 100);
+  const cents = (minor % 100).toString().padStart(2, '0').replace(/0+$/, '');
+  return cents === '' ? String(whole) : `${whole},${cents}`;
+}

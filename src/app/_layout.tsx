@@ -33,6 +33,9 @@ export default function RootLayout() {
         <Stack.Screen name="capture" options={{ presentation: 'modal' }} />
         <Stack.Screen name="rate" options={{ presentation: 'modal' }} />
         <Stack.Screen name="account/new" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="transfer" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="category/[id]" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="categories/index" />
         <Stack.Screen name="movement/[id]" />
       </Stack>
     </>

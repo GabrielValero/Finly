@@ -48,3 +48,16 @@ export function resolveEntry(input: EntryInput): ResolvedEntry {
     rateSource: rateRequired ? rateSource : null,
   };
 }
+
+/** Reconstruye lo que el usuario tecleó originalmente (para editar o duplicar). */
+export function enteredFromTx(tx: {
+  amountMinor: number;
+  accountCurrency: Currency;
+  listedAmountMinor: number | null;
+  listedCurrency: Currency | null;
+}): { minor: number; currency: Currency } {
+  if (tx.listedAmountMinor !== null && tx.listedCurrency !== null) {
+    return { minor: tx.listedAmountMinor, currency: tx.listedCurrency };
+  }
+  return { minor: Math.abs(tx.amountMinor), currency: tx.accountCurrency };
+}

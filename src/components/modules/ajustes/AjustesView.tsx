@@ -19,6 +19,13 @@ export function AjustesView() {
   return (
     <ScreenTemplate title="Ajustes" titleStyle="large">
       <ScrollView contentContainerStyle={styles.scroll}>
+        <AppText variant="label" color="textMuted">Datos</AppText>
+        <Card>
+          <PressableScale onPress={vm.openCategories} style={styles.row}>
+            <AppText variant="body">Categorías</AppText>
+            <Icon name="chevronRight" size={20} color="textMuted" />
+          </PressableScale>
+        </Card>
         <AppText variant="label" color="textMuted">Tema</AppText>
         <Card>
           {vm.items.map((item) => (
@@ -35,7 +42,7 @@ export function AjustesView() {
             </PressableScale>
           ))}
         </Card>
-        <AppText variant="small" color="textMuted">Más ajustes (respaldo, importar datos, categorías) llegan pronto.</AppText>
+        <AppText variant="small" color="textMuted">Más ajustes (respaldo, importar datos) llegan pronto.</AppText>
       </ScrollView>
     </ScreenTemplate>
   );
