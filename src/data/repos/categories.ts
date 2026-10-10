@@ -17,14 +17,16 @@ const DEFAULTS: Seed[] = [
   { name: 'Otros ingresos', icon: 'cash', kind: 'income' },
 ];
 
+export function defaultCategoryRows(now: Date) {
+  return DEFAULTS.map((c) => ({ ...c, id: newId(), color: null, parentId: null, excludeFromReports: false, updatedAt: now }));
+}
+
 /** Crea las categorías iniciales solo si la tabla está vacía (idempotente). */
 export async function seedDefaultCategories(): Promise<void> {
   const [row] = await db.select({ n: count() }).from(categories);
   if ((row?.n ?? 0) > 0) return;
   const now = new Date();
-  await db.insert(categories).values(
-    DEFAULTS.map((c) => ({ ...c, id: newId(), color: null, parentId: null, excludeFromReports: false, updatedAt: now })),
-  );
+  await db.insert(categories).values(defaultCategoryRows(now));
 }
 
 export interface CategoryFields {

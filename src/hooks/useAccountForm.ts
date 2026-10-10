@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
-import { archiveAccount, insertAccount, updateAccount } from '../data/repos/accounts';
+import { archiveAccount, deleteAccountMovements, insertAccount, updateAccount } from '../data/repos/accounts';
 import { accountInputSchema } from '../schemas/account';
 import { openingForTargetBalance } from '../utils/accounts';
 import { newId } from '../utils/ids';
@@ -86,6 +86,19 @@ export function useAccountForm(id?: string) {
     ]);
   };
 
+  const movementCount = existing?.txCount ?? 0;
+  const confirmDeleteMovements = () => {
+    if (!existing || movementCount === 0) return;
+    Alert.alert(
+      'Eliminar movimientos',
+      `Se borrarán ${movementCount} movimientos de ${existing.name} y no se pueden recuperar. Si alguno es una transferencia, también se borra su otra mitad en la otra cuenta. El saldo vuelve al inicial.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Eliminar', style: 'destructive', onPress: () => void deleteAccountMovements(existing.id).then(() => router.back()) },
+      ],
+    );
+  };
+
   const negativeBalance = isEdit && existing !== null && existing.balanceMinor < 0 && !balanceTouched;
 
   return {
@@ -104,6 +117,9 @@ export function useAccountForm(id?: string) {
     save,
     canArchive: isEdit && existing !== null,
     confirmArchive,
+    movementCount,
+    canDeleteMovements: isEdit && movementCount > 0,
+    confirmDeleteMovements,
     close: () => router.back(),
   };
 }

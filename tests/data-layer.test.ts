@@ -50,3 +50,25 @@ describe('capa de datos con el driver real de Drizzle', () => {
     expect((await monthTransactionsQuery('2026-10')).some((r) => r.id === 'bad')).toBe(false);
   });
 });
+
+describe('borrado de datos', () => {
+  it('eliminar movimientos de una cuenta borra también la otra pata de las transferencias', async () => {
+    const { deleteAccountMovements } = await import('../src/data/repos/accounts');
+    const { wipeAllData } = await import('../src/data/repos/reset');
+    const { accounts, categories: cats, transactions: txs } = await import('../src/data/schema');
+    await insertTransaction({ ...base, id: 'x1', accountId: 'ves', accountCurrency: 'VES', kind: 'expense', amountMinor: -100, occurredAt: '2026-10-11T10:00:00', categoryId: 'c', concept: '', rateScaled: 4_350_000, rateSource: 'manual' });
+    const legs = buildTransfer({ from: { id: 'usd', currency: 'USD' }, to: { id: 'ves', currency: 'VES' }, outMinor: 100, inMinor: 43500, transferId: 'tr2' });
+    const row = { ...base, categoryId: null, concept: '', occurredAt: '2026-10-11T12:00:00' };
+    await insertTransfer([{ ...row, id: 'c', ...legs[0] }, { ...row, id: 'd', ...legs[1] }]);
+    const removed = await deleteAccountMovements('ves');
+    expect(removed).toBe(5); // x1 + tr2 (2 patas) + tr1 (2 patas, ya borradas lógicamente)
+    const left = await db.select().from(txs);
+    expect(left.some((r) => r.accountId === 'ves' || r.transferId === 'tr2')).toBe(false);
+    expect(left.some((r) => r.id === 't1')).toBe(true);
+
+    await wipeAllData(new Date());
+    expect(await db.select().from(txs)).toHaveLength(0);
+    expect(await db.select().from(accounts)).toHaveLength(0);
+    expect((await db.select().from(cats)).length).toBeGreaterThan(0);
+  });
+});

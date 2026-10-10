@@ -11,6 +11,7 @@ interface PreferencesState {
   /** Última cuenta usada al capturar (comodidad de UI). */
   lastAccountId: string | null;
   setLastAccountId: (id: string) => void;
+  clearLastAccount: () => void;
   setThemeId: (id: string) => void;
   saveCustomTheme: (seed: ThemeSeed) => void;
   removeCustomTheme: (id: string) => void;
@@ -30,6 +31,7 @@ export const usePreferences = create<PreferencesState>()(
       customThemes: [],
       lastAccountId: null,
       setLastAccountId: (lastAccountId) => set({ lastAccountId }),
+      clearLastAccount: () => set({ lastAccountId: null }),
       setThemeId: (themeId) => set({ themeId }),
       saveCustomTheme: (seed) =>
         set((s) => ({ customThemes: [...s.customThemes.filter((t) => t.id !== seed.id), seed] })),

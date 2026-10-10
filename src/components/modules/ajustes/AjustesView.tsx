@@ -25,6 +25,10 @@ export function AjustesView() {
             <AppText variant="body">Categorías</AppText>
             <Icon name="chevronRight" size={20} color="textMuted" />
           </PressableScale>
+          <PressableScale onPress={vm.openDeleteData} style={styles.row}>
+            <AppText variant="body" color="expense">Borrar todos los datos</AppText>
+            <Icon name="chevronRight" size={20} color="textMuted" />
+          </PressableScale>
         </Card>
         <AppText variant="label" color="textMuted">Tema</AppText>
         <Card>
