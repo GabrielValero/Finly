@@ -8,6 +8,9 @@ interface PreferencesState {
   themeId: string;
   /** Temas del usuario, guardados como semilla. Se validan con zod al leerlos (hooks/useTheme). */
   customThemes: ThemeSeed[];
+  /** Última cuenta usada al capturar (comodidad de UI). */
+  lastAccountId: string | null;
+  setLastAccountId: (id: string) => void;
   setThemeId: (id: string) => void;
   saveCustomTheme: (seed: ThemeSeed) => void;
   removeCustomTheme: (id: string) => void;
@@ -25,6 +28,8 @@ export const usePreferences = create<PreferencesState>()(
     (set) => ({
       themeId: DEFAULT_THEME_ID,
       customThemes: [],
+      lastAccountId: null,
+      setLastAccountId: (lastAccountId) => set({ lastAccountId }),
       setThemeId: (themeId) => set({ themeId }),
       saveCustomTheme: (seed) =>
         set((s) => ({ customThemes: [...s.customThemes.filter((t) => t.id !== seed.id), seed] })),

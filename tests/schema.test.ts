@@ -1,8 +1,9 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-const sqlText = readFileSync(new URL('../drizzle/0000_init.sql', import.meta.url), 'utf8');
+const dir = new URL('../drizzle/', import.meta.url);
+const sqlText = readdirSync(dir).filter((f) => f.endsWith('.sql')).sort().map((f) => readFileSync(new URL(f, dir), 'utf8')).join('\n--> statement-breakpoint\n');
 
 let db: DatabaseSync;
 beforeEach(() => {
@@ -69,5 +70,24 @@ describe('otras invariantes', () => {
   });
   it('FK: cuenta inexistente rechazada', () => {
     expect(() => insert({ account_id: 'nope' })).toThrow();
+  });
+});
+
+describe('transferencias', () => {
+  const leg = (o: Row) => insert({ kind: 'transfer', category_id: null, transfer_id: 't1', ...o });
+  it('dos patas con tasa implícita entre monedas distintas: OK', () => {
+    expect(() => leg({ account_id: 'usd', account_currency: 'USD', amount_minor: -5000, rate_scaled: 870_000_000, rate_source: 'manual' })).not.toThrow();
+    expect(() => leg({ account_id: 'ves', account_currency: 'VES', amount_minor: 4_350_000, rate_scaled: 870_000_000, rate_source: 'manual' })).not.toThrow();
+  });
+  it('una transferencia sin transfer_id o un gasto con transfer_id: rechazado', () => {
+    expect(() => insert({ kind: 'transfer', category_id: null, amount_minor: -100 })).toThrow();
+    expect(() => insert({ transfer_id: 't9' })).toThrow();
+  });
+  it('borrado lógico de ambas patas deja los saldos intactos', () => {
+    leg({ id: 'a', account_id: 'usd', account_currency: 'USD', amount_minor: -5000, rate_scaled: 870_000_000, rate_source: 'manual' });
+    leg({ id: 'b', account_id: 'ves', account_currency: 'VES', amount_minor: 4_350_000, rate_scaled: 870_000_000, rate_source: 'manual' });
+    db.exec("UPDATE transactions SET deleted_at = 1 WHERE transfer_id = 't1'");
+    const live = db.prepare('SELECT count(*) AS n FROM transactions WHERE deleted_at IS NULL').get() as { n: number };
+    expect(live.n).toBe(0);
   });
 });
