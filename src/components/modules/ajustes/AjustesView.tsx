@@ -2,6 +2,7 @@ import { ScrollView } from 'react-native';
 import { useAjustesScreen } from '../../../hooks/useAjustesScreen';
 import { useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
+import { Banner } from '../../shared/Banner';
 import { Card } from '../../shared/Card';
 import { SettingsRow } from '../../shared/SettingsRow';
 import { ScreenTemplate } from '../../template/ScreenTemplate';
@@ -16,6 +17,7 @@ export function AjustesView() {
   return (
     <ScreenTemplate title="Ajustes" titleStyle="large">
       <ScrollView contentContainerStyle={styles.scroll}>
+        {vm.backupBanner ? <Banner text={vm.backupBanner} action="RESPALDAR" onPress={vm.openBackup} /> : null}
         <AppText variant="label" color="textMuted">Tasas</AppText>
         <Card style={styles.card}>
           <SettingsRow label="Tasa de hoy" value={vm.rateValue} onPress={vm.openRates} />
@@ -25,17 +27,17 @@ export function AjustesView() {
         <Card style={styles.card}>
           <SettingsRow label="Cuentas" value={vm.accountsValue} onPress={vm.openAccounts} />
           <SettingsRow label="Categorías" value={vm.categoriesValue} onPress={vm.openCategories} />
-          <SettingsRow label="Exportar respaldo" value="Próximamente" />
-          <SettingsRow label="Restaurar respaldo" value="Próximamente" />
+          <SettingsRow label="Respaldo" value={vm.backupValue} onPress={vm.openBackup} />
           <SettingsRow label="Importar datos" value="Próximamente" />
           <SettingsRow label="Borrar todos los datos" danger onPress={vm.openDeleteData} last />
         </Card>
         <AppText variant="label" color="textMuted">App</AppText>
         <Card style={styles.card}>
           <SettingsRow label="Moneda base" value="USD" />
-          <SettingsRow label="Bloqueo con huella" value="Próximamente" />
+          <SettingsRow label="Bloqueo con huella" value={vm.lockValue} onPress={vm.toggleLock} />
           <SettingsRow label="Tema" value={vm.themeValue} onPress={vm.openTheme} last />
         </Card>
+        {vm.lockError ? <AppText variant="small" color="expense">{vm.lockError}</AppText> : null}
       </ScrollView>
     </ScreenTemplate>
   );

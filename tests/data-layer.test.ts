@@ -72,3 +72,37 @@ describe('borrado de datos', () => {
     expect((await db.select().from(cats)).length).toBeGreaterThan(0);
   });
 });
+
+describe('respaldo', () => {
+  it('exportar → borrar todo → restaurar devuelve los mismos datos', async () => {
+    const { exportBackup, restoreBackup } = await import('../src/data/repos/backup');
+    const { wipeAllData } = await import('../src/data/repos/reset');
+    const { backupFileSchema } = await import('../src/schemas/backup');
+    const { accounts, transactions: txs } = await import('../src/data/schema');
+    const [cat] = await db.select().from(categories);
+    await insertAccount({ id: 'r1', name: 'Respaldo', currency: 'USD', icon: 'cash', color: null, openingMinor: 1000, includeInTotal: true, archivedAt: null, sortOrder: 0, updatedAt: new Date() });
+    await insertTransaction({ ...base, id: 'rt1', accountId: 'r1', accountCurrency: 'USD', kind: 'expense', amountMinor: -250, occurredAt: '2026-10-12T10:00:00', categoryId: cat?.id ?? null, concept: 'Café', rateScaled: null, rateSource: null });
+    const file = await exportBackup(new Date('2026-10-12T12:00:00Z'));
+    const parsed = backupFileSchema.parse(JSON.parse(JSON.stringify(file)));
+    const before = await db.select().from(txs);
+    await wipeAllData(new Date());
+    expect(await db.select().from(txs)).toHaveLength(0);
+    await restoreBackup(parsed);
+    expect(await db.select().from(txs)).toEqual(before);
+    expect((await db.select().from(accounts)).some((a) => a.id === 'r1')).toBe(true);
+  });
+
+  it('un respaldo inválido no cambia nada (atómico)', async () => {
+    const { exportBackup, restoreBackup } = await import('../src/data/repos/backup');
+    const { transactions: txs } = await import('../src/data/schema');
+    const file = await exportBackup(new Date());
+    const before = await db.select().from(txs);
+    const broken = structuredClone(file);
+    broken.tables.transactions.push({ id: 'huerfana', account_id: 'no-existe', category_id: null, kind: 'transfer', amount_minor: -1, occurred_at: '2026-10-12T10:00:00', account_currency: 'USD', updated_at: 1 });
+    await expect(restoreBackup(broken)).rejects.toThrow();
+    expect(await db.select().from(txs)).toEqual(before);
+    const alien = structuredClone(file);
+    alien.tables.accounts.push({ id: 'z', columna_futura: 1 });
+    await expect(restoreBackup(alien)).rejects.toThrow('incompatible');
+  });
+});
