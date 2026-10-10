@@ -4,6 +4,7 @@ import { insertTransaction, updateTransaction } from '../data/repos/transactions
 import { findOrCreateTag } from '../data/repos/tags';
 import { transactionInputSchema } from '../schemas/transaction';
 import { usePreferences } from '../store/preferences';
+import { useUi } from '../store/ui';
 import { enteredFromTx, resolveEntry } from '../utils/entry';
 import { formatMoney, formatRate, MoneyError, type Currency } from '../utils/money';
 import { newId } from '../utils/ids';
@@ -100,13 +101,9 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
     return parent && !first.some((c) => c.id === parent.id) ? [parent, ...first.slice(0, VISIBLE_CATEGORIES - 1)] : first;
   }, [parents, parent]);
 
-  const categoryOptions = useMemo(
-    () =>
-      parents.flatMap((p) => [
-        { value: p.id, label: p.name },
-        ...activeCategories.filter((c) => c.parentId === p.id).map((c) => ({ value: c.id, label: `${p.name} › ${c.name}` })),
-      ]),
-    [parents, activeCategories],
+  const pickerCategories = useMemo(
+    () => activeCategories.filter((c) => c.kind === kind).map((c) => ({ id: c.id, name: c.name, icon: c.icon, parentId: c.parentId })),
+    [activeCategories, kind],
   );
 
   const selectAnyCategory = useCallback(
@@ -123,6 +120,19 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
     },
     [activeCategories],
   );
+
+  // Categoría recién creada desde esta pantalla: se elige sola (y se cambia el tipo si hace falta).
+  const createdCategoryId = useUi((s) => s.createdCategoryId);
+  const setCreatedCategoryId = useUi((s) => s.setCreatedCategoryId);
+  useEffect(() => {
+    if (!createdCategoryId) return;
+    const created = activeCategories.find((c) => c.id === createdCategoryId);
+    if (!created) return;
+    setKindState(created.kind);
+    setParentId(created.parentId ?? created.id);
+    setSubId(created.parentId ? created.id : null);
+    setCreatedCategoryId(null);
+  }, [createdCategoryId, activeCategories, setCreatedCategoryId]);
 
   const setKind = useCallback((next: CaptureKind) => {
     setKindState(next);
@@ -263,10 +273,13 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
     openNewAccount: () => router.push('/account/new'),
     categories: shownParents.map((c) => ({ id: c.id, name: c.name, icon: c.icon })),
     hasMoreCategories: parents.length > VISIBLE_CATEGORIES || activeCategories.some((c) => c.parentId && parents.some((p) => p.id === c.parentId)),
-    categoryOptions,
+    pickerCategories,
     selectedCategoryValue: category?.id ?? null,
     selectAnyCategory,
-    openNewCategory: () => router.push({ pathname: '/category/[id]', params: { id: 'new', kind } }),
+    openNewCategory: () => router.push({ pathname: '/category/[id]', params: { id: 'new', kind, pick: '1' } }),
+    openNewSubcategoryOf: (parentId: string) => router.push({ pathname: '/category/[id]', params: { id: 'new', kind, parentId, pick: '1' } }),
+    /** Fila de subcategorías: la subcategoría nace dentro de la categoría elegida. */
+    openNewSubcategory: parent ? () => router.push({ pathname: '/category/[id]', params: { id: 'new', kind, parentId: parent.id, pick: '1' } }) : null,
     categoryId: parent?.id ?? null,
     selectCategory: (id: string) => {
       setParentId(id);

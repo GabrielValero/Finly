@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { deleteBudgetItem, saveBudgetItem } from '../data/repos/budgets';
+import { useUi } from '../store/ui';
 import { validateBudgetItem } from '../utils/budget';
 import { categoryPath, type CategoryKind } from '../utils/categories';
 import { formatMonthLabel } from '../utils/dates';
@@ -42,16 +43,26 @@ export function useBudgetItemForm({ id, month }: Params) {
 
   const taken = useMemo(() => items.filter((i) => i.kind === kind && i.id !== id).map((i) => i.categoryId), [items, kind, id]);
 
-  const options = useMemo(() => {
-    const parentName = new Map(categories.map((c) => [c.id, c.name]));
-    return categories
-      .filter((c) => c.kind === kind && !taken.includes(c.id))
-      .map((c) => ({ value: c.id, label: categoryPath(c.name, c.parentId ? (parentName.get(c.parentId) ?? null) : null) ?? c.name }))
-      .sort((a, b) => a.label.localeCompare(b.label, 'es'));
-  }, [categories, kind, taken]);
+  const pickerCategories = useMemo(
+    () => categories.filter((c) => c.kind === kind).map((c) => ({ id: c.id, name: c.name, icon: c.icon, parentId: c.parentId })),
+    [categories, kind],
+  );
 
   const selected = categories.find((c) => c.id === categoryId) ?? null;
-  const selectedLabel = selected ? (options.find((o) => o.value === selected.id)?.label ?? existingLabel(existing, selected.name)) : null;
+  const selectedLabel = selected ? (categoryPath(selected.name, categories.find((c) => c.id === selected.parentId)?.name ?? null) ?? selected.name) : null;
+
+  // Categoría recién creada desde el selector: se elige sola (y cambia el tipo si hace falta).
+  const createdCategoryId = useUi((s) => s.createdCategoryId);
+  const setCreatedCategoryId = useUi((s) => s.setCreatedCategoryId);
+  useEffect(() => {
+    if (!createdCategoryId) return;
+    const created = categories.find((c) => c.id === createdCategoryId);
+    if (!created) return;
+    setKind(created.kind);
+    if (created.kind === 'income') setIsFixed(false);
+    setCategoryId(created.id);
+    setCreatedCategoryId(null);
+  }, [createdCategoryId, categories, setCreatedCategoryId]);
 
   const changeKind = (next: CategoryKind) => {
     if (next === kind) return;
@@ -91,8 +102,12 @@ export function useBudgetItemForm({ id, month }: Params) {
     changeKind,
     categoryLocked: !isNew,
     selectedLabel,
-    options,
+    pickerCategories,
+    takenIds: taken,
+    selectedId: categoryId,
     selectCategory: setCategoryId,
+    openNewCategory: () => router.push({ pathname: '/category/[id]', params: { id: 'new', kind, pick: '1' } }),
+    openNewSubcategory: (parentId: string) => router.push({ pathname: '/category/[id]', params: { id: 'new', kind, parentId, pick: '1' } }),
     amount,
     amountLabel: `$ ${amount.display}`,
     previewLabel: formatMoney(amount.minor, 'USD'),
@@ -104,8 +119,4 @@ export function useBudgetItemForm({ id, month }: Params) {
     confirmDelete,
     close: () => router.back(),
   };
-}
-
-function existingLabel(existing: { categoryName: string; parentName: string | null } | null, fallback: string): string {
-  return existing ? (categoryPath(existing.categoryName, existing.parentName) ?? fallback) : fallback;
 }

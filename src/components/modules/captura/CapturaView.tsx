@@ -7,6 +7,7 @@ import { useTheme, useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
 import { Button } from '../../shared/Button';
 import { CategoryChip } from '../../shared/CategoryChip';
+import { CategoryPickerModal } from '../../shared/CategoryPickerModal';
 import { Icon } from '../../shared/Icon';
 import { Keypad } from '../../shared/Keypad';
 import { OptionList } from '../../shared/OptionList';
@@ -80,16 +81,18 @@ export function CapturaView() {
             {vm.categories.map((c) => (
               <CategoryChip key={c.id} label={c.name} icon={c.icon} selected={c.id === vm.categoryId} onPress={() => vm.selectCategory(c.id)} />
             ))}
-            {vm.hasMoreCategories ? <CategoryChip label="Más" icon="plus" selected={false} onPress={() => setCategoryPicker(true)} /> : null}
+            {vm.hasMoreCategories ? <CategoryChip label="Más" icon="list" selected={false} onPress={() => setCategoryPicker(true)} /> : null}
+            <CategoryChip label="Nueva" icon="plus" selected={false} onPress={vm.openNewCategory} />
           </ScrollView>
 
-          {vm.subcategories.length > 0 ? (
+          {vm.categoryId ? (
             <View style={styles.subLabel}>
               <AppText variant="label" color="textMuted">SUBCATEGORÍA (OPCIONAL)</AppText>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
                 {vm.subcategories.map((c) => (
                   <CategoryChip key={c.id} label={c.name} icon={c.icon} selected={c.id === vm.subcategoryId} onPress={() => vm.selectSubcategory(c.id)} />
                 ))}
+                {vm.openNewSubcategory ? <CategoryChip label="Nueva" icon="plus" selected={false} onPress={vm.openNewSubcategory} /> : null}
               </ScrollView>
             </View>
           ) : null}
@@ -125,24 +128,24 @@ export function CapturaView() {
         />
       </SheetModal>
 
-      <SheetModal visible={categoryPicker} title="CATEGORÍA" onClose={() => setCategoryPicker(false)}>
-        <OptionList
-          options={vm.categoryOptions}
-          selected={vm.selectedCategoryValue}
-          onSelect={(id) => {
-            vm.selectAnyCategory(id);
-            setCategoryPicker(false);
-          }}
-        />
-        <Button
-          label="Nueva categoría"
-          variant="outline"
-          onPress={() => {
-            setCategoryPicker(false);
-            vm.openNewCategory();
-          }}
-        />
-      </SheetModal>
+      <CategoryPickerModal
+        visible={categoryPicker}
+        categories={vm.pickerCategories}
+        selectedId={vm.selectedCategoryValue}
+        onSelect={(id) => {
+          vm.selectAnyCategory(id);
+          setCategoryPicker(false);
+        }}
+        onClose={() => setCategoryPicker(false)}
+        onNew={() => {
+          setCategoryPicker(false);
+          vm.openNewCategory();
+        }}
+        onNewSub={(parentId) => {
+          setCategoryPicker(false);
+          vm.openNewSubcategoryOf(parentId);
+        }}
+      />
 
       <SheetModal visible={accountPicker} title="CUENTA" onClose={() => setAccountPicker(false)}>
         <OptionList

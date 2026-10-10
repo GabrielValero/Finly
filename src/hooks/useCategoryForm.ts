@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { archiveCategory, insertCategory, updateCategory } from '../data/repos/categories';
+import { useUi } from '../store/ui';
 import { validateCategory, type CategoryKind } from '../utils/categories';
 import { useCategoryRows } from './useData';
 
@@ -10,12 +11,15 @@ interface Params {
   id: string;
   kind?: string;
   parentId?: string;
+  /** '1' = se abrió desde un selector: al guardar, avisa cuál se creó para que se elija sola. */
+  pick?: string;
 }
 
-export function useCategoryForm({ id, kind: kindParam, parentId: parentParam }: Params) {
+export function useCategoryForm({ id, kind: kindParam, parentId: parentParam, pick }: Params) {
   const router = useRouter();
   const rows = useCategoryRows();
   const isNew = id === 'new';
+  const setCreatedCategoryId = useUi((s) => s.setCreatedCategoryId);
   const existing = isNew ? null : (rows.find((c) => c.id === id) ?? null);
 
   const [name, setName] = useState('');
@@ -57,8 +61,10 @@ export function useCategoryForm({ id, kind: kindParam, parentId: parentParam }: 
     setError(null);
     try {
       const fields = { name: name.trim(), icon, kind: effectiveKind, parentId, excludeFromReports: exclude };
-      if (isNew) await insertCategory(fields);
-      else await updateCategory(id, fields);
+      if (isNew) {
+        const createdId = await insertCategory(fields);
+        if (pick === '1') setCreatedCategoryId(createdId);
+      } else await updateCategory(id, fields);
       router.back();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo guardar');

@@ -21,11 +21,12 @@ interface Props {
   id: string;
   kind?: string;
   parentId?: string;
+  pick?: string;
 }
 
 /** Crear / editar categoría o subcategoría (pantalla 11 del diseño). */
-export function CategoriaFormView({ id, kind, parentId }: Props) {
-  const vm = useCategoryForm({ id, kind, parentId });
+export function CategoriaFormView({ id, kind, parentId, pick }: Props) {
+  const vm = useCategoryForm({ id, kind, parentId, pick });
   const insets = useSafeAreaInsets();
   const [parentPicker, setParentPicker] = useState(false);
   const styles = useThemedStyles((t) => ({
