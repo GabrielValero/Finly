@@ -23,6 +23,8 @@ const REGISTRY: Record<string, Glyph> = {
   close: { lib: 'feather', name: 'x' },
   back: { lib: 'feather', name: 'chevron-left' },
   chevronDown: { lib: 'feather', name: 'chevron-down' },
+  chevronUp: { lib: 'feather', name: 'chevron-up' },
+  search: { lib: 'feather', name: 'search' },
   chevronRight: { lib: 'feather', name: 'chevron-right' },
   chevronLeft: { lib: 'feather', name: 'chevron-left' },
   calendar: { lib: 'feather', name: 'calendar' },

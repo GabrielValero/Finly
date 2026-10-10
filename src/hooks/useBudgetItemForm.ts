@@ -43,16 +43,13 @@ export function useBudgetItemForm({ id, month }: Params) {
 
   const taken = useMemo(() => items.filter((i) => i.kind === kind && i.id !== id).map((i) => i.categoryId), [items, kind, id]);
 
-  const options = useMemo(() => {
-    const parentName = new Map(categories.map((c) => [c.id, c.name]));
-    return categories
-      .filter((c) => c.kind === kind && !taken.includes(c.id))
-      .map((c) => ({ value: c.id, label: categoryPath(c.name, c.parentId ? (parentName.get(c.parentId) ?? null) : null) ?? c.name }))
-      .sort((a, b) => a.label.localeCompare(b.label, 'es'));
-  }, [categories, kind, taken]);
+  const pickerCategories = useMemo(
+    () => categories.filter((c) => c.kind === kind).map((c) => ({ id: c.id, name: c.name, icon: c.icon, parentId: c.parentId })),
+    [categories, kind],
+  );
 
   const selected = categories.find((c) => c.id === categoryId) ?? null;
-  const selectedLabel = selected ? (options.find((o) => o.value === selected.id)?.label ?? existingLabel(existing, selected.name)) : null;
+  const selectedLabel = selected ? (categoryPath(selected.name, categories.find((c) => c.id === selected.parentId)?.name ?? null) ?? selected.name) : null;
 
   // Categoría recién creada desde el selector: se elige sola (y cambia el tipo si hace falta).
   const createdCategoryId = useUi((s) => s.createdCategoryId);
@@ -105,10 +102,12 @@ export function useBudgetItemForm({ id, month }: Params) {
     changeKind,
     categoryLocked: !isNew,
     selectedLabel,
-    options,
+    pickerCategories,
+    takenIds: taken,
+    selectedId: categoryId,
     selectCategory: setCategoryId,
     openNewCategory: () => router.push({ pathname: '/category/[id]', params: { id: 'new', kind, pick: '1' } }),
-    openNewSubcategory: () => router.push({ pathname: '/category/[id]', params: { id: 'new', kind, sub: '1', pick: '1' } }),
+    openNewSubcategory: (parentId: string) => router.push({ pathname: '/category/[id]', params: { id: 'new', kind, parentId, pick: '1' } }),
     amount,
     amountLabel: `$ ${amount.display}`,
     previewLabel: formatMoney(amount.minor, 'USD'),
@@ -120,8 +119,4 @@ export function useBudgetItemForm({ id, month }: Params) {
     confirmDelete,
     close: () => router.back(),
   };
-}
-
-function existingLabel(existing: { categoryName: string; parentName: string | null } | null, fallback: string): string {
-  return existing ? (categoryPath(existing.categoryName, existing.parentName) ?? fallback) : fallback;
 }

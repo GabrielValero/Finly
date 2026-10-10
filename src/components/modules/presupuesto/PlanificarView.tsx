@@ -5,10 +5,10 @@ import { useBudgetItemForm } from '../../../hooks/useBudgetItemForm';
 import { useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
 import { Button } from '../../shared/Button';
+import { CategoryPickerModal } from '../../shared/CategoryPickerModal';
 import { Card } from '../../shared/Card';
 import { Icon } from '../../shared/Icon';
 import { Keypad } from '../../shared/Keypad';
-import { OptionList } from '../../shared/OptionList';
 import { PressableScale } from '../../shared/PressableScale';
 import { Segmented } from '../../shared/Segmented';
 import { SettingsRow } from '../../shared/SettingsRow';
@@ -80,36 +80,26 @@ export function PlanificarView({ id, month }: { id: string; month: string }) {
         <Button label="Guardar" onPress={() => void vm.save()} disabled={!vm.canSave} />
       </View>
 
-      <SheetModal visible={picker} title="CATEGORÍA" onClose={() => setPicker(false)}>
-        {vm.options.length === 0 ? (
-          <AppText variant="small" color="textMuted">Ya planificaste todas las categorías de este tipo.</AppText>
-        ) : (
-          <OptionList
-            options={vm.options}
-            selected={null}
-            onSelect={(c) => {
-              vm.selectCategory(c);
-              setPicker(false);
-            }}
-          />
-        )}
-        <Button
-          label="Nueva categoría"
-          variant="outline"
-          onPress={() => {
-            setPicker(false);
-            vm.openNewCategory();
-          }}
-        />
-        <Button
-          label="Nueva subcategoría"
-          variant="outline"
-          onPress={() => {
-            setPicker(false);
-            vm.openNewSubcategory();
-          }}
-        />
-      </SheetModal>
+      <CategoryPickerModal
+        visible={picker}
+        categories={vm.pickerCategories}
+        selectedId={vm.selectedId}
+        disabledIds={vm.takenIds}
+        disabledHint="Ya planificada este mes"
+        onSelect={(c) => {
+          vm.selectCategory(c);
+          setPicker(false);
+        }}
+        onClose={() => setPicker(false)}
+        onNew={() => {
+          setPicker(false);
+          vm.openNewCategory();
+        }}
+        onNewSub={(parentId) => {
+          setPicker(false);
+          vm.openNewSubcategory(parentId);
+        }}
+      />
       <SheetModal visible={keypad} title="MONTO PLANIFICADO (USD)" onClose={() => setKeypad(false)}>
         <AppText variant="display" align="center">{vm.amount.display}</AppText>
         <Keypad onKey={vm.amount.press} />

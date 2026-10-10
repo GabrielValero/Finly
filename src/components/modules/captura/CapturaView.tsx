@@ -7,6 +7,7 @@ import { useTheme, useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
 import { Button } from '../../shared/Button';
 import { CategoryChip } from '../../shared/CategoryChip';
+import { CategoryPickerModal } from '../../shared/CategoryPickerModal';
 import { Icon } from '../../shared/Icon';
 import { Keypad } from '../../shared/Keypad';
 import { OptionList } from '../../shared/OptionList';
@@ -127,24 +128,24 @@ export function CapturaView() {
         />
       </SheetModal>
 
-      <SheetModal visible={categoryPicker} title="CATEGORÍA" onClose={() => setCategoryPicker(false)}>
-        <OptionList
-          options={vm.categoryOptions}
-          selected={vm.selectedCategoryValue}
-          onSelect={(id) => {
-            vm.selectAnyCategory(id);
-            setCategoryPicker(false);
-          }}
-        />
-        <Button
-          label="Nueva categoría"
-          variant="outline"
-          onPress={() => {
-            setCategoryPicker(false);
-            vm.openNewCategory();
-          }}
-        />
-      </SheetModal>
+      <CategoryPickerModal
+        visible={categoryPicker}
+        categories={vm.pickerCategories}
+        selectedId={vm.selectedCategoryValue}
+        onSelect={(id) => {
+          vm.selectAnyCategory(id);
+          setCategoryPicker(false);
+        }}
+        onClose={() => setCategoryPicker(false)}
+        onNew={() => {
+          setCategoryPicker(false);
+          vm.openNewCategory();
+        }}
+        onNewSub={(parentId) => {
+          setCategoryPicker(false);
+          vm.openNewSubcategoryOf(parentId);
+        }}
+      />
 
       <SheetModal visible={accountPicker} title="CUENTA" onClose={() => setAccountPicker(false)}>
         <OptionList

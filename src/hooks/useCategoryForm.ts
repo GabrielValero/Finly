@@ -11,17 +11,14 @@ interface Params {
   id: string;
   kind?: string;
   parentId?: string;
-  /** '1' = subcategoría: el padre es obligatorio. */
-  sub?: string;
   /** '1' = se abrió desde un selector: al guardar, avisa cuál se creó para que se elija sola. */
   pick?: string;
 }
 
-export function useCategoryForm({ id, kind: kindParam, parentId: parentParam, sub, pick }: Params) {
+export function useCategoryForm({ id, kind: kindParam, parentId: parentParam, pick }: Params) {
   const router = useRouter();
   const rows = useCategoryRows();
   const isNew = id === 'new';
-  const subMode = isNew && sub === '1';
   const setCreatedCategoryId = useUi((s) => s.setCreatedCategoryId);
   const existing = isNew ? null : (rows.find((c) => c.id === id) ?? null);
 
@@ -44,7 +41,6 @@ export function useCategoryForm({ id, kind: kindParam, parentId: parentParam, su
     setHydrated(true);
   }, [hydrated, existing]);
 
-  const askParent = subMode && parentParam === undefined;
   const parentOptions = useMemo(() => rows.filter((c) => c.parentId === null && c.kind === kind && c.id !== id), [rows, kind, id]);
   const parent = rows.find((c) => c.id === parentId) ?? null;
   const hasChildren = existing ? rows.some((c) => c.parentId === existing.id) : false;
@@ -52,14 +48,14 @@ export function useCategoryForm({ id, kind: kindParam, parentId: parentParam, su
   const effectiveKind: CategoryKind = parent ? parent.kind : kind;
 
   const problem = useMemo(
-    () => (name.trim() === '' ? null : validateCategory({ id: isNew ? null : id, name, kind: effectiveKind, parentId, requireParent: subMode }, rows)),
-    [name, effectiveKind, parentId, rows, id, isNew, subMode],
+    () => (name.trim() === '' ? null : validateCategory({ id: isNew ? null : id, name, kind: effectiveKind, parentId }, rows)),
+    [name, effectiveKind, parentId, rows, id, isNew],
   );
 
   const canSave = hydrated && !saving && name.trim().length > 0 && problem === null;
 
   const save = async () => {
-    const issue = validateCategory({ id: isNew ? null : id, name, kind: effectiveKind, parentId, requireParent: subMode }, rows);
+    const issue = validateCategory({ id: isNew ? null : id, name, kind: effectiveKind, parentId }, rows);
     if (issue) return setError(issue);
     setSaving(true);
     setError(null);
@@ -88,7 +84,7 @@ export function useCategoryForm({ id, kind: kindParam, parentId: parentParam, su
   return {
     isNew,
     notFound: !isNew && rows.length > 0 && !existing,
-    title: isNew ? (parentId || subMode ? 'NUEVA SUBCATEGORÍA' : 'NUEVA CATEGORÍA') : 'EDITAR CATEGORÍA',
+    title: isNew ? (parentId ? 'NUEVA SUBCATEGORÍA' : 'NUEVA CATEGORÍA') : 'EDITAR CATEGORÍA',
     previewName: trimmed || 'Nueva categoría',
     previewSub: parent ? `SUBCATEGORÍA DE ${parent.name.toUpperCase()}` : effectiveKind === 'expense' ? 'GASTO' : 'INGRESO',
     name,
@@ -96,9 +92,8 @@ export function useCategoryForm({ id, kind: kindParam, parentId: parentParam, su
     kind: effectiveKind,
     setKind,
     kindLocked: parent !== null || hasChildren,
-    parentLabel: parent?.name ?? (subMode ? 'Elegir categoría' : 'Ninguna (principal)'),
-    parentOptions: [...(subMode ? [] : [{ value: '', label: 'Ninguna (principal)' }]), ...parentOptions.map((c) => ({ value: c.id, label: c.name }))],
-    askParent,
+    parentLabel: parent?.name ?? 'Ninguna (principal)',
+    parentOptions: [{ value: '', label: 'Ninguna (principal)' }, ...parentOptions.map((c) => ({ value: c.id, label: c.name }))],
     parentId,
     setParentId: (value: string) => setParentId(value === '' ? null : value),
     canNest: !hasChildren,

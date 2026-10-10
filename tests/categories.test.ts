@@ -19,10 +19,6 @@ describe('validateCategory', () => {
     expect(validateCategory(draft({ name: '   ' }), all)).not.toBeNull();
     expect(validateCategory(draft({ name: 'x'.repeat(41) }), all)).not.toBeNull();
   });
-  it('con requireParent exige elegir la categoría padre', () => {
-    expect(validateCategory({ ...draft({}), requireParent: true }, all)).toMatch(/padre/);
-    expect(validateCategory({ ...draft({ parentId: 'ropa' }), requireParent: true }, all)).toBeNull();
-  });
   it('máximo 2 niveles', () => {
     expect(validateCategory(draft({ parentId: 'mercado' }), all)).toMatch(/2 niveles/);
   });
