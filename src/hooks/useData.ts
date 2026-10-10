@@ -1,9 +1,11 @@
 import { and, desc, eq, isNotNull, isNull, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/sqlite-core';
 import { useMemo } from 'react';
 import { db } from '../data/db';
 import { monthTransactionsQuery, transactionByIdQuery } from '../data/queries';
-import { accounts, categories, exchangeRates, tags, transactions, transactionTags } from '../data/schema';
-import type { RateRecord } from '../utils/rates';
+import { accounts, budgetItems, budgets, categories, exchangeRates, tags, transactions, transactionTags } from '../data/schema';
+import { usePreferences } from '../store/preferences';
+import { pickLatestRate, type RateRecord } from '../utils/rates';
 import { useDbQuery } from './useDbQuery';
 
 /** Cuentas activas con su saldo derivado (apertura + suma de movimientos vivos). */
@@ -33,14 +35,26 @@ export function useCategoryRows() {
   return useDbQuery(() => db.select().from(categories).where(isNull(categories.archivedAt)).orderBy(categories.name), ['categories']);
 }
 
-/** Tasa más reciente (por fecha de vigencia, luego por captura). */
+/** Tasa de hoy según la fuente por defecto (ver `pickLatestRate`). */
 export function useLatestRate(): RateRecord | null {
+  const preferred = usePreferences((s) => s.defaultRateSource);
   const data = useDbQuery(
-    () => db.select().from(exchangeRates).orderBy(desc(exchangeRates.validFrom), desc(exchangeRates.fetchedAt)).limit(1),
+    () => db.select().from(exchangeRates).orderBy(desc(exchangeRates.validFrom), desc(exchangeRates.fetchedAt)).limit(60),
     ['exchange_rates'],
   );
-  const row = data[0];
-  return useMemo(() => (row ? { source: row.source, rateScaled: row.rateScaled, validFrom: row.validFrom } : null), [row]);
+  return useMemo(() => {
+    const row = pickLatestRate(data, preferred);
+    return row ? { source: row.source, rateScaled: row.rateScaled, validFrom: row.validFrom } : null;
+  }, [data, preferred]);
+}
+
+/** Historial de tasas, de la más reciente a la más antigua. */
+export function useRateHistory(limit = 30) {
+  return useDbQuery(
+    () => db.select().from(exchangeRates).orderBy(desc(exchangeRates.validFrom), desc(exchangeRates.fetchedAt)).limit(limit),
+    ['exchange_rates'],
+    [limit],
+  );
 }
 
 /** Movimientos del mes. Depende de las tablas del join: al renombrar una cuenta o categoría también se refresca. */
@@ -145,4 +159,32 @@ export function useDataCounts() {
   );
   const r = rows[0];
   return { accounts: Number(r?.accounts ?? 0), movements: Number(r?.movements ?? 0), categories: Number(r?.categories ?? 0), tags: Number(r?.tags ?? 0) };
+}
+
+const budgetParents = alias(categories, 'budget_parent');
+
+/** Partidas del presupuesto de un mes, con los datos de su categoría. */
+export function useBudgetItems(month: string) {
+  return useDbQuery(
+    () =>
+      db
+        .select({
+          id: budgetItems.id,
+          categoryId: budgetItems.categoryId,
+          kind: budgetItems.kind,
+          plannedMinor: budgetItems.plannedMinor,
+          isFixed: budgetItems.isFixed,
+          categoryName: categories.name,
+          categoryIcon: categories.icon,
+          parentName: budgetParents.name,
+        })
+        .from(budgetItems)
+        .innerJoin(budgets, eq(budgets.id, budgetItems.budgetId))
+        .innerJoin(categories, eq(categories.id, budgetItems.categoryId))
+        .leftJoin(budgetParents, eq(budgetParents.id, categories.parentId))
+        .where(eq(budgets.month, month))
+        .orderBy(categories.name),
+    ['budgets', 'budget_items', 'categories'],
+    [month],
+  );
 }

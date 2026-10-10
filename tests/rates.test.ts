@@ -32,3 +32,13 @@ describe('needsRate', () => {
     expect(needsRate('USD', 'VES')).toBe(true);
   });
 });
+
+describe('pickLatestRate', () => {
+  it('prefiere la fuente elegida y cae a la otra si no hay', async () => {
+    const { pickLatestRate } = await import('../src/utils/rates');
+    expect(pickLatestRate(rates, 'manual')?.rateScaled).toBe(40_000_000);
+    expect(pickLatestRate(rates, 'bcv')?.validFrom).toBe('2026-10-06');
+    expect(pickLatestRate(rates.filter((r) => r.source === 'bcv'), 'manual')?.source).toBe('bcv');
+    expect(pickLatestRate([], 'bcv')).toBeNull();
+  });
+});

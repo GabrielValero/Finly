@@ -41,3 +41,17 @@ export function resolveRate(
   }
   return best;
 }
+
+/**
+ * Tasa "de hoy": la más reciente de la fuente preferida; si esa fuente no tiene ninguna,
+ * la más reciente de cualquiera. `rates` puede venir en cualquier orden.
+ */
+export function pickLatestRate<T extends RateRecord & { fetchedAt?: Date }>(rates: readonly T[], preferred: RateSource): T | null {
+  const newest = (list: readonly T[]): T | null =>
+    list.reduce<T | null>((best, r) => {
+      if (best === null) return r;
+      if (r.validFrom !== best.validFrom) return r.validFrom > best.validFrom ? r : best;
+      return (r.fetchedAt?.getTime() ?? 0) > (best.fetchedAt?.getTime() ?? 0) ? r : best;
+    }, null);
+  return newest(rates.filter((r) => r.source === preferred)) ?? newest(rates);
+}

@@ -63,6 +63,20 @@ export function formatDayLabel(day: string, today: string): string {
   return `${weekday} · ${short}`;
 }
 
+/** "9 oct 2026". */
+export function formatDayShort(day: string): string {
+  const { y, m, d } = parseDay(day);
+  return `${d} ${MONTHS_SHORT[m - 1]} ${y}`;
+}
+
+/** "hoy", "ayer", "hace 2 días". */
+export function formatAge(day: string, today: string): string {
+  const diff = Math.max(daysBetween(day, today), 0);
+  if (diff === 0) return 'hoy';
+  if (diff === 1) return 'ayer';
+  return `hace ${diff} días`;
+}
+
 /** "9 oct 2026 · 8:14 a. m." */
 export function formatDateTimeLong(iso: string): string {
   const { y, m, d } = parseDay(dayOf(iso));

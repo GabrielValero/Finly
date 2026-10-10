@@ -11,9 +11,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0A0A0B",
+        "backgroundColor": "#DF6D35",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
@@ -33,6 +32,12 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 160,
           "resizeMode": "contain"
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Permitir a Finly usar Face ID para desbloquear la app."
         }
       ]
     ],
