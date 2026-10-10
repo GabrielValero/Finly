@@ -80,16 +80,18 @@ export function CapturaView() {
             {vm.categories.map((c) => (
               <CategoryChip key={c.id} label={c.name} icon={c.icon} selected={c.id === vm.categoryId} onPress={() => vm.selectCategory(c.id)} />
             ))}
-            {vm.hasMoreCategories ? <CategoryChip label="Más" icon="plus" selected={false} onPress={() => setCategoryPicker(true)} /> : null}
+            {vm.hasMoreCategories ? <CategoryChip label="Más" icon="list" selected={false} onPress={() => setCategoryPicker(true)} /> : null}
+            <CategoryChip label="Nueva" icon="plus" selected={false} onPress={vm.openNewCategory} />
           </ScrollView>
 
-          {vm.subcategories.length > 0 ? (
+          {vm.categoryId ? (
             <View style={styles.subLabel}>
               <AppText variant="label" color="textMuted">SUBCATEGORÍA (OPCIONAL)</AppText>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
                 {vm.subcategories.map((c) => (
                   <CategoryChip key={c.id} label={c.name} icon={c.icon} selected={c.id === vm.subcategoryId} onPress={() => vm.selectSubcategory(c.id)} />
                 ))}
+                {vm.openNewSubcategory ? <CategoryChip label="Nueva" icon="plus" selected={false} onPress={vm.openNewSubcategory} /> : null}
               </ScrollView>
             </View>
           ) : null}

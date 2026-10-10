@@ -13,12 +13,15 @@ export interface CategoryDraft {
   name: string;
   kind: CategoryKind;
   parentId: string | null;
+  /** Al crear una subcategoría desde un selector: el padre es obligatorio. */
+  requireParent?: boolean;
 }
 
 const MAX_NAME = 40;
 
 /**
  * Reglas de dominio de una categoría. Devuelve el primer problema o null si es válida.
+ * - Con `requireParent`, la categoría debe quedar dentro de otra.
  * - Máximo 2 niveles (un padre no puede tener padre).
  * - La subcategoría hereda el tipo del padre.
  * - Nombre único entre hermanas.
@@ -31,6 +34,8 @@ export function validateCategory(draft: CategoryDraft, all: readonly CategoryNod
 
   const hasChildren = draft.id !== null && all.some((c) => c.parentId === draft.id);
   const existing = draft.id === null ? null : (all.find((c) => c.id === draft.id) ?? null);
+
+  if (draft.requireParent && draft.parentId === null) return 'Elige la categoría padre';
 
   if (draft.parentId !== null) {
     if (draft.parentId === draft.id) return 'Una categoría no puede estar dentro de sí misma';

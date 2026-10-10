@@ -21,13 +21,15 @@ interface Props {
   id: string;
   kind?: string;
   parentId?: string;
+  sub?: string;
+  pick?: string;
 }
 
 /** Crear / editar categoría o subcategoría (pantalla 11 del diseño). */
-export function CategoriaFormView({ id, kind, parentId }: Props) {
-  const vm = useCategoryForm({ id, kind, parentId });
+export function CategoriaFormView({ id, kind, parentId, sub, pick }: Props) {
+  const vm = useCategoryForm({ id, kind, parentId, sub, pick });
   const insets = useSafeAreaInsets();
-  const [parentPicker, setParentPicker] = useState(false);
+  const [parentPicker, setParentPicker] = useState(vm.askParent);
   const styles = useThemedStyles((t) => ({
     scroll: { paddingHorizontal: t.space[16], paddingBottom: t.space[32] + insets.bottom, gap: t.space[12] },
     preview: { flexDirection: 'row', alignItems: 'center', gap: t.space[16] },

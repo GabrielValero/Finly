@@ -93,6 +93,22 @@ export function PlanificarView({ id, month }: { id: string; month: string }) {
             }}
           />
         )}
+        <Button
+          label="Nueva categoría"
+          variant="outline"
+          onPress={() => {
+            setPicker(false);
+            vm.openNewCategory();
+          }}
+        />
+        <Button
+          label="Nueva subcategoría"
+          variant="outline"
+          onPress={() => {
+            setPicker(false);
+            vm.openNewSubcategory();
+          }}
+        />
       </SheetModal>
       <SheetModal visible={keypad} title="MONTO PLANIFICADO (USD)" onClose={() => setKeypad(false)}>
         <AppText variant="display" align="center">{vm.amount.display}</AppText>
