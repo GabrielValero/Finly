@@ -11,9 +11,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0A0A0B",
+        "backgroundColor": "#DF6D35",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
@@ -25,6 +24,7 @@
     "scheme": "finly",
     "backgroundColor": "#0A0A0B",
     "plugins": [
+      "expo-router",
       [
         "expo-splash-screen",
         {
@@ -32,6 +32,12 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 160,
           "resizeMode": "contain"
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Permitir a Finly usar Face ID para desbloquear la app."
         }
       ]
     ],
@@ -42,24 +48,12 @@
     },
     "owner": "gabriel-valero-team",
     "runtimeVersion": {
-      "policy": "fingerprint"
+      "policy": "appVersion"
     },
     "updates": {
       "url": "https://u.expo.dev/eaf3555d-fa92-490c-8537-8dd7af2d1e78",
       "checkAutomatically": "ON_ERROR_RECOVERY",
       "fallbackToCacheTimeout": 0
-    },
-    "backgroundColor": "#0A0A0B",
-    "plugins": [
-      [
-        "expo-splash-screen",
-        {
-          "backgroundColor": "#0A0A0B",
-          "image": "./assets/splash-icon.png",
-          "imageWidth": 160,
-          "resizeMode": "contain"
-        }
-      ]
-    ]
+    }
   }
 }

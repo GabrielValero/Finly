@@ -23,6 +23,7 @@ export const accounts = sqliteTable(
     color: text('color'),
     /** Saldo inicial en unidades menores de la moneda de la cuenta. */
     openingMinor: integer('opening_minor').notNull().default(0),
+    includeInTotal: integer('include_in_total', { mode: 'boolean' }).notNull().default(true),
     archivedAt: ts('archived_at'),
     sortOrder: integer('sort_order').notNull().default(0),
     updatedAt: ts('updated_at').notNull(),

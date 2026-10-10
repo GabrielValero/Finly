@@ -1,0 +1,105 @@
+import { useRouter } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import { Alert } from 'react-native';
+import { archiveCategory, insertCategory, updateCategory } from '../data/repos/categories';
+import { validateCategory, type CategoryKind } from '../utils/categories';
+import { useCategoryRows } from './useData';
+
+interface Params {
+  /** 'new' o el id de la categoría a editar. */
+  id: string;
+  kind?: string;
+  parentId?: string;
+}
+
+export function useCategoryForm({ id, kind: kindParam, parentId: parentParam }: Params) {
+  const router = useRouter();
+  const rows = useCategoryRows();
+  const isNew = id === 'new';
+  const existing = isNew ? null : (rows.find((c) => c.id === id) ?? null);
+
+  const [name, setName] = useState('');
+  const [kind, setKind] = useState<CategoryKind>(kindParam === 'income' ? 'income' : 'expense');
+  const [parentId, setParentId] = useState<string | null>(parentParam ?? null);
+  const [icon, setIcon] = useState<string>('cart');
+  const [exclude, setExclude] = useState(false);
+  const [hydrated, setHydrated] = useState(isNew);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (hydrated || !existing) return;
+    setName(existing.name);
+    setKind(existing.kind);
+    setParentId(existing.parentId);
+    setIcon(existing.icon);
+    setExclude(existing.excludeFromReports);
+    setHydrated(true);
+  }, [hydrated, existing]);
+
+  const parentOptions = useMemo(() => rows.filter((c) => c.parentId === null && c.kind === kind && c.id !== id), [rows, kind, id]);
+  const parent = rows.find((c) => c.id === parentId) ?? null;
+  const hasChildren = existing ? rows.some((c) => c.parentId === existing.id) : false;
+  // La subcategoría hereda el tipo del padre.
+  const effectiveKind: CategoryKind = parent ? parent.kind : kind;
+
+  const problem = useMemo(
+    () => (name.trim() === '' ? null : validateCategory({ id: isNew ? null : id, name, kind: effectiveKind, parentId }, rows)),
+    [name, effectiveKind, parentId, rows, id, isNew],
+  );
+
+  const canSave = hydrated && !saving && name.trim().length > 0 && problem === null;
+
+  const save = async () => {
+    const issue = validateCategory({ id: isNew ? null : id, name, kind: effectiveKind, parentId }, rows);
+    if (issue) return setError(issue);
+    setSaving(true);
+    setError(null);
+    try {
+      const fields = { name: name.trim(), icon, kind: effectiveKind, parentId, excludeFromReports: exclude };
+      if (isNew) await insertCategory(fields);
+      else await updateCategory(id, fields);
+      router.back();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudo guardar');
+      setSaving(false);
+    }
+  };
+
+  const confirmArchive = () => {
+    if (!existing) return;
+    Alert.alert('Archivar categoría', `${existing.name}${hasChildren ? ' y sus subcategorías dejarán' : ' dejará'} de ofrecerse al registrar. Tus movimientos no cambian.`, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Archivar', style: 'destructive', onPress: () => void archiveCategory(existing.id, new Date()).then(() => router.back()) },
+    ]);
+  };
+
+  const trimmed = name.trim();
+  return {
+    isNew,
+    notFound: !isNew && rows.length > 0 && !existing,
+    title: isNew ? (parentId ? 'NUEVA SUBCATEGORÍA' : 'NUEVA CATEGORÍA') : 'EDITAR CATEGORÍA',
+    previewName: trimmed || 'Nueva categoría',
+    previewSub: parent ? `SUBCATEGORÍA DE ${parent.name.toUpperCase()}` : effectiveKind === 'expense' ? 'GASTO' : 'INGRESO',
+    name,
+    setName,
+    kind: effectiveKind,
+    setKind,
+    kindLocked: parent !== null || hasChildren,
+    parentLabel: parent?.name ?? 'Ninguna (principal)',
+    parentOptions: [{ value: '', label: 'Ninguna (principal)' }, ...parentOptions.map((c) => ({ value: c.id, label: c.name }))],
+    parentId,
+    setParentId: (value: string) => setParentId(value === '' ? null : value),
+    canNest: !hasChildren,
+    icon,
+    setIcon,
+    exclude,
+    setExclude,
+    canSave,
+    error: problem ?? error,
+    save,
+    canArchive: !isNew && existing !== null,
+    confirmArchive,
+    close: () => router.back(),
+  };
+}

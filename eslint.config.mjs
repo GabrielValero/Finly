@@ -7,7 +7,7 @@ const forbiddenInPure = [
 ];
 
 export default tseslint.config(
-  { ignores: ['babel.config.js', 'metro.config.js', 'node_modules', 'drizzle', '.expo', 'dist'] },
+  { ignores: ['babel.config.js', 'metro.config.js', 'app.config.js', 'scripts', 'node_modules', 'drizzle', '.expo', 'dist'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
