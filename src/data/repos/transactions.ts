@@ -51,3 +51,10 @@ export async function softDeleteTransaction(id: string, now: Date): Promise<void
     }
   });
 }
+
+/** Pone o quita la categoría de una transferencia en sus dos patas (la pata de salida es la que cuenta en el presupuesto). */
+export async function setTransferCategory(transferId: string, categoryId: string | null, now: Date): Promise<void> {
+  db.transaction((tx) => {
+    tx.update(transactions).set({ categoryId, updatedAt: now }).where(and(eq(transactions.transferId, transferId), isNull(transactions.deletedAt))).run();
+  });
+}

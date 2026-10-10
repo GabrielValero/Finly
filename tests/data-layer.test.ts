@@ -133,3 +133,25 @@ describe('presupuesto', () => {
     expect(await db.select().from(budgetItems)).toHaveLength(5);
   });
 });
+
+describe('categoría en transferencias', () => {
+  it('se pone y se quita en las dos patas, y no toca las borradas', async () => {
+    const { setTransferCategory } = await import('../src/data/repos/transactions');
+    const { transactions: txs } = await import('../src/data/schema');
+    const acc = { icon: 'cash', color: null, openingMinor: 0, includeInTotal: true, archivedAt: null, sortOrder: 0, updatedAt: new Date() };
+    await insertAccount({ ...acc, id: 'sc1', name: 'Origen cat', currency: 'USD' });
+    await insertAccount({ ...acc, id: 'sc2', name: 'Destino cat', currency: 'USD' });
+    const cat = (await db.select().from(categories)).find((c) => c.kind === 'expense')!;
+    const legs = buildTransfer({ from: { id: 'sc1', currency: 'USD' }, to: { id: 'sc2', currency: 'USD' }, outMinor: 10000, inMinor: 10000, transferId: 'trc' });
+    const common = { ...base, categoryId: null, concept: '', occurredAt: '2026-10-10T12:00:00' };
+    await insertTransfer([{ ...common, id: 'trc-out', ...legs[0] }, { ...common, id: 'trc-in', ...legs[1] }]);
+
+    await setTransferCategory('trc', cat.id, new Date());
+    let rows = (await db.select().from(txs)).filter((r) => r.transferId === 'trc');
+    expect(rows.map((r) => r.categoryId)).toEqual([cat.id, cat.id]);
+
+    await setTransferCategory('trc', null, new Date());
+    rows = (await db.select().from(txs)).filter((r) => r.transferId === 'trc');
+    expect(rows.map((r) => r.categoryId)).toEqual([null, null]);
+  });
+});

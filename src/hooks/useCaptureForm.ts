@@ -4,13 +4,13 @@ import { insertTransaction, updateTransaction } from '../data/repos/transactions
 import { findOrCreateTag } from '../data/repos/tags';
 import { transactionInputSchema } from '../schemas/transaction';
 import { usePreferences } from '../store/preferences';
-import { useUi } from '../store/ui';
 import { enteredFromTx, resolveEntry } from '../utils/entry';
 import { formatMoney, formatRate, MoneyError, type Currency } from '../utils/money';
 import { newId } from '../utils/ids';
 import { needsRate, type RateRecord } from '../utils/rates';
 import { signedAmount } from '../utils/transactions';
 import { useAmountBuffer } from './useAmountBuffer';
+import { useCreatedCategory } from './useCreatedCategory';
 import { useMovementDetails } from './useMovementDetails';
 import { useAccountsWithBalance, useAllCategoryRows, useLatestRate, useTags, useTagsOfTransaction, useTransactionById } from './useData';
 
@@ -122,17 +122,11 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
   );
 
   // Categoría recién creada desde esta pantalla: se elige sola (y se cambia el tipo si hace falta).
-  const createdCategoryId = useUi((s) => s.createdCategoryId);
-  const setCreatedCategoryId = useUi((s) => s.setCreatedCategoryId);
-  useEffect(() => {
-    if (!createdCategoryId) return;
-    const created = activeCategories.find((c) => c.id === createdCategoryId);
-    if (!created) return;
+  useCreatedCategory(activeCategories, (created) => {
     setKindState(created.kind);
     setParentId(created.parentId ?? created.id);
     setSubId(created.parentId ? created.id : null);
-    setCreatedCategoryId(null);
-  }, [createdCategoryId, activeCategories, setCreatedCategoryId]);
+  });
 
   const setKind = useCallback((next: CaptureKind) => {
     setKindState(next);

@@ -2,12 +2,12 @@ import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { deleteBudgetItem, saveBudgetItem } from '../data/repos/budgets';
-import { useUi } from '../store/ui';
 import { validateBudgetItem } from '../utils/budget';
 import { categoryPath, type CategoryKind } from '../utils/categories';
 import { formatMonthLabel } from '../utils/dates';
 import { formatMoney } from '../utils/money';
 import { useAmountBuffer } from './useAmountBuffer';
+import { useCreatedCategory } from './useCreatedCategory';
 import { useBudgetItems, useCategoryRows } from './useData';
 
 interface Params {
@@ -52,17 +52,11 @@ export function useBudgetItemForm({ id, month }: Params) {
   const selectedLabel = selected ? (categoryPath(selected.name, categories.find((c) => c.id === selected.parentId)?.name ?? null) ?? selected.name) : null;
 
   // Categoría recién creada desde el selector: se elige sola (y cambia el tipo si hace falta).
-  const createdCategoryId = useUi((s) => s.createdCategoryId);
-  const setCreatedCategoryId = useUi((s) => s.setCreatedCategoryId);
-  useEffect(() => {
-    if (!createdCategoryId) return;
-    const created = categories.find((c) => c.id === createdCategoryId);
-    if (!created) return;
+  useCreatedCategory(categories, (created) => {
     setKind(created.kind);
     if (created.kind === 'income') setIsFixed(false);
     setCategoryId(created.id);
-    setCreatedCategoryId(null);
-  }, [createdCategoryId, categories, setCreatedCategoryId]);
+  });
 
   const changeKind = (next: CategoryKind) => {
     if (next === kind) return;

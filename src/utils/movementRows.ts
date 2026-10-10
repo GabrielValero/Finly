@@ -43,6 +43,11 @@ export function signedMoney(minor: number, currency: Currency): string {
   return `${minor > 0 ? '+' : ''}${formatMoney(minor, currency)}`;
 }
 
+/** Una transferencia con categoría (cuenta en el presupuesto) lo muestra: "TRANSFERENCIA · PADRES". */
+function transferSubtitle(categoryName: string | null): string {
+  return categoryName ? `TRANSFERENCIA · ${categoryName.toUpperCase()}` : 'TRANSFERENCIA';
+}
+
 /**
  * - `usd`: historial general; cada monto en USD con la tasa congelada y las transferencias como un solo movimiento.
  * - `native`: vista de UNA cuenta; cada monto en la moneda de la cuenta y cada pata de transferencia es su propia fila.
@@ -58,7 +63,7 @@ export function toRow(tx: MovementTx, mode: RowMode = 'usd'): MovementRowVm {
     id: tx.id,
     icon: isTransfer ? 'transfer' : (tx.categoryIcon ?? 'wallet'),
     title: tx.concept.trim() || (isTransfer ? 'Transferencia' : (tx.categoryName ?? 'Movimiento')),
-    subtitle: mode === 'native' ? (isTransfer ? 'TRANSFERENCIA' : (tx.categoryName ?? 'SIN CATEGORÍA').toUpperCase()) : tx.accountName.toUpperCase(),
+    subtitle: isTransfer ? transferSubtitle(tx.categoryName) : mode === 'native' ? (tx.categoryName ?? 'SIN CATEGORÍA').toUpperCase() : tx.accountName.toUpperCase(),
     amount,
     tone: tx.kind === 'income' || (isTransfer && tx.amountMinor > 0) ? 'income' : 'default',
     caption: mode === 'usd' && originalInBs ? 'en Bs' : null,
@@ -72,7 +77,7 @@ export function toTransferRow(out: MovementTx, incoming: MovementTx): MovementRo
     id: out.id,
     icon: 'transfer',
     title: out.concept.trim() || `${out.accountName} → ${incoming.accountName}`,
-    subtitle: 'TRANSFERENCIA',
+    subtitle: transferSubtitle(out.categoryName),
     amount: formatMoney(-out.amountMinor, out.accountCurrency),
     tone: 'default',
     caption: sameMoney ? null : `→ ${formatMoney(incoming.amountMinor, incoming.accountCurrency)}`,

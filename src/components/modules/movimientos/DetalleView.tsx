@@ -1,15 +1,19 @@
+import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useThemedStyles } from '../../../hooks/useTheme';
 import { useTransactionDetail } from '../../../hooks/useTransactionDetail';
 import { AppText } from '../../shared/AppText';
 import { Button } from '../../shared/Button';
 import { Card } from '../../shared/Card';
+import { CategoryPickerModal } from '../../shared/CategoryPickerModal';
 import { IconBadge } from '../../shared/IconBadge';
 import { RowDato } from '../../shared/RowDato';
+import { SelectRow } from '../../shared/SelectRow';
 import { ScreenTemplate } from '../../template/ScreenTemplate';
 
 export function DetalleView({ id }: { id: string }) {
   const vm = useTransactionDetail(id);
+  const [categoryOpen, setCategoryOpen] = useState(false);
   const styles = useThemedStyles((t) => ({
     scroll: { paddingHorizontal: t.space[16], paddingBottom: t.space[32], gap: t.space[16] },
     hero: { alignItems: 'center', gap: t.space[8], paddingVertical: t.space[8] },
@@ -65,11 +69,42 @@ export function DetalleView({ id }: { id: string }) {
           ))}
         </Card>
 
+        {vm.transferCategory ? (
+          <>
+            <SelectRow label="CATEGORÍA" value={vm.transferCategory.label} onPress={() => setCategoryOpen(true)} />
+            <AppText variant="small" color="textMuted">Con categoría, esta transferencia cuenta como gasto en el presupuesto (una sola vez).</AppText>
+          </>
+        ) : null}
+
         <View style={styles.actions}>
           {vm.isTransfer ? null : <View style={styles.action}><Button label="Duplicar" variant="outline" onPress={vm.duplicate} /></View>}
           <View style={styles.action}><Button label="Eliminar" variant="danger" onPress={vm.confirmDelete} /></View>
         </View>
       </ScrollView>
+      {vm.transferCategory ? (
+        <CategoryPickerModal
+          visible={categoryOpen}
+          categories={vm.transferCategory.categories}
+          selectedId={vm.transferCategory.selectedId}
+          onSelect={(c) => {
+            vm.transferCategory?.set(c);
+            setCategoryOpen(false);
+          }}
+          onClear={() => {
+            vm.transferCategory?.set(null);
+            setCategoryOpen(false);
+          }}
+          onClose={() => setCategoryOpen(false)}
+          onNew={() => {
+            setCategoryOpen(false);
+            vm.transferCategory?.openNew();
+          }}
+          onNewSub={(parentId) => {
+            setCategoryOpen(false);
+            vm.transferCategory?.openNewSub(parentId);
+          }}
+        />
+      ) : null}
     </ScreenTemplate>
   );
 }

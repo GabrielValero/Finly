@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { Alert } from 'react-native';
 import { copyBudgetFromPrevious } from '../data/repos/budgets';
 import { useUi } from '../store/ui';
-import { allocateSpending, budgetTotals, itemStatus, progressOf, type BudgetTx } from '../utils/budget';
+import { allocateSpending, budgetKind, budgetTotals, itemStatus, progressOf, type BudgetTx } from '../utils/budget';
 import { STATUS_STYLE, statusLabel } from '../utils/budgetDisplay';
 import { categoryPath, isExcluded } from '../utils/categories';
 import { dayOf, formatMonthLabel, monthOf, recentMonths, toLocalIso } from '../utils/dates';
@@ -42,7 +42,7 @@ export function usePresupuestoScreen() {
   const view = useMemo(() => {
     const lite = items.map((i) => ({ id: i.id, categoryId: i.categoryId, kind: i.kind, plannedMinor: i.plannedMinor, isFixed: i.isFixed }));
     const budgetTxs: BudgetTx[] = txs.map((t) => ({
-      kind: t.kind,
+      kind: budgetKind(t) ?? 'transfer',
       usdMinor: usdMagnitude(t),
       categoryId: t.categoryId,
       excluded: isExcluded(t.excludeFromReports, t.parentExcludeFromReports),
