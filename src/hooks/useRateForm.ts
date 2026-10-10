@@ -6,14 +6,16 @@ import { dayOf, toLocalIso } from '../utils/dates';
 import { newId } from '../utils/ids';
 import { formatRate } from '../utils/money';
 import type { RateSource } from '../utils/rates';
+import { usePreferences } from '../store/preferences';
 import { useAmountBuffer } from './useAmountBuffer';
 import { useLatestRate } from './useData';
 
 export function useRateForm() {
   const router = useRouter();
   const latest = useLatestRate();
+  const defaultSource = usePreferences((s) => s.defaultRateSource);
   const amount = useAmountBuffer(4);
-  const [source, setSource] = useState<RateSource>('bcv');
+  const [source, setSource] = useState<RateSource>(defaultSource);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 

@@ -1,6 +1,7 @@
 import Storage from 'expo-sqlite/kv-store';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import type { RateSource } from '../utils/rates';
 import { DEFAULT_THEME_ID, type ThemeSeed } from '../utils/theme';
 
 /** Solo estado de UI y preferencias. Nunca datos financieros. */
@@ -10,6 +11,9 @@ interface PreferencesState {
   customThemes: ThemeSeed[];
   /** Última cuenta usada al capturar (comodidad de UI). */
   lastAccountId: string | null;
+  /** Fuente de la tasa que se propone al registrar movimientos en Bs. */
+  defaultRateSource: RateSource;
+  setDefaultRateSource: (source: RateSource) => void;
   setLastAccountId: (id: string) => void;
   clearLastAccount: () => void;
   setThemeId: (id: string) => void;
@@ -30,6 +34,8 @@ export const usePreferences = create<PreferencesState>()(
       themeId: DEFAULT_THEME_ID,
       customThemes: [],
       lastAccountId: null,
+      defaultRateSource: 'bcv',
+      setDefaultRateSource: (defaultRateSource) => set({ defaultRateSource }),
       setLastAccountId: (lastAccountId) => set({ lastAccountId }),
       clearLastAccount: () => set({ lastAccountId: null }),
       setThemeId: (themeId) => set({ themeId }),
