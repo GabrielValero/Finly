@@ -106,3 +106,30 @@ describe('respaldo', () => {
     await expect(restoreBackup(alien)).rejects.toThrow('incompatible');
   });
 });
+
+describe('presupuesto', () => {
+  it('guarda partidas (una por categoría), actualiza y copia del mes anterior', async () => {
+    const { saveBudgetItem, copyBudgetFromPrevious, deleteBudgetItem } = await import('../src/data/repos/budgets');
+    const { budgetItems, budgets } = await import('../src/data/schema');
+    const cats = await db.select().from(categories);
+    const exp = cats.filter((c) => c.kind === 'expense');
+    const inc = cats.find((c) => c.kind === 'income');
+    const now = new Date();
+    await saveBudgetItem({ month: '2026-09', categoryId: exp[0]!.id, kind: 'expense', plannedMinor: 35000, isFixed: false }, now);
+    await saveBudgetItem({ month: '2026-09', categoryId: exp[1]!.id, kind: 'expense', plannedMinor: 13566, isFixed: true }, now);
+    await saveBudgetItem({ month: '2026-09', categoryId: inc!.id, kind: 'income', plannedMinor: 120000, isFixed: true }, now);
+    await saveBudgetItem({ month: '2026-09', categoryId: exp[0]!.id, kind: 'expense', plannedMinor: 40000, isFixed: false }, now);
+    const sept = await db.select().from(budgetItems);
+    expect(sept).toHaveLength(3);
+    expect(sept.find((i) => i.categoryId === exp[0]!.id)?.plannedMinor).toBe(40000);
+    expect(sept.find((i) => i.categoryId === inc!.id)?.isFixed).toBe(false);
+
+    expect(await copyBudgetFromPrevious('2026-10', now)).toBe(3);
+    expect(await copyBudgetFromPrevious('2026-10', now)).toBe(0);
+    expect(await copyBudgetFromPrevious('2026-08', now)).toBe(0);
+    expect(await db.select().from(budgets)).toHaveLength(2);
+    const first = sept[0]!;
+    await deleteBudgetItem(first.id);
+    expect(await db.select().from(budgetItems)).toHaveLength(5);
+  });
+});
