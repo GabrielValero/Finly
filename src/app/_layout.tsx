@@ -39,6 +39,8 @@ export default function RootLayout() {
         <Stack.Screen name="categories/index" />
         <Stack.Screen name="movement/[id]" />
         <Stack.Screen name="settings/delete-data" />
+        <Stack.Screen name="settings/rates" />
+        <Stack.Screen name="settings/theme" />
       </Stack>
     </>
   );
