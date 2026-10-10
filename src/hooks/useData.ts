@@ -130,3 +130,19 @@ export function useRecentTransferLegs() {
     ['transactions', 'accounts'],
   );
 }
+
+/** Totales para la pantalla de borrado: cuentas, movimientos vivos, categorías y etiquetas. */
+export function useDataCounts() {
+  const rows = useDbQuery(
+    () =>
+      db.select({
+        accounts: sql<number>`(select count(*) from accounts)`,
+        movements: sql<number>`(select count(*) from transactions where deleted_at is null)`,
+        categories: sql<number>`(select count(*) from categories)`,
+        tags: sql<number>`(select count(*) from tags)`,
+      }).from(sql`(select 1)`),
+    ['accounts', 'transactions', 'categories', 'tags'],
+  );
+  const r = rows[0];
+  return { accounts: Number(r?.accounts ?? 0), movements: Number(r?.movements ?? 0), categories: Number(r?.categories ?? 0), tags: Number(r?.tags ?? 0) };
+}

@@ -30,7 +30,7 @@ export function CuentaFormView({ id }: { id?: string }) {
     iconBtn: { width: 52, height: 52, borderRadius: t.radius[16], backgroundColor: t.colors.surface2, borderWidth: 2, borderColor: t.colors.surface2, alignItems: 'center', justifyContent: 'center' },
     iconSelected: { borderColor: t.colors.accent },
     balanceBox: { backgroundColor: t.colors.surface, borderRadius: t.radius[16], borderWidth: 1, borderColor: t.colors.border, padding: t.space[16], gap: t.space[8] },
-    archive: { alignItems: 'center', paddingVertical: t.space[12] },
+    dangerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: t.space[12] },
     toggle: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   }));
 
@@ -86,7 +86,21 @@ export function CuentaFormView({ id }: { id?: string }) {
 
         {vm.error ? <AppText variant="small" color="expense">{vm.error}</AppText> : null}
         {vm.canArchive ? (
-          <PressableScale onPress={vm.confirmArchive} style={styles.archive}><AppText variant="body" color="expense">Archivar cuenta</AppText></PressableScale>
+          <>
+            <AppText variant="label" color="textMuted">Zona de peligro</AppText>
+            <Card>
+              {vm.canDeleteMovements ? (
+                <PressableScale onPress={vm.confirmDeleteMovements} style={styles.dangerRow}>
+                  <AppText variant="body" color="expense">Eliminar movimientos</AppText>
+                  <AppText variant="caption" color="textMuted">{vm.movementCount}</AppText>
+                </PressableScale>
+              ) : null}
+              <PressableScale onPress={vm.confirmArchive} style={styles.dangerRow}>
+                <AppText variant="body" color="expense">Archivar cuenta</AppText>
+              </PressableScale>
+            </Card>
+            <AppText variant="small" color="textMuted">Eliminar movimientos deja la cuenta con su saldo inicial. La cuenta y su configuración se conservan.</AppText>
+          </>
         ) : null}
         <Button label={vm.submitLabel} onPress={() => void vm.save()} disabled={!vm.canSave} />
       </ScrollView>

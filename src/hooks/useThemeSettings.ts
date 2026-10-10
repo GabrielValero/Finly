@@ -14,5 +14,5 @@ export function useThemeSettings() {
       }),
     [seeds, activeId],
   );
-  return { items, select: setThemeId, openCategories: () => router.push('/categories') };
+  return { items, select: setThemeId, openCategories: () => router.push('/categories'), openDeleteData: () => router.push('/settings/delete-data') };
 }

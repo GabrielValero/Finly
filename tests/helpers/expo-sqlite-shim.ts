@@ -35,9 +35,9 @@ export class SQLiteDatabase {
   prepareSync(sql: string) { return new Statement(this.raw.prepare(sql)); }
 }
 
-export function openDatabaseSync(_name: string, _options?: unknown) {
+export function openDatabaseSync() {
   return new SQLiteDatabase();
 }
-export function addDatabaseChangeListener(_cb: unknown) {
+export function addDatabaseChangeListener() {
   return { remove() {} };
 }
