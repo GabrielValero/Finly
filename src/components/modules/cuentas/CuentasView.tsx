@@ -16,7 +16,7 @@ function AccountCard({ a, onPress }: { a: AccountCardVm; onPress: () => void }) 
     right: { alignItems: 'flex-end', gap: t.space[4], maxWidth: '45%' },
   }));
   return (
-    <PressableScale onPress={onPress} accessibilityLabel={`Editar ${a.name}`}>
+    <PressableScale onPress={onPress} accessibilityLabel={`Ver movimientos de ${a.name}`}>
     <Card>
       <View style={styles.row}>
         <IconBadge icon={a.icon} />
@@ -66,11 +66,11 @@ export function CuentasView() {
         {vm.usd.length > 0 ? (
           <View style={styles.group}><AppText variant="label" color="textMuted">Dólares · USD</AppText></View>
         ) : null}
-        {vm.usd.map((a) => <AccountCard key={a.id} a={a} onPress={() => vm.openEdit(a.id)} />)}
+        {vm.usd.map((a) => <AccountCard key={a.id} a={a} onPress={() => vm.openAccount(a.id)} />)}
         {vm.ves.length > 0 ? (
           <View style={styles.group}><AppText variant="label" color="textMuted">Bolívares · VES</AppText></View>
         ) : null}
-        {vm.ves.map((a) => <AccountCard key={a.id} a={a} onPress={() => vm.openEdit(a.id)} />)}
+        {vm.ves.map((a) => <AccountCard key={a.id} a={a} onPress={() => vm.openAccount(a.id)} />)}
         {vm.lastTransfer ? (
           <>
             <View style={styles.group}><AppText variant="label" color="textMuted">Última transferencia</AppText></View>

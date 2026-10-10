@@ -48,7 +48,7 @@ export function useAccountsScreen() {
           }
         : null,
       openTransfer: () => router.push('/transfer'),
-      openEdit: (id: string) => router.push({ pathname: '/account/[id]', params: { id } }),
+      openAccount: (id: string) => router.push({ pathname: '/account-movements/[id]', params: { id } }),
       openNew: () => router.push('/account/new'),
     };
   }, [accounts, rate, transferLegs, router]);
