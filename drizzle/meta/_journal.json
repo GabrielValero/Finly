@@ -15,6 +15,13 @@
       "when": 1791563769816,
       "tag": "0001_account_include_in_total",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791682194100,
+      "tag": "0002_soft_shotgun",
+      "breakpoints": true
     }
   ]
 }

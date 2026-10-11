@@ -5,6 +5,7 @@ import { AppText } from '../../shared/AppText';
 import { Button } from '../../shared/Button';
 import { Card } from '../../shared/Card';
 import { Segmented } from '../../shared/Segmented';
+import { SwitchRow } from '../../shared/SwitchRow';
 import { SettingsRow } from '../../shared/SettingsRow';
 import { ScreenTemplate } from '../../template/ScreenTemplate';
 
@@ -25,6 +26,12 @@ export function TasasAjustesView() {
           <AppText variant="caption" color="textMuted" numberOfLines={2}>{vm.hero.caption}</AppText>
           <View style={styles.action}><Button label="Actualizar tasa" onPress={vm.update} /></View>
         </Card>
+        <SwitchRow
+          label="Actualizar BCV automáticamente"
+          hint="Al abrir la app consulta la tasa oficial en dolarapi.com. Sin internet se queda con la última guardada."
+          value={vm.autoRate}
+          onChange={vm.setAutoRate}
+        />
         <AppText variant="label" color="textMuted">Fuente por defecto</AppText>
         <Segmented options={[{ value: 'bcv', label: 'BCV' }, { value: 'manual', label: 'Manual' }]} value={vm.source} onChange={vm.setSource} />
         <AppText variant="small" color="textMuted">Es la tasa que se propone al registrar movimientos en Bs. Siempre puedes cambiarla en cada uno.</AppText>

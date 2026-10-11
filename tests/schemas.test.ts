@@ -22,3 +22,14 @@ describe('transactionInputSchema', () => {
     expect(transactionInputSchema.safeParse({ ...base, amountMinor: 1.5 }).success).toBe(false);
   });
 });
+
+describe('respaldo con listas de compras', () => {
+  it('acepta el formato 1 (sin listas) y las rellena vacías', async () => {
+    const { backupFileSchema } = await import('../src/schemas/backup');
+    const empty = { categories: [], accounts: [], tags: [], exchange_rates: [], budgets: [], budget_items: [], transactions: [], transaction_tags: [] };
+    const parsed = backupFileSchema.parse({ app: 'finly', format: 1, exportedAt: '2026-10-10T00:00:00Z', tables: empty });
+    expect(parsed.tables.shopping_lists).toEqual([]);
+    expect(parsed.tables.shopping_items).toEqual([]);
+    expect(backupFileSchema.safeParse({ app: 'finly', format: 3, exportedAt: 'x', tables: empty }).success).toBe(false);
+  });
+});

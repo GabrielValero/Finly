@@ -20,6 +20,9 @@ interface PreferencesState {
   lockEnabled: boolean;
   setLockEnabled: (on: boolean) => void;
   setDefaultRateSource: (source: RateSource) => void;
+  /** Traer la tasa BCV automáticamente (dolarapi) al abrir la app. */
+  autoRate: boolean;
+  setAutoRate: (on: boolean) => void;
   setLastAccountId: (id: string) => void;
   clearLastAccount: () => void;
   setThemeId: (id: string) => void;
@@ -46,6 +49,8 @@ export const usePreferences = create<PreferencesState>()(
       lockEnabled: false,
       setLockEnabled: (lockEnabled) => set({ lockEnabled }),
       setDefaultRateSource: (defaultRateSource) => set({ defaultRateSource }),
+      autoRate: true,
+      setAutoRate: (autoRate) => set({ autoRate }),
       setLastAccountId: (lastAccountId) => set({ lastAccountId }),
       clearLastAccount: () => set({ lastAccountId: null }),
       setThemeId: (themeId) => set({ themeId }),
