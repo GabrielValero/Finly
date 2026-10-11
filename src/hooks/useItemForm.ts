@@ -4,7 +4,7 @@ import { Alert } from 'react-native';
 import { deleteItem, insertItem, updateItem } from '../data/repos/shopping';
 import { categoryPath } from '../utils/categories';
 import { formatMoney, type Currency } from '../utils/money';
-import { formatQuantity, parseQuantity } from '../utils/shopping';
+import { UNIT_LABEL, formatQuantity, lineNative, parseQuantity, type ShopUnit } from '../utils/shopping';
 import { useAmountBuffer } from './useAmountBuffer';
 import { useCreatedCategory } from './useCreatedCategory';
 import { useCategoryRows } from './useData';
@@ -23,6 +23,7 @@ export function useItemForm(id: string, listId: string) {
   const price = useAmountBuffer();
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('1');
+  const [unit, setUnit] = useState<ShopUnit>('und');
   const [currency, setCurrency] = useState<Currency>('USD');
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [priority, setPriority] = useState<Priority | null>(null);
@@ -36,6 +37,7 @@ export function useItemForm(id: string, listId: string) {
     if (hydrated || !existing) return;
     setName(existing.name);
     setQuantity(formatQuantity(existing.quantityMilli));
+    setUnit(existing.unit);
     setCurrency(existing.priceCurrency);
     setCategoryId(existing.categoryId);
     setPriority(existing.priority);
@@ -72,6 +74,7 @@ export function useItemForm(id: string, listId: string) {
     const fields = {
       name: name.trim(),
       quantityMilli,
+      unit,
       // Precio 0 = "sin precio": el teclado vacío no distingue un 0 intencional, y un producto gratis no tiene sentido en una lista.
       priceMinor: price.minor > 0 ? price.minor : null,
       priceCurrency: currency,
@@ -106,6 +109,19 @@ export function useItemForm(id: string, listId: string) {
     setName,
     quantity,
     setQuantity,
+    unit,
+    setUnit,
+    priceTitle: unit === 'und' ? 'Precio por unidad' : `Precio por ${UNIT_LABEL[unit]}`,
+    /** Cantidad x precio, para que se vea el multiplicado antes de guardar. */
+    lineLabel: (() => {
+      if (price.minor <= 0) return null;
+      try {
+        const total = lineNative({ priceMinor: price.minor, quantityMilli: parseQuantity(quantity) });
+        return total === null ? null : `Total del producto: ${formatMoney(total, currency)}`;
+      } catch {
+        return null;
+      }
+    })(),
     currency,
     setCurrency,
     price,

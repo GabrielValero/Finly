@@ -22,6 +22,13 @@
       "when": 1791682194100,
       "tag": "0002_soft_shotgun",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1791750738254,
+      "tag": "0003_solid_firebird",
+      "breakpoints": true
     }
   ]
 }

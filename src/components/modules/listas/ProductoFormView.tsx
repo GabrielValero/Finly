@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useItemForm } from '../../../hooks/useItemForm';
+import { UNITS, UNIT_LABEL } from '../../../utils/shopping';
 import { useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
 import { Button } from '../../shared/Button';
 import { CategoryPickerModal } from '../../shared/CategoryPickerModal';
 import { Card } from '../../shared/Card';
+import { Chip } from '../../shared/Chip';
 import { Field } from '../../shared/Field';
 import { Icon } from '../../shared/Icon';
 import { Keypad } from '../../shared/Keypad';
@@ -25,6 +27,7 @@ export function ProductoFormView({ id, listId }: { id: string; listId: string })
     scroll: { paddingHorizontal: t.space[16], paddingBottom: t.space[16], gap: t.space[12] },
     box: { backgroundColor: t.colors.surface, borderRadius: t.radius[16], borderWidth: 1, borderColor: t.colors.border, paddingHorizontal: t.space[16], paddingVertical: t.space[12], gap: t.space[4] },
     boxRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: t.space[8] },
+    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: t.space[8] },
     flex: { flex: 1, minWidth: 0 },
     list: { paddingVertical: 0, paddingHorizontal: t.space[16] },
     footer: { paddingHorizontal: t.space[16], paddingBottom: t.space[16] + insets.bottom },
@@ -36,12 +39,18 @@ export function ProductoFormView({ id, listId }: { id: string; listId: string })
       </ScreenTemplate>
     );
   }
-  const priceTitle = vm.isWish ? 'Precio objetivo (por unidad)' : 'Precio (por unidad)';
+  const priceTitle = vm.isWish ? `${vm.priceTitle} (objetivo)` : vm.priceTitle;
   return (
     <ScreenTemplate title={vm.title} left="close" onLeft={vm.close}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Field label="Producto" value={vm.name} onChangeText={vm.setName} placeholder="Ej. Harina PAN" maxLength={80} autoFocus={vm.isNew} />
         <Field label="Cantidad" value={vm.quantity} onChangeText={vm.setQuantity} keyboardType="decimal-pad" placeholder="1" maxLength={9} />
+        <AppText variant="label" color="textMuted">Se compra por</AppText>
+        <View style={styles.chips}>
+          {UNITS.map((u) => (
+            <Chip key={u} label={u === 'und' ? 'Unidades' : UNIT_LABEL[u]} selected={vm.unit === u} onPress={() => vm.setUnit(u)} />
+          ))}
+        </View>
 
         <AppText variant="label" color="textMuted">Moneda del precio</AppText>
         <Segmented options={[{ value: 'USD', label: 'USD' }, { value: 'VES', label: 'Bs' }]} value={vm.currency} onChange={vm.setCurrency} />
@@ -49,6 +58,7 @@ export function ProductoFormView({ id, listId }: { id: string; listId: string })
           <AppText variant="label" color="textMuted">{priceTitle}</AppText>
           <AppText variant="heading">{vm.priceLabel}</AppText>
         </PressableScale>
+        {vm.lineLabel ? <AppText variant="label" color="accent">{vm.lineLabel}</AppText> : null}
         {vm.currency === 'VES' ? <AppText variant="small" color="textMuted">El total de la lista siempre se muestra en USD, convertido con la tasa de la lista.</AppText> : null}
 
         <PressableScale onPress={() => setPicker(true)} style={styles.box}>
