@@ -1,0 +1,1 @@
+ALTER TABLE `shopping_items` ADD `unit` text DEFAULT 'und' NOT NULL;

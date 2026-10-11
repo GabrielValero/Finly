@@ -217,6 +217,8 @@ export const shoppingItems = sqliteTable(
     name: text('name').notNull(),
     /** Cantidad x 1000 (1 = 1000; 0,5 kg = 500). */
     quantityMilli: integer('quantity_milli').notNull().default(1000),
+    /** Unidad de la cantidad; el precio es POR esta unidad (p. ej. $3 por kg x 2,5 kg). */
+    unit: text('unit', { enum: ['und', 'kg', 'g', 'l', 'ml'] }).notNull().default('und'),
     /** Precio unitario en `priceCurrency`; null = aún sin precio. */
     priceMinor: integer('price_minor'),
     priceCurrency: currency('price_currency').notNull().default('USD'),

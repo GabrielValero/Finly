@@ -4,7 +4,7 @@ import { shoppingItems, shoppingLists, transactions } from '../schema';
 import { toLocalIso } from '../../utils/dates';
 import { newId } from '../../utils/ids';
 import type { Currency } from '../../utils/money';
-import { expenseMoney, planPurchase, type ListRate } from '../../utils/shopping';
+import { expenseMoney, planPurchase, type ListRate, type ShopUnit } from '../../utils/shopping';
 
 /*
  * Driver síncrono: los callbacks de `db.transaction` son síncronos y usan `.run()/.get()/.all()`.
@@ -42,6 +42,7 @@ export async function reopenList(id: string, now: Date): Promise<void> {
 export interface ItemFields {
   name: string;
   quantityMilli: number;
+  unit: ShopUnit;
   priceMinor: number | null;
   priceCurrency: Currency;
   categoryId: string | null;

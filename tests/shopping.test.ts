@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { expenseMoney, formatQuantity, limitStatus, lineUsd, parseQuantity, planPurchase, summarizeList, type ShopItemLike } from '../src/utils/shopping';
+import { describePrice, formatQuantityUnit, expenseMoney, formatQuantity, limitStatus, lineUsd, parseQuantity, planPurchase, summarizeList, type ShopItemLike } from '../src/utils/shopping';
 
 const item = (o: Partial<ShopItemLike> & { id: string }): ShopItemLike => ({
   quantityMilli: 1000,
@@ -117,5 +117,21 @@ describe('sortItems', () => {
     const mk = (id: string, priority: 'low' | 'medium' | 'high' | null, purchased: boolean, sortOrder: number) => ({ id, priority, purchasedAt: purchased ? new Date() : null, sortOrder });
     const out = sortItems([mk('a', 'low', false, 0), mk('b', 'high', false, 1), mk('c', 'high', true, 2), mk('d', null, false, 3)], 'wish');
     expect(out.map((i) => i.id)).toEqual(['b', 'a', 'd', 'c']);
+  });
+});
+
+describe('unidades', () => {
+  it('el precio es por unidad y se multiplica por la cantidad', () => {
+    // 2,5 kg a $3,00 el kilo = $7,50
+    expect(lineUsd(item({ id: 'a', priceMinor: 300, quantityMilli: 2500 }), null)).toBe(750);
+    // En Bs: 2 unidades a Bs 875,00 = Bs 1.750,00 = $2,00 a 875
+    expect(lineUsd(item({ id: 'a', priceMinor: 87_500, priceCurrency: 'VES', quantityMilli: 2000 }), 875_000_000)).toBe(200);
+  });
+  it('formatea cantidad y descripción', () => {
+    expect(formatQuantityUnit(2500, 'kg')).toBe('2,5 kg');
+    expect(formatQuantityUnit(3000, 'und')).toBe('3');
+    expect(describePrice(2500, 'kg', '$3,00')).toBe('2,5 kg × $3,00/kg');
+    expect(describePrice(1000, 'und', '$1,50')).toBe('$1,50');
+    expect(describePrice(2000, 'und', '$1,50')).toBe('2 × $1,50');
   });
 });

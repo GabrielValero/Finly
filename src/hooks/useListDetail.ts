@@ -11,7 +11,8 @@ import { usdEquivalent } from '../utils/transactions';
 import {
   LIST_KIND_LABEL,
   PRIORITY_LABEL,
-  formatQuantity,
+  describePrice,
+  formatQuantityUnit,
   lineUsd,
   limitStatus,
   planPurchase,
@@ -72,8 +73,11 @@ export function useListDetail(id: string) {
     const limit = limitStatus(totals.totalUsd, list.limitMinor);
     const rows: ProductRowVm[] = sortItems(items, list.kind).map((i) => {
       const usd = lineUsd(i, rate?.rateScaled ?? null);
-      const qty = i.quantityMilli === 1000 ? '' : `${formatQuantity(i.quantityMilli)} × `;
-      const price = i.priceMinor === null ? 'Sin precio' : `${qty}${formatMoney(i.priceMinor, i.priceCurrency)}`;
+      const trivial = i.quantityMilli === 1000 && i.unit === 'und';
+      const price =
+        i.priceMinor === null
+          ? trivial ? 'Sin precio' : `${formatQuantityUnit(i.quantityMilli, i.unit)} · sin precio`
+          : describePrice(i.quantityMilli, i.unit, formatMoney(i.priceMinor, i.priceCurrency));
       const own = i.categoryId ? labelOf(i.categoryId) : null;
       return {
         id: i.id,
@@ -194,7 +198,7 @@ export function useListDetail(id: string) {
     quickAdd: (name: string) => {
       const clean = name.trim();
       if (!clean) return;
-      void insertItem(id, { name: clean, quantityMilli: 1000, priceMinor: null, priceCurrency: 'USD', categoryId: null, priority: null, note: null }, new Date());
+      void insertItem(id, { name: clean, quantityMilli: 1000, unit: 'und', priceMinor: null, priceCurrency: 'USD', categoryId: null, priority: null, note: null }, new Date());
     },
     reopen: () => void reopenList(id, new Date()),
     openItem: (itemId: string) => router.push({ pathname: '/list-item/[id]', params: { id: itemId, listId: id } }),

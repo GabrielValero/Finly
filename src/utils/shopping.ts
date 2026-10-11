@@ -17,6 +17,22 @@ export interface ShopItemLike {
   purchasedAt: Date | null;
 }
 
+export const UNITS = ['und', 'kg', 'g', 'l', 'ml'] as const;
+export type ShopUnit = (typeof UNITS)[number];
+export const UNIT_LABEL: Record<ShopUnit, string> = { und: 'und', kg: 'kg', g: 'g', l: 'L', ml: 'ml' };
+
+/** "2,5 kg" / "3" (unidades sueltas no llevan sufijo). */
+export function formatQuantityUnit(milli: number, unit: ShopUnit): string {
+  const q = formatQuantity(milli);
+  return unit === 'und' ? q : `${q} ${UNIT_LABEL[unit]}`;
+}
+
+/** "2 × $1,50" (unidades) o "2,5 kg × $3,00/kg"; con cantidad 1 und solo el precio. */
+export function describePrice(milli: number, unit: ShopUnit, priceText: string): string {
+  if (unit === 'und') return milli === 1000 ? priceText : `${formatQuantity(milli)} × ${priceText}`;
+  return `${formatQuantityUnit(milli, unit)} × ${priceText}/${UNIT_LABEL[unit]}`;
+}
+
 /** "2", "0,5", "1.25" -> milésimas (1000 = 1). Máx. 3 decimales, mayor a cero. */
 export function parseQuantity(input: string): number {
   const raw = input.trim().replace(/\s+/g, '');

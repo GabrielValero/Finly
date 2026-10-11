@@ -172,8 +172,8 @@ describe('listas de compras', () => {
     const now = new Date('2026-10-10T16:00:00Z');
     await db.insert(categories).values({ id: 'c2', name: 'Salud', icon: 'heart', kind: 'expense', parentId: null, color: null, excludeFromReports: false, archivedAt: null, updatedAt: now });
     const listId = await insertList({ name: 'Mercado semanal', kind: 'market', categoryId: 'c', limitMinor: 10_000, rateMode: 'bcv', manualRateScaled: null }, now);
-    const item = { quantityMilli: 1000, priceCurrency: 'USD' as const, categoryId: null, priority: null, note: null };
-    const a = await insertItem(listId, { ...item, name: 'Arroz', priceMinor: 300 }, now);
+    const item = { quantityMilli: 1000, unit: 'und' as const, priceCurrency: 'USD' as const, categoryId: null, priority: null, note: null };
+    const a = await insertItem(listId, { ...item, name: 'Arroz', unit: 'kg' as const, quantityMilli: 2500, priceMinor: 120 }, now);
     const b = await insertItem(listId, { ...item, name: 'Ibuprofeno', priceMinor: 87_500, priceCurrency: 'VES', categoryId: 'c2' }, now);
     const rate = { rateScaled: 875_000_000, source: 'bcv' as const };
 
@@ -197,7 +197,7 @@ describe('listas de compras', () => {
     const { eq } = await import('drizzle-orm');
     const now = new Date();
     const listId = await insertList({ name: 'Otra', kind: 'wish', categoryId: 'c', limitMinor: null, rateMode: 'bcv', manualRateScaled: null }, now);
-    const id = await insertItem(listId, { name: 'Libro', quantityMilli: 1000, priceMinor: 1500, priceCurrency: 'USD', categoryId: null, priority: 'high', note: null }, now);
+    const id = await insertItem(listId, { name: 'Libro', quantityMilli: 1000, unit: 'und', priceMinor: 1500, priceCurrency: 'USD', categoryId: null, priority: 'high', note: null }, now);
     await expect(finalizePurchase({ listId, itemIds: [id], accountId: 'no-existe', accountCurrency: 'USD', rate: null, now })).rejects.toThrow();
     expect((await db.select().from(shoppingItems).where(eq(shoppingItems.id, id)))[0]?.purchasedAt).toBeNull();
   });
@@ -208,7 +208,7 @@ describe('listas de compras', () => {
     const { eq } = await import('drizzle-orm');
     const now = new Date();
     const listId = await insertList({ name: 'Temporal', kind: 'wish', categoryId: null, limitMinor: null, rateMode: 'bcv', manualRateScaled: null }, now);
-    await insertItem(listId, { name: 'X', quantityMilli: 1000, priceMinor: null, priceCurrency: 'USD', categoryId: null, priority: null, note: null }, now);
+    await insertItem(listId, { name: 'X', quantityMilli: 1000, unit: 'und', priceMinor: null, priceCurrency: 'USD', categoryId: null, priority: null, note: null }, now);
     await deleteList(listId);
     expect(await db.select().from(shoppingItems).where(eq(shoppingItems.listId, listId))).toHaveLength(0);
   });
