@@ -48,3 +48,10 @@ export function minorToBuffer(minor: number): string {
   const cents = (minor % 100).toString().padStart(2, '0').replace(/0+$/, '');
   return cents === '' ? String(whole) : `${whole},${cents}`;
 }
+
+/** Tasa escalada -> buffer del teclado ("875,6505"). Inverso de bufferToRate. */
+export function rateToBuffer(rateScaled: number): string {
+  const whole = Math.floor(rateScaled / 1_000_000);
+  const frac = (rateScaled % 1_000_000).toString().padStart(6, '0').slice(0, 4).replace(/0+$/, '');
+  return frac === '' ? String(whole) : `${whole},${frac}`;
+}

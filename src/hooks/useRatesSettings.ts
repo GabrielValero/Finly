@@ -10,6 +10,8 @@ export function useRatesSettings() {
   const history = useRateHistory(30);
   const source = usePreferences((s) => s.defaultRateSource);
   const setSource = usePreferences((s) => s.setDefaultRateSource);
+  const autoRate = usePreferences((s) => s.autoRate);
+  const setAutoRate = usePreferences((s) => s.setAutoRate);
   const today = dayOf(toLocalIso(new Date()));
   const label = (s: 'bcv' | 'manual') => (s === 'bcv' ? 'BCV' : 'Manual');
   return {
@@ -18,6 +20,8 @@ export function useRatesSettings() {
       : { value: '—', caption: 'Aún no hay tasa registrada' },
     source,
     setSource,
+    autoRate,
+    setAutoRate,
     history: history.map((r) => ({ id: r.id, date: formatDayShort(r.validFrom), value: `${formatRate(r.rateScaled)} · ${label(r.source)}` })),
     update: () => router.push('/rate'),
     back: () => router.back(),

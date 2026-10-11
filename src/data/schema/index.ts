@@ -181,9 +181,68 @@ export const budgetItems = sqliteTable(
   ],
 );
 
+export const shoppingLists = sqliteTable(
+  'shopping_lists',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    /** market: compra con presupuesto y marcado en el súper. wish: deseos a futuro. */
+    kind: text('kind', { enum: ['market', 'wish'] }).notNull(),
+    /** Categoría que heredan los productos que no tienen la suya. */
+    categoryId: text('category_id').references(() => categories.id),
+    /** Tope en USD (solo listas de mercado). */
+    limitMinor: integer('limit_minor'),
+    /** bcv: tasa vigente en vivo. manual: la fijada en `manualRateScaled`. */
+    rateMode: text('rate_mode', { enum: ['bcv', 'manual'] }).notNull().default('bcv'),
+    manualRateScaled: integer('manual_rate_scaled'),
+    completedAt: ts('completed_at'),
+    createdAt: ts('created_at').notNull(),
+    updatedAt: ts('updated_at').notNull(),
+  },
+  (t) => [
+    index('shopping_lists_category_idx').on(t.categoryId),
+    check('shopping_lists_limit_positive', sql`${t.limitMinor} IS NULL OR ${t.limitMinor} > 0`),
+    check('shopping_lists_manual_rate', sql`(${t.rateMode} = 'manual') = (${t.manualRateScaled} IS NOT NULL)`),
+    check('shopping_lists_manual_positive', sql`${t.manualRateScaled} IS NULL OR ${t.manualRateScaled} > 0`),
+  ],
+);
+
+export const shoppingItems = sqliteTable(
+  'shopping_items',
+  {
+    id: text('id').primaryKey(),
+    listId: text('list_id')
+      .notNull()
+      .references(() => shoppingLists.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    /** Cantidad x 1000 (1 = 1000; 0,5 kg = 500). */
+    quantityMilli: integer('quantity_milli').notNull().default(1000),
+    /** Precio unitario en `priceCurrency`; null = aún sin precio. */
+    priceMinor: integer('price_minor'),
+    priceCurrency: currency('price_currency').notNull().default('USD'),
+    /** Si es null hereda la de la lista. */
+    categoryId: text('category_id').references(() => categories.id),
+    checked: integer('checked', { mode: 'boolean' }).notNull().default(false),
+    /** Cuándo se compró (lo marca "Registrar compra" / "Marcar como comprado"). */
+    purchasedAt: ts('purchased_at'),
+    /** Solo listas de deseos. */
+    priority: text('priority', { enum: ['low', 'medium', 'high'] }),
+    note: text('note'),
+    sortOrder: integer('sort_order').notNull().default(0),
+    updatedAt: ts('updated_at').notNull(),
+  },
+  (t) => [
+    index('shopping_items_list_idx').on(t.listId),
+    check('shopping_items_qty_positive', sql`${t.quantityMilli} > 0`),
+    check('shopping_items_price_nonneg', sql`${t.priceMinor} IS NULL OR ${t.priceMinor} >= 0`),
+  ],
+);
+
 export type Account = typeof accounts.$inferSelect;
 export type NewAccount = typeof accounts.$inferInsert;
 export type Transaction = typeof transactions.$inferSelect;
 export type NewTransaction = typeof transactions.$inferInsert;
 export type Category = typeof categories.$inferSelect;
 export type ExchangeRate = typeof exchangeRates.$inferSelect;
+export type ShoppingList = typeof shoppingLists.$inferSelect;
+export type ShoppingItem = typeof shoppingItems.$inferSelect;

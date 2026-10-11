@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { accounts, budgetItems, budgets, categories, exchangeRates, tags, transactions, transactionTags } from '../schema';
+import { accounts, budgetItems, budgets, categories, exchangeRates, shoppingItems, shoppingLists, tags, transactions, transactionTags } from '../schema';
 import { defaultCategoryRows } from './categories';
 
 /**
@@ -8,6 +8,8 @@ import { defaultCategoryRows } from './categories';
  */
 export async function wipeAllData(now: Date): Promise<void> {
   db.transaction((tx) => {
+    tx.delete(shoppingItems).run();
+    tx.delete(shoppingLists).run();
     tx.delete(budgetItems).run();
     tx.delete(budgets).run();
     tx.delete(transactionTags).run();

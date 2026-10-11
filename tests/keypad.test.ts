@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bufferToDisplay, bufferToMinor, bufferToRate, pressKey, type KeypadKey } from '../src/utils/keypad';
+import { rateToBuffer, bufferToDisplay, bufferToMinor, bufferToRate, pressKey, type KeypadKey } from '../src/utils/keypad';
 
 const type = (keys: KeypadKey[]) => keys.reduce((b, k) => pressKey(b, k), '');
 
@@ -36,5 +36,13 @@ describe('keypad', () => {
     expect(bufferToRate('871,37')).toBe(871_370_000);
     expect(bufferToRate('')).toBe(0);
     expect(bufferToRate('0,')).toBe(0);
+  });
+});
+
+describe('rateToBuffer', () => {
+  it('es inverso de bufferToRate con 4 decimales', () => {
+    expect(rateToBuffer(875_650_500)).toBe('875,6505');
+    expect(rateToBuffer(36_000_000)).toBe('36');
+    expect(bufferToRate(rateToBuffer(875_650_500))).toBe(875_650_500);
   });
 });

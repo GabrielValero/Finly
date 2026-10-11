@@ -6,6 +6,8 @@ import { AppText } from '../../shared/AppText';
 import { Button } from '../../shared/Button';
 import { Card } from '../../shared/Card';
 import { Fab } from '../../shared/Fab';
+import { Segmented } from '../../shared/Segmented';
+import { ListasView } from '../listas/ListasView';
 import { Icon } from '../../shared/Icon';
 import { OptionList } from '../../shared/OptionList';
 import { PressableScale } from '../../shared/PressableScale';
@@ -17,9 +19,11 @@ export function PresupuestoView() {
   const vm = usePresupuestoScreen();
   const theme = useTheme();
   const [monthPicker, setMonthPicker] = useState(false);
+  const [section, setSection] = useState<'budget' | 'lists'>('budget');
   const styles = useThemedStyles((t) => ({
     header: { height: 56, paddingHorizontal: t.space[16], flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     pill: { height: 32, paddingHorizontal: t.space[12], borderRadius: t.radius.full, backgroundColor: t.colors.surface, flexDirection: 'row', alignItems: 'center', gap: t.space[8] },
+    switch: { paddingHorizontal: t.space[16], paddingBottom: t.space[8] },
     scroll: { paddingHorizontal: t.space[16], paddingBottom: 120, gap: t.space[8] },
     summary: { gap: t.space[8] },
     track: { height: 6, borderRadius: 3, backgroundColor: t.colors.surface2, overflow: 'hidden' },
@@ -48,12 +52,18 @@ export function PresupuestoView() {
     <ScreenTemplate>
       <View style={styles.header}>
         <AppText variant="title">Presupuesto</AppText>
-        <PressableScale onPress={() => setMonthPicker(true)} style={styles.pill} accessibilityLabel="Cambiar de mes">
-          <AppText variant="label">{vm.monthLabel}</AppText>
-          <Icon name="chevronDown" size={16} color="textMuted" />
-        </PressableScale>
+        {section === 'budget' ? (
+          <PressableScale onPress={() => setMonthPicker(true)} style={styles.pill} accessibilityLabel="Cambiar de mes">
+            <AppText variant="label">{vm.monthLabel}</AppText>
+            <Icon name="chevronDown" size={16} color="textMuted" />
+          </PressableScale>
+        ) : null}
       </View>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <View style={styles.switch}>
+        <Segmented options={[{ value: 'budget', label: 'Presupuesto' }, { value: 'lists', label: 'Listas' }]} value={section} onChange={setSection} />
+      </View>
+      {section === 'lists' ? <ListasView /> : null}
+      {section === 'budget' ? <ScrollView contentContainerStyle={styles.scroll}>
         {vm.isEmpty ? (
           <Card>
             <View style={styles.empty}>
@@ -89,8 +99,8 @@ export function PresupuestoView() {
             <Section title="Ingresos" rows={vm.income} />
           </>
         )}
-      </ScrollView>
-      <Fab onPress={vm.openAdd} label="Planificar categoría" />
+      </ScrollView> : null}
+      {section === 'budget' ? <Fab onPress={vm.openAdd} label="Planificar categoría" /> : null}
       <SheetModal visible={monthPicker} title="MES" onClose={() => setMonthPicker(false)}>
         <OptionList
           options={vm.months}

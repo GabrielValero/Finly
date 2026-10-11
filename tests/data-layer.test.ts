@@ -155,3 +155,61 @@ describe('categoría en transferencias', () => {
     expect(rows.map((r) => r.categoryId)).toEqual([null, null]);
   });
 });
+
+describe('listas de compras', () => {
+  beforeAll(async () => {
+    // Los tests de borrado anteriores vacían cuentas y categorías: se recrean las necesarias.
+    const now = new Date();
+    await db.insert(categories).values({ id: 'c', name: 'Mercado test', icon: 'cart', kind: 'expense', parentId: null, color: null, excludeFromReports: false, archivedAt: null, updatedAt: now }).onConflictDoNothing();
+    await insertAccount({ icon: 'cash', color: null, openingMinor: 0, includeInTotal: true, archivedAt: null, sortOrder: 0, updatedAt: now, id: 'ves', name: 'Banesco2', currency: 'VES' });
+    await insertAccount({ icon: 'cash', color: null, openingMinor: 0, includeInTotal: true, archivedAt: null, sortOrder: 0, updatedAt: now, id: 'usd', name: 'Binance2', currency: 'USD' });
+  });
+
+  it('finalizePurchase crea un gasto por categoría, marca comprados y completa la lista', async () => {
+    const { insertList, insertItem, finalizePurchase } = await import('../src/data/repos/shopping');
+    const { shoppingItems, shoppingLists, transactions: txs } = await import('../src/data/schema');
+    const { eq } = await import('drizzle-orm');
+    const now = new Date('2026-10-10T16:00:00Z');
+    await db.insert(categories).values({ id: 'c2', name: 'Salud', icon: 'heart', kind: 'expense', parentId: null, color: null, excludeFromReports: false, archivedAt: null, updatedAt: now });
+    const listId = await insertList({ name: 'Mercado semanal', kind: 'market', categoryId: 'c', limitMinor: 10_000, rateMode: 'bcv', manualRateScaled: null }, now);
+    const item = { quantityMilli: 1000, priceCurrency: 'USD' as const, categoryId: null, priority: null, note: null };
+    const a = await insertItem(listId, { ...item, name: 'Arroz', priceMinor: 300 }, now);
+    const b = await insertItem(listId, { ...item, name: 'Ibuprofeno', priceMinor: 87_500, priceCurrency: 'VES', categoryId: 'c2' }, now);
+    const rate = { rateScaled: 875_000_000, source: 'bcv' as const };
+
+    const r = await finalizePurchase({ listId, itemIds: [a, b], accountId: 'ves', accountCurrency: 'VES', rate, now });
+    expect(r).toEqual({ expenses: 2, registeredItems: 2 });
+
+    const made = await db.select().from(txs).where(eq(txs.concept, 'Mercado semanal'));
+    const byCat = Object.fromEntries(made.map((t) => [t.categoryId, t]));
+    expect(byCat['c']).toMatchObject({ amountMinor: -262_500, listedAmountMinor: 300, listedCurrency: 'USD', rateScaled: 875_000_000, rateSource: 'bcv' });
+    expect(byCat['c2']).toMatchObject({ amountMinor: -87_500, listedAmountMinor: 100 });
+    expect((await db.select().from(shoppingItems)).every((i) => i.purchasedAt !== null)).toBe(true);
+    expect((await db.select().from(shoppingLists).where(eq(shoppingLists.id, listId)))[0]?.completedAt).not.toBeNull();
+
+    // Reintentar no duplica: ya no quedan productos pendientes.
+    await expect(finalizePurchase({ listId, itemIds: [a, b], accountId: 'ves', accountCurrency: 'VES', rate, now })).rejects.toThrow();
+  });
+
+  it('es atómica: si una cuenta no existe no queda nada marcado', async () => {
+    const { insertList, insertItem, finalizePurchase } = await import('../src/data/repos/shopping');
+    const { shoppingItems } = await import('../src/data/schema');
+    const { eq } = await import('drizzle-orm');
+    const now = new Date();
+    const listId = await insertList({ name: 'Otra', kind: 'wish', categoryId: 'c', limitMinor: null, rateMode: 'bcv', manualRateScaled: null }, now);
+    const id = await insertItem(listId, { name: 'Libro', quantityMilli: 1000, priceMinor: 1500, priceCurrency: 'USD', categoryId: null, priority: 'high', note: null }, now);
+    await expect(finalizePurchase({ listId, itemIds: [id], accountId: 'no-existe', accountCurrency: 'USD', rate: null, now })).rejects.toThrow();
+    expect((await db.select().from(shoppingItems).where(eq(shoppingItems.id, id)))[0]?.purchasedAt).toBeNull();
+  });
+
+  it('borrar la lista borra sus productos', async () => {
+    const { insertList, insertItem, deleteList } = await import('../src/data/repos/shopping');
+    const { shoppingItems } = await import('../src/data/schema');
+    const { eq } = await import('drizzle-orm');
+    const now = new Date();
+    const listId = await insertList({ name: 'Temporal', kind: 'wish', categoryId: null, limitMinor: null, rateMode: 'bcv', manualRateScaled: null }, now);
+    await insertItem(listId, { name: 'X', quantityMilli: 1000, priceMinor: null, priceCurrency: 'USD', categoryId: null, priority: null, note: null }, now);
+    await deleteList(listId);
+    expect(await db.select().from(shoppingItems).where(eq(shoppingItems.listId, listId))).toHaveLength(0);
+  });
+});
