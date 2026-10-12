@@ -225,3 +225,58 @@ describe('listas de compras', () => {
     expect(await db.select().from(shoppingItems).where(eq(shoppingItems.listId, listId))).toHaveLength(0);
   });
 });
+
+describe('deudas y préstamos', () => {
+  const now = new Date('2026-10-12T15:00:00Z');
+  const fields = { direction: 'owed_to_me' as const, person: 'Tío', currency: 'USD' as const, principalMinor: 10_000, note: null, openedOn: '2026-10-12', dueOn: null, openRateScaled: null };
+
+  beforeAll(async () => {
+    await insertAccount({ icon: 'cash', color: null, openingMinor: 0, includeInTotal: true, archivedAt: null, sortOrder: 0, updatedAt: now, id: 'dusd', name: 'DeudaUSD', currency: 'USD' });
+    await insertAccount({ icon: 'cash', color: null, openingMinor: 0, includeInTotal: true, archivedAt: null, sortOrder: 0, updatedAt: now, id: 'dves', name: 'DeudaBs', currency: 'VES' });
+  });
+
+  it('sin cuenta no crea movimientos; con pagos parciales y tope', async () => {
+    const { createDebt, addPayment } = await import('../src/data/repos/debts');
+    const { debtPayments, transactions: txs } = await import('../src/data/schema');
+    const { eq } = await import('drizzle-orm');
+    const before = (await db.select().from(txs)).length;
+    const id = await createDebt(fields, null, now);
+    await addPayment({ debtId: id, amountMinor: 4000, paidOn: '2026-10-12', note: null, link: null }, now);
+    expect((await db.select().from(txs)).length).toBe(before);
+    expect(await db.select().from(debtPayments).where(eq(debtPayments.debtId, id))).toHaveLength(1);
+    await expect(addPayment({ debtId: id, amountMinor: 6001, paidOn: '2026-10-12', note: null, link: null }, now)).rejects.toThrow('mayor');
+  });
+
+  it('con cuenta: préstamo sale como gasto de sistema y el cobro entra como ingreso, excluidos de reportes', async () => {
+    const { createDebt, addPayment } = await import('../src/data/repos/debts');
+    const { categories: cats, transactions: txs } = await import('../src/data/schema');
+    const { eq } = await import('drizzle-orm');
+    const link = { accountId: 'dusd', accountCurrency: 'USD' as const, rate: null };
+    const id = await createDebt({ ...fields, person: 'Liseth' }, link, now);
+    await addPayment({ debtId: id, amountMinor: 2500, paidOn: '2026-10-12', note: null, link }, now);
+    const mine = await db.select().from(txs).where(eq(txs.accountId, 'dusd'));
+    expect(mine.map((t) => [t.kind, t.amountMinor, t.concept]).sort()).toEqual([['expense', -10_000, 'Préstamo a Liseth'], ['income', 2500, 'Pago de Liseth']]);
+    const sys = await db.select().from(cats).where(eq(cats.name, 'Préstamos dados'));
+    expect(sys[0]).toMatchObject({ kind: 'expense', excludeFromReports: true });
+  });
+
+  it('cuenta en Bs con deuda en USD guarda tasa y monto listado; deleteDebt quita sus movimientos', async () => {
+    const { createDebt, deleteDebt } = await import('../src/data/repos/debts');
+    const { transactions: txs } = await import('../src/data/schema');
+    const { eq, and, isNull } = await import('drizzle-orm');
+    const link = { accountId: 'dves', accountCurrency: 'VES' as const, rate: { rateScaled: 875_000_000, source: 'bcv' as const } };
+    const id = await createDebt({ ...fields, person: 'Pedro', principalMinor: 1000 }, link, now);
+    const live = () => db.select().from(txs).where(and(eq(txs.accountId, 'dves'), isNull(txs.deletedAt)));
+    expect((await live())[0]).toMatchObject({ amountMinor: -875_000, listedAmountMinor: 1000, listedCurrency: 'USD', rateScaled: 875_000_000 });
+    await deleteDebt(id, now);
+    expect(await live()).toHaveLength(0);
+  });
+
+  it('es atómica: una cuenta inexistente no deja la deuda a medias', async () => {
+    const { createDebt } = await import('../src/data/repos/debts');
+    const { debts: table } = await import('../src/data/schema');
+    const { eq } = await import('drizzle-orm');
+    await expect(createDebt({ ...fields, person: 'Fantasma' }, { accountId: 'no-existe', accountCurrency: 'USD', rate: null }, now)).rejects.toThrow();
+    expect(await db.select().from(table).where(eq(table.person, 'Fantasma'))).toHaveLength(0);
+  });
+});
