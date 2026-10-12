@@ -42,6 +42,7 @@ export default function RootLayout() {
         <Stack.Screen name="transfer" options={{ presentation: 'modal' }} />
         <Stack.Screen name="category/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="budget/[id]" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="reports" />
         <Stack.Screen name="categories/index" />
         <Stack.Screen name="list-form/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="list-item/[id]" options={{ presentation: 'modal' }} />

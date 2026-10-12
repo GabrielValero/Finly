@@ -2,7 +2,7 @@ import { and, desc, eq, gte, isNotNull, isNull, lt, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
 import { useMemo } from 'react';
 import { db } from '../data/db';
-import { monthTransactionsQuery, transactionByIdQuery } from '../data/queries';
+import { monthTransactionsQuery, rangeTransactionsQuery, transactionByIdQuery } from '../data/queries';
 import { accounts, budgetItems, budgets, categories, exchangeRates, tags, transactions, transactionTags } from '../data/schema';
 import { usePreferences } from '../store/preferences';
 import { monthBounds } from '../utils/dates';
@@ -61,6 +61,25 @@ export function useRateHistory(limit = 30) {
 /** Movimientos del mes. Depende de las tablas del join: al renombrar una cuenta o categoría también se refresca. */
 export function useMonthTransactions(month: string) {
   return useDbQuery(() => monthTransactionsQuery(month), ['transactions', 'accounts', 'categories'], [month]);
+}
+
+/** Movimientos de los meses [fromMonth, toMonth]. */
+export function useRangeTransactions(fromMonth: string, toMonth: string) {
+  return useDbQuery(() => rangeTransactionsQuery(fromMonth, toMonth), ['transactions', 'accounts', 'categories'], [fromMonth, toMonth]);
+}
+
+/** Pares (movimiento, etiqueta) de los movimientos vivos de varios meses. */
+export function useRangeTagLinks(fromMonth: string, toMonth: string) {
+  return useDbQuery(
+    () =>
+      db
+        .select({ transactionId: transactionTags.transactionId, tagId: transactionTags.tagId })
+        .from(transactionTags)
+        .innerJoin(transactions, eq(transactions.id, transactionTags.transactionId))
+        .where(and(gte(transactions.occurredAt, monthBounds(fromMonth).from), lt(transactions.occurredAt, monthBounds(toMonth).to), isNull(transactions.deletedAt))),
+    ['transaction_tags', 'transactions'],
+    [fromMonth, toMonth],
+  );
 }
 
 export function useTransactionById(id: string) {

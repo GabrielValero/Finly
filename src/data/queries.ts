@@ -40,6 +40,20 @@ export function monthTransactionsQuery(month: string) {
     .orderBy(desc(transactions.occurredAt));
 }
 
+/** Movimientos vivos de varios meses seguidos [fromMonth, toMonth] (para reportes). */
+export function rangeTransactionsQuery(fromMonth: string, toMonth: string) {
+  const from = monthBounds(fromMonth).from;
+  const to = monthBounds(toMonth).to;
+  return db
+    .select(txColumns)
+    .from(transactions)
+    .innerJoin(accounts, eq(accounts.id, transactions.accountId))
+    .leftJoin(categories, eq(categories.id, transactions.categoryId))
+    .leftJoin(parentCategories, eq(parentCategories.id, categories.parentId))
+    .where(and(gte(transactions.occurredAt, from), lt(transactions.occurredAt, to), isNull(transactions.deletedAt)))
+    .orderBy(desc(transactions.occurredAt));
+}
+
 export function transactionByIdQuery(id: string) {
   return db
     .select({ ...txColumns, note: transactions.note, deletedAt: transactions.deletedAt })
