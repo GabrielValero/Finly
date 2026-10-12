@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
+import { useHomeMenu } from '../../../hooks/useHomeMenu';
 import { useMovementsScreen } from '../../../hooks/useMovementsScreen';
 import { useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
@@ -8,6 +9,7 @@ import { Card } from '../../shared/Card';
 import { Chip } from '../../shared/Chip';
 import { Fab } from '../../shared/Fab';
 import { Icon } from '../../shared/Icon';
+import { MenuDrawer } from '../../shared/MenuDrawer';
 import { OptionList } from '../../shared/OptionList';
 import { PressableScale } from '../../shared/PressableScale';
 import { RowMovimiento } from '../../shared/RowMovimiento';
@@ -18,10 +20,14 @@ import { ScreenTemplate } from '../../template/ScreenTemplate';
 export function MovimientosView() {
   const vm = useMovementsScreen();
   const [monthPicker, setMonthPicker] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menu = useHomeMenu();
   const styles = useThemedStyles((t) => ({
     scroll: { paddingHorizontal: t.space[16], paddingBottom: 120, gap: t.space[12] },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 36 },
+    left: { flexDirection: 'row', alignItems: 'center', gap: t.space[12] },
     month: { flexDirection: 'row', alignItems: 'center', gap: t.space[8] },
+    hamburger: { width: 36, height: 36, borderRadius: t.radius.full, backgroundColor: t.colors.surface, alignItems: 'center', justifyContent: 'center' },
     pill: { height: 28, paddingHorizontal: t.space[12], borderRadius: t.radius.full, backgroundColor: t.colors.surface, justifyContent: 'center' },
     balance: { gap: t.space[8] },
     divider: { height: 1, backgroundColor: t.colors.border, marginVertical: t.space[8] },
@@ -36,10 +42,15 @@ export function MovimientosView() {
     <ScreenTemplate>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
-          <PressableScale onPress={() => setMonthPicker(true)} style={styles.month} accessibilityLabel="Cambiar de mes">
-            <AppText variant="label">{vm.monthLabel}</AppText>
-            <Icon name="chevronDown" size={16} color="textMuted" />
-          </PressableScale>
+          <View style={styles.left}>
+            <PressableScale onPress={() => setMenuOpen(true)} style={styles.hamburger} accessibilityLabel="Abrir menú">
+              <Icon name="menu" size={20} />
+            </PressableScale>
+            <PressableScale onPress={() => setMonthPicker(true)} style={styles.month} accessibilityLabel="Cambiar de mes">
+              <AppText variant="label">{vm.monthLabel}</AppText>
+              <Icon name="chevronDown" size={16} color="textMuted" />
+            </PressableScale>
+          </View>
           <PressableScale onPress={vm.openRate} style={styles.pill} accessibilityLabel="Cambiar tasa">
             <AppText variant="caption">{vm.rateLabel}</AppText>
           </PressableScale>
@@ -73,6 +84,14 @@ export function MovimientosView() {
           </ScrollView>
         ) : null}
 
+        {vm.tagChips.length > 1 || vm.tagFilter ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+            {vm.tagChips.map((c) => (
+              <Chip key={c.id ?? 'all-tags'} label={c.id === null ? 'Todas las etiquetas' : `#${c.name} · ${c.count}`} selected={c.id === vm.tagFilter} onPress={() => vm.setTagFilter(c.id)} />
+            ))}
+          </ScrollView>
+        ) : null}
+
         {vm.banner ? <Banner text={vm.banner} action="ACTUALIZAR" onPress={vm.openRate} /> : null}
 
         {!vm.hasAccounts ? (
@@ -83,7 +102,9 @@ export function MovimientosView() {
           </View>
         ) : vm.isEmpty ? (
           <View style={styles.empty}>
-            <AppText variant="heading" align="center">{vm.filterName ? `Sin movimientos de ${vm.filterName} este mes` : 'Sin movimientos este mes'}</AppText>
+            <AppText variant="heading" align="center">
+              {vm.tagFilterName ? `Sin movimientos con #${vm.tagFilterName} este mes` : vm.filterName ? `Sin movimientos de ${vm.filterName} este mes` : 'Sin movimientos este mes'}
+            </AppText>
             <AppText variant="small" color="textMuted" align="center">Toca + para registrar el primero.</AppText>
           </View>
         ) : (
@@ -103,6 +124,7 @@ export function MovimientosView() {
 
       {vm.hasAccounts ? <Fab onPress={vm.openCapture} /> : null}
 
+      <MenuDrawer visible={menuOpen} items={menu} onClose={() => setMenuOpen(false)} />
       <SheetModal visible={monthPicker} title="MES" onClose={() => setMonthPicker(false)}>
         <OptionList
           options={vm.months}

@@ -6,6 +6,9 @@ interface UiState {
   selectedMonth: string;
   setSelectedMonth: (month: string) => void;
   /** Categoría recién creada desde un selector (captura/planificar): la pantalla que la pidió la elige y lo limpia. */
+  /** Sección abierta en la pestaña Presupuesto (el menú del Home puede abrir directamente Listas). */
+  presupuestoSection: 'budget' | 'lists';
+  setPresupuestoSection: (section: 'budget' | 'lists') => void;
   createdCategoryId: string | null;
   setCreatedCategoryId: (id: string | null) => void;
 }
@@ -13,6 +16,8 @@ interface UiState {
 export const useUi = create<UiState>()((set) => ({
   selectedMonth: monthOf(toLocalIso(new Date())),
   setSelectedMonth: (selectedMonth) => set({ selectedMonth }),
+  presupuestoSection: 'budget',
+  setPresupuestoSection: (presupuestoSection) => set({ presupuestoSection }),
   createdCategoryId: null,
   setCreatedCategoryId: (createdCategoryId) => set({ createdCategoryId }),
 }));
