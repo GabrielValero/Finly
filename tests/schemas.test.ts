@@ -30,6 +30,6 @@ describe('respaldo con listas de compras', () => {
     const parsed = backupFileSchema.parse({ app: 'finly', format: 1, exportedAt: '2026-10-10T00:00:00Z', tables: empty });
     expect(parsed.tables.shopping_lists).toEqual([]);
     expect(parsed.tables.shopping_items).toEqual([]);
-    expect(backupFileSchema.safeParse({ app: 'finly', format: 3, exportedAt: 'x', tables: empty }).success).toBe(false);
+    expect(backupFileSchema.safeParse({ app: 'finly', format: 4, exportedAt: 'x', tables: empty }).success).toBe(false);
   });
 });

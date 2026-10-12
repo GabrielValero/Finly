@@ -47,6 +47,9 @@ export default function RootLayout() {
         <Stack.Screen name="list-form/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="list-item/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="list/[id]" />
+        <Stack.Screen name="debts" />
+        <Stack.Screen name="debt/[id]" />
+        <Stack.Screen name="debt-form/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="movement/[id]" />
         <Stack.Screen name="account-movements/[id]" />
         <Stack.Screen name="budget-movements/[id]" />

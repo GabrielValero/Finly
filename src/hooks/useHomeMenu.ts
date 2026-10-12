@@ -14,6 +14,7 @@ export function useHomeMenu(): MenuItem[] {
   const setSection = useUi((s) => s.setPresupuestoSection);
   return [
     { key: 'reports', label: 'Reportes', icon: 'chart', onPress: () => router.push('/reports') },
+    { key: 'debts', label: 'Deudas y préstamos', icon: 'users', onPress: () => router.push('/debts') },
     {
       key: 'lists',
       label: 'Listas de compras',

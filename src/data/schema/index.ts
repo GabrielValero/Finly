@@ -240,6 +240,51 @@ export const shoppingItems = sqliteTable(
   ],
 );
 
+export const debts = sqliteTable(
+  'debts',
+  {
+    id: text('id').primaryKey(),
+    /** owed_to_me: yo presté (me deben). i_owe: me prestaron (debo). */
+    direction: text('direction', { enum: ['owed_to_me', 'i_owe'] }).notNull(),
+    person: text('person').notNull(),
+    /** Moneda en la que se pactó la deuda; los pagos se llevan en ella. */
+    currency: currency('currency').notNull(),
+    principalMinor: integer('principal_minor').notNull(),
+    note: text('note'),
+    /** YYYY-MM-DD */
+    openedOn: text('opened_on').notNull(),
+    dueOn: text('due_on'),
+    /** Tasa Bs/USD del día en que se abrió (solo deudas en Bs): permite medir cuánto se devaluó. */
+    openRateScaled: integer('open_rate_scaled'),
+    /** Movimiento opcional que registró el préstamo en una cuenta. Sin FK: no debe bloquear borrados. */
+    transactionId: text('transaction_id'),
+    createdAt: ts('created_at').notNull(),
+    updatedAt: ts('updated_at').notNull(),
+  },
+  (t) => [
+    index('debts_direction_idx').on(t.direction),
+    check('debts_principal_positive', sql`${t.principalMinor} > 0`),
+    check('debts_open_rate_positive', sql`${t.openRateScaled} IS NULL OR ${t.openRateScaled} > 0`),
+  ],
+);
+
+export const debtPayments = sqliteTable(
+  'debt_payments',
+  {
+    id: text('id').primaryKey(),
+    debtId: text('debt_id')
+      .notNull()
+      .references(() => debts.id, { onDelete: 'cascade' }),
+    /** En la moneda de la deuda. */
+    amountMinor: integer('amount_minor').notNull(),
+    paidOn: text('paid_on').notNull(),
+    note: text('note'),
+    transactionId: text('transaction_id'),
+    updatedAt: ts('updated_at').notNull(),
+  },
+  (t) => [index('debt_payments_debt_idx').on(t.debtId), check('debt_payments_positive', sql`${t.amountMinor} > 0`)],
+);
+
 export type Account = typeof accounts.$inferSelect;
 export type NewAccount = typeof accounts.$inferInsert;
 export type Transaction = typeof transactions.$inferSelect;
@@ -248,3 +293,5 @@ export type Category = typeof categories.$inferSelect;
 export type ExchangeRate = typeof exchangeRates.$inferSelect;
 export type ShoppingList = typeof shoppingLists.$inferSelect;
 export type ShoppingItem = typeof shoppingItems.$inferSelect;
+export type Debt = typeof debts.$inferSelect;
+export type DebtPayment = typeof debtPayments.$inferSelect;
