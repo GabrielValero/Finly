@@ -128,3 +128,11 @@ export async function finalizePurchase(input: PurchaseInput): Promise<{ expenses
     return { expenses: plan.groups.length, registeredItems: done.length };
   });
 }
+
+/** Cambia la tasa con la que la lista convierte los productos en Bs. */
+export async function setListRate(id: string, mode: 'bcv' | 'manual', manualRateScaled: number | null, now: Date): Promise<void> {
+  await db
+    .update(shoppingLists)
+    .set({ rateMode: mode, manualRateScaled: mode === 'manual' ? manualRateScaled : null, updatedAt: now })
+    .where(eq(shoppingLists.id, id));
+}

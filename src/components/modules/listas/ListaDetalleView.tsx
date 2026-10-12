@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { ScrollView, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useListDetail } from '../../../hooks/useListDetail';
+import { useListRateEditor } from '../../../hooks/useListRate';
+import { ListRateSheet } from './ListRateSheet';
 import { useTheme, useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
 import { Button } from '../../shared/Button';
@@ -14,6 +16,7 @@ import { ScreenTemplate } from '../../template/ScreenTemplate';
 
 export function ListaDetalleView({ id }: { id: string }) {
   const vm = useListDetail(id);
+  const rateEditor = useListRateEditor(id);
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState('');
@@ -53,6 +56,7 @@ export function ListaDetalleView({ id }: { id: string }) {
         <Card highlight style={styles.summary}>
           <AppText variant="label" color="textMuted">{vm.kindLabel}{vm.categoryLabel ? ` · ${vm.categoryLabel}` : ''}</AppText>
           <AppText variant="display" fit>{vm.totalLabel}</AppText>
+          {vm.totalBsLabel ? <AppText variant="amountMid" color="textMuted" fit>{vm.totalBsLabel}</AppText> : null}
           <AppText variant="small" color="textMuted" numberOfLines={2}>
             {vm.pendingCount} {vm.pendingCount === 1 ? 'producto pendiente' : 'productos pendientes'}{vm.incomplete ? ` · ${vm.incomplete}` : ''}
           </AppText>
@@ -71,14 +75,18 @@ export function ListaDetalleView({ id }: { id: string }) {
               <View style={styles.col}>
                 <AppText variant="label" color="textMuted">En el carrito</AppText>
                 <AppText variant="amountMid" fit>{vm.cartLabel}</AppText>
+                {vm.cartBsLabel ? <AppText variant="caption" color="textMuted" numberOfLines={1}>{vm.cartBsLabel}</AppText> : null}
               </View>
-              <View style={styles.col}>
+              <PressableScale onPress={rateEditor.openSheet} style={styles.col} accessibilityLabel="Cambiar tasa">
                 <AppText variant="label" color="textMuted">Tasa</AppText>
                 <AppText variant="small" numberOfLines={1}>{vm.rateLabel}</AppText>
-              </View>
+                <AppText variant="caption" color="accent">Cambiar</AppText>
+              </PressableScale>
             </View>
           ) : (
-            <AppText variant="small" color="textMuted">Tasa: {vm.rateLabel}</AppText>
+            <PressableScale onPress={rateEditor.openSheet} accessibilityLabel="Cambiar tasa">
+              <AppText variant="small" color="textMuted">Tasa: {vm.rateLabel} · <AppText variant="small" color="accent">Cambiar</AppText></AppText>
+            </PressableScale>
           )}
           {vm.budgetHint ? <AppText variant="small" color="textMuted">{vm.budgetHint}</AppText> : null}
         </Card>
@@ -123,6 +131,7 @@ export function ListaDetalleView({ id }: { id: string }) {
         </View>
       ) : null}
 
+      <ListRateSheet editor={rateEditor} />
       <SheetModal visible={vm.purchaseOpen} title="REGISTRAR COMPRA" onClose={vm.closePurchase}>
         {vm.purchase ? (
           <>

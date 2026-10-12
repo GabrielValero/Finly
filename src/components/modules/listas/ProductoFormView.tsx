@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useItemForm } from '../../../hooks/useItemForm';
+import { useListRateEditor } from '../../../hooks/useListRate';
+import { ListRateSheet } from './ListRateSheet';
 import { UNITS, UNIT_LABEL } from '../../../utils/shopping';
 import { useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
@@ -20,6 +22,7 @@ import { ScreenTemplate } from '../../template/ScreenTemplate';
 
 export function ProductoFormView({ id, listId }: { id: string; listId: string }) {
   const vm = useItemForm(id, listId);
+  const rateEditor = useListRateEditor(listId);
   const insets = useSafeAreaInsets();
   const [picker, setPicker] = useState(false);
   const [keypad, setKeypad] = useState(false);
@@ -59,7 +62,13 @@ export function ProductoFormView({ id, listId }: { id: string; listId: string })
           <AppText variant="heading">{vm.priceLabel}</AppText>
         </PressableScale>
         {vm.lineLabel ? <AppText variant="label" color="accent">{vm.lineLabel}</AppText> : null}
-        {vm.currency === 'VES' ? <AppText variant="small" color="textMuted">El total de la lista siempre se muestra en USD, convertido con la tasa de la lista.</AppText> : null}
+        {vm.currency === 'VES' ? (
+          <PressableScale onPress={rateEditor.openSheet} accessibilityLabel="Cambiar tasa">
+            <AppText variant="small" color="textMuted">
+              Se convierte a USD con {rateEditor.label}. <AppText variant="small" color="accent">Cambiar tasa</AppText>
+            </AppText>
+          </PressableScale>
+        ) : null}
 
         <PressableScale onPress={() => setPicker(true)} style={styles.box}>
           <AppText variant="label" color="textMuted">Categoría</AppText>
@@ -112,6 +121,7 @@ export function ProductoFormView({ id, listId }: { id: string; listId: string })
           vm.openNewSubcategory(parentId);
         }}
       />
+      <ListRateSheet editor={rateEditor} />
       <SheetModal visible={keypad} title={`${priceTitle.toUpperCase()} · ${vm.currency === 'USD' ? 'USD' : 'BS'}`} onClose={() => setKeypad(false)}>
         <AppText variant="display" align="center">{vm.price.display}</AppText>
         <Keypad onKey={vm.price.press} />

@@ -109,6 +109,17 @@ export function useTransferForm() {
     }
   }, [from, to, outMinor, inMinor, details.concept, details.occurredAt, category, router]);
 
+  // Saldo actual y cómo quedará con el monto tecleado (para ver de un vistazo si alcanza).
+  const balanceInfo = (a: typeof from, deltaMinor: number) => {
+    if (!a) return null;
+    const after = a.balanceMinor + deltaMinor;
+    return {
+      current: `Saldo ${formatMoney(a.balanceMinor, a.currency)}`,
+      after: deltaMinor === 0 ? null : `Quedará ${formatMoney(after, a.currency)}`,
+      negative: after < 0 && deltaMinor !== 0,
+    };
+  };
+
   const label = (a: typeof from) => (a ? `${a.name} · ${a.currency}` : 'Elige una cuenta');
   const money = (a: typeof from, display: string) => (a?.currency === 'VES' ? `Bs ${display}` : `$${display}`);
 
@@ -118,6 +129,8 @@ export function useTransferForm() {
     toLabel: label(to),
     fromId: from?.id ?? null,
     toId: to?.id ?? null,
+    fromBalance: balanceInfo(from, -outMinor),
+    toBalance: balanceInfo(to, inMinor),
     fromAmount: money(from, outBuf.display),
     toAmount: money(to, sameCurrency ? outBuf.display : inBuf.display),
     active: effectiveActive,

@@ -3,12 +3,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { deleteItem, insertItem, updateItem } from '../data/repos/shopping';
 import { categoryPath } from '../utils/categories';
-import { formatMoney, type Currency } from '../utils/money';
-import { UNIT_LABEL, formatQuantity, lineNative, parseQuantity, type ShopUnit } from '../utils/shopping';
+import { formatMoney, vesToUsd, type Currency } from '../utils/money';
+import { UNIT_LABEL, formatQuantity, lineNative, parseQuantity, resolveListRate, type ShopUnit } from '../utils/shopping';
 import { useAmountBuffer } from './useAmountBuffer';
 import { useCreatedCategory } from './useCreatedCategory';
 import { useCategoryRows } from './useData';
-import { useShoppingItems, useShoppingList } from './useShopping';
+import { useRateRows, useShoppingItems, useShoppingList } from './useShopping';
 
 type Priority = 'low' | 'medium' | 'high';
 
@@ -18,6 +18,7 @@ export function useItemForm(id: string, listId: string) {
   const list = useShoppingList(listId);
   const items = useShoppingItems(listId);
   const categories = useCategoryRows();
+  const rates = useRateRows();
   const existing = isNew ? null : (items.find((i) => i.id === id) ?? null);
 
   const price = useAmountBuffer();
@@ -117,7 +118,10 @@ export function useItemForm(id: string, listId: string) {
       if (price.minor <= 0) return null;
       try {
         const total = lineNative({ priceMinor: price.minor, quantityMilli: parseQuantity(quantity) });
-        return total === null ? null : `Total del producto: ${formatMoney(total, currency)}`;
+        if (total === null) return null;
+        const rate = list ? resolveListRate(list, rates) : null;
+        const usd = currency === 'VES' && rate ? ` ≈ ${formatMoney(vesToUsd(total, rate.rateScaled), 'USD')}` : '';
+        return `Total del producto: ${formatMoney(total, currency)}${usd}`;
       } catch {
         return null;
       }

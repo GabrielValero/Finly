@@ -29,6 +29,7 @@ export function TransferenciaView() {
     boxActive: { borderColor: t.colors.accent, borderWidth: 2 },
     boxHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: t.space[12] },
     selector: { flexDirection: 'row', alignItems: 'center', gap: t.space[4], flexShrink: 1, minWidth: 0 },
+    balanceRow: { flexDirection: 'row', justifyContent: 'space-between', gap: t.space[8] },
     swapRow: { alignItems: 'center', marginVertical: -t.space[4] },
     swap: { width: 36, height: 36, borderRadius: t.radius.full, backgroundColor: t.colors.surface2, alignItems: 'center', justifyContent: 'center' },
     rateBox: { backgroundColor: t.colors.surface2, borderRadius: t.radius[16], padding: t.space[16], gap: t.space[4] },
@@ -67,6 +68,12 @@ export function TransferenciaView() {
               </PressableScale>
             </View>
             <AppText variant="display" fit>{vm.fromAmount}</AppText>
+            {vm.fromBalance ? (
+              <View style={styles.balanceRow}>
+                <AppText variant="caption" color="textMuted">{vm.fromBalance.current}</AppText>
+                {vm.fromBalance.after ? <AppText variant="caption" color={vm.fromBalance.negative ? 'expense' : 'textMuted'}>{vm.fromBalance.after}</AppText> : null}
+              </View>
+            ) : null}
           </PressableScale>
 
           <View style={styles.swapRow}>
@@ -82,6 +89,12 @@ export function TransferenciaView() {
               </PressableScale>
             </View>
             <AppText variant="display" fit>{vm.toAmount}</AppText>
+            {vm.toBalance ? (
+              <View style={styles.balanceRow}>
+                <AppText variant="caption" color="textMuted">{vm.toBalance.current}</AppText>
+                {vm.toBalance.after ? <AppText variant="caption" color="textMuted">{vm.toBalance.after}</AppText> : null}
+              </View>
+            ) : null}
             {vm.convertHint ? <AppText variant="caption" color="textMuted">{vm.convertHint}</AppText> : null}
           </PressableScale>
 
