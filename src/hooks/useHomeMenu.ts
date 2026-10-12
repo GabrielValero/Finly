@@ -13,6 +13,7 @@ export function useHomeMenu(): MenuItem[] {
   const router = useRouter();
   const setSection = useUi((s) => s.setPresupuestoSection);
   return [
+    { key: 'reports', label: 'Reportes', icon: 'chart', onPress: () => router.push('/reports') },
     {
       key: 'lists',
       label: 'Listas de compras',
