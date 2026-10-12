@@ -202,6 +202,18 @@ describe('listas de compras', () => {
     expect((await db.select().from(shoppingItems).where(eq(shoppingItems.id, id)))[0]?.purchasedAt).toBeNull();
   });
 
+  it('setListRate alterna entre BCV y manual respetando el CHECK', async () => {
+    const { insertList, setListRate } = await import('../src/data/repos/shopping');
+    const { shoppingLists } = await import('../src/data/schema');
+    const { eq } = await import('drizzle-orm');
+    const now = new Date();
+    const id = await insertList({ name: 'Tasa', kind: 'market', categoryId: 'c', limitMinor: null, rateMode: 'bcv', manualRateScaled: null }, now);
+    await setListRate(id, 'manual', 880_000_000, now);
+    expect((await db.select().from(shoppingLists).where(eq(shoppingLists.id, id)))[0]).toMatchObject({ rateMode: 'manual', manualRateScaled: 880_000_000 });
+    await setListRate(id, 'bcv', 880_000_000, now); // el valor manual se descarta
+    expect((await db.select().from(shoppingLists).where(eq(shoppingLists.id, id)))[0]).toMatchObject({ rateMode: 'bcv', manualRateScaled: null });
+  });
+
   it('borrar la lista borra sus productos', async () => {
     const { insertList, insertItem, deleteList } = await import('../src/data/repos/shopping');
     const { shoppingItems } = await import('../src/data/schema');

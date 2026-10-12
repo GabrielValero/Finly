@@ -177,6 +177,9 @@ export function useListDetail(id: string) {
     categoryLabel: list ? labelOf(list.categoryId) : null,
     totalLabel: formatMoney(view?.totals.totalUsd ?? 0, 'USD'),
     cartLabel: formatMoney(view?.totals.checkedUsd ?? 0, 'USD'),
+    // Equivalente en Bs con la tasa de la lista (null si no hay tasa).
+    totalBsLabel: rate ? `≈ ${formatMoney(usdToVes(view?.totals.totalUsd ?? 0, rate.rateScaled), 'VES')}` : null,
+    cartBsLabel: rate ? `≈ ${formatMoney(usdToVes(view?.totals.checkedUsd ?? 0, rate.rateScaled), 'VES')}` : null,
     checkedCount: view?.totals.checkedCount ?? 0,
     pendingCount: view?.totals.pendingCount ?? 0,
     limit: list?.limitMinor ? { ...view!.limit, label: formatMoney(list.limitMinor, 'USD'), remaining: formatMoney(Math.abs(view!.limit.remainingMinor), 'USD') } : null,
