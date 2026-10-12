@@ -1,10 +1,11 @@
-import { and, desc, eq, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, isNotNull, isNull, lt, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
 import { useMemo } from 'react';
 import { db } from '../data/db';
 import { monthTransactionsQuery, transactionByIdQuery } from '../data/queries';
 import { accounts, budgetItems, budgets, categories, exchangeRates, tags, transactions, transactionTags } from '../data/schema';
 import { usePreferences } from '../store/preferences';
+import { monthBounds } from '../utils/dates';
 import { pickLatestRate, type RateRecord } from '../utils/rates';
 import { useDbQuery } from './useDbQuery';
 
@@ -90,6 +91,22 @@ export function useCategoryUsage(): Map<string, number> {
 
 export function useTags() {
   return useDbQuery(() => db.select().from(tags).orderBy(tags.name), ['tags']);
+}
+
+/** Pares (movimiento, etiqueta) de los movimientos vivos de un mes. */
+export function useMonthTagLinks(month: string) {
+  return useDbQuery(
+    () => {
+      const { from, to } = monthBounds(month);
+      return db
+        .select({ transactionId: transactionTags.transactionId, tagId: transactionTags.tagId })
+        .from(transactionTags)
+        .innerJoin(transactions, eq(transactions.id, transactionTags.transactionId))
+        .where(and(gte(transactions.occurredAt, from), lt(transactions.occurredAt, to), isNull(transactions.deletedAt)));
+    },
+    ['transaction_tags', 'transactions'],
+    [month],
+  );
 }
 
 export function useTagsOfTransaction(id: string) {

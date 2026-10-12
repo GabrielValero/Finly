@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
+import { useUi } from '../../../store/ui';
 import { usePresupuestoScreen, type BudgetRowVm } from '../../../hooks/usePresupuestoScreen';
 import { useTheme, useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
@@ -19,7 +20,8 @@ export function PresupuestoView() {
   const vm = usePresupuestoScreen();
   const theme = useTheme();
   const [monthPicker, setMonthPicker] = useState(false);
-  const [section, setSection] = useState<'budget' | 'lists'>('budget');
+  const section = useUi((s) => s.presupuestoSection);
+  const setSection = useUi((s) => s.setPresupuestoSection);
   const styles = useThemedStyles((t) => ({
     header: { height: 56, paddingHorizontal: t.space[16], flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     pill: { height: 32, paddingHorizontal: t.space[12], borderRadius: t.radius.full, backgroundColor: t.colors.surface, flexDirection: 'row', alignItems: 'center', gap: t.space[8] },

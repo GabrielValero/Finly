@@ -7,7 +7,8 @@ import { formatMinor, formatMoney, formatRate } from '../utils/money';
 import { portfolioTotal } from '../utils/portfolio';
 import { buildMovementGroups } from '../utils/movementRows';
 import { monthTotals } from '../utils/summary';
-import { useAccountsWithBalance, useLatestRate, useMonthTransactions, type TxRow } from './useData';
+import { filterByTag, tagsInUse } from '../utils/tagFilter';
+import { useAccountsWithBalance, useLatestRate, useMonthTagLinks, useMonthTransactions, useTags, type TxRow } from './useData';
 
 export type { MovementGroupVm, MovementRowVm } from '../utils/movementRows';
 
@@ -23,8 +24,20 @@ export function useMovementsScreen() {
   const [accountFilter, setAccountFilter] = useState<string | null>(null);
   const filterAccount = accounts.find((a) => a.id === accountFilter) ?? null;
   const filterId = filterAccount?.id ?? null;
-  const rows = useMemo(() => (filterId ? allRows.filter((r) => r.accountId === filterId) : allRows), [allRows, filterId]);
-  const previousRows = useMemo(() => (filterId ? allPreviousRows.filter((r) => r.accountId === filterId) : allPreviousRows), [allPreviousRows, filterId]);
+  /** null = todas las etiquetas. */
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const allTags = useTags();
+  const tagLinks = useMonthTagLinks(month);
+  const previousTagLinks = useMonthTagLinks(addMonths(month, -1));
+  const byAccount = useMemo(() => (filterId ? allRows.filter((r) => r.accountId === filterId) : allRows), [allRows, filterId]);
+  const tagChips = useMemo(() => tagsInUse(allTags, tagLinks, new Set(byAccount.map((r) => r.id))), [allTags, tagLinks, byAccount]);
+  const filterTag = tagFilter ? (allTags.find((t) => t.id === tagFilter) ?? null) : null;
+  const tagId = filterTag?.id ?? null;
+  const rows = useMemo(() => filterByTag(byAccount, tagLinks, tagId), [byAccount, tagLinks, tagId]);
+  const previousRows = useMemo(
+    () => filterByTag(filterId ? allPreviousRows.filter((r) => r.accountId === filterId) : allPreviousRows, previousTagLinks, tagId),
+    [allPreviousRows, filterId, previousTagLinks, tagId],
+  );
   const rate = useLatestRate();
 
   const today = dayOf(toLocalIso(new Date()));
@@ -66,6 +79,10 @@ export function useMovementsScreen() {
       accountFilter: filterId,
       setAccountFilter,
       filterName: filterAccount?.name ?? null,
+      tagChips: [{ id: null as string | null, name: 'Todas', count: 0 }, ...tagChips.map((t) => ({ id: t.id as string | null, name: t.name, count: t.count }))],
+      tagFilter: tagId,
+      setTagFilter,
+      tagFilterName: filterTag?.name ?? null,
       deltaPositive: delta === null ? true : delta >= 0,
       expenseLabel: formatMoney(totals.expenseUsdMinor, 'USD'),
       incomeLabel: formatMoney(totals.incomeUsdMinor, 'USD'),
@@ -80,5 +97,5 @@ export function useMovementsScreen() {
       openNewAccount: () => router.push('/account/new'),
       openDetail: (id: string) => router.push({ pathname: '/movement/[id]', params: { id } }),
     };
-  }, [rows, previousRows, allRows, accounts, filterAccount, filterId, rate, month, today, currentMonth, setSelectedMonth, router]);
+  }, [rows, previousRows, allRows, accounts, filterAccount, filterId, tagChips, tagId, filterTag, rate, month, today, currentMonth, setSelectedMonth, router]);
 }
