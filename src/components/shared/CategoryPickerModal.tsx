@@ -1,3 +1,4 @@
+import { ModalSafeArea } from './ModalSafeArea';
 import { Modal, ScrollView, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCategoryPicker } from '../../hooks/useCategoryPicker';
@@ -30,8 +31,8 @@ interface Props {
 /** Selector de categorías a pantalla completa: búsqueda, grupos que se abren y alta de categorías/subcategorías. */
 export function CategoryPickerModal({ visible, ...rest }: Props) {
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={rest.onClose} statusBarTranslucent>
-      {visible ? <PickerBody {...rest} /> : null}
+    <Modal visible={visible} animationType="slide" onRequestClose={rest.onClose} statusBarTranslucent navigationBarTranslucent>
+      <ModalSafeArea>{visible ? <PickerBody {...rest} /> : null}</ModalSafeArea>
     </Modal>
   );
 }

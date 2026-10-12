@@ -140,6 +140,8 @@ export function useItemForm(id: string, listId: string) {
     openNewSubcategory: (parentId: string) => router.push({ pathname: '/category/[id]', params: { id: 'new', kind: 'expense', parentId, pick: '1' } }),
     priority,
     setPriority,
+    /** Prioridad o nota ya cargadas: la sección «Más opciones» arranca abierta. */
+    hasExtras: priority !== null || note.trim() !== '',
     note,
     setNote,
     canSave,

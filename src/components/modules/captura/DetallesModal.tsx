@@ -9,6 +9,7 @@ import { CalendarSheet } from '../../shared/CalendarSheet';
 import { Chip } from '../../shared/Chip';
 import { Field } from '../../shared/Field';
 import { Icon } from '../../shared/Icon';
+import { ModalSafeArea } from '../../shared/ModalSafeArea';
 import { PressableScale } from '../../shared/PressableScale';
 
 interface TagVm {
@@ -26,7 +27,17 @@ interface Props {
 }
 
 /** Concepto, fecha/hora y etiquetas (pantalla 12 del diseño). */
-export function DetallesModal({ visible, onClose, details, tags }: Props) {
+export function DetallesModal({ visible, ...rest }: Props) {
+  return (
+    <Modal visible={visible} animationType="slide" onRequestClose={rest.onClose} statusBarTranslucent navigationBarTranslucent>
+      <ModalSafeArea>
+        <DetallesBody {...rest} />
+      </ModalSafeArea>
+    </Modal>
+  );
+}
+
+function DetallesBody({ onClose, details, tags }: Omit<Props, 'visible'>) {
   const insets = useSafeAreaInsets();
   const [newTag, setNewTag] = useState('');
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -51,7 +62,6 @@ export function DetallesModal({ visible, onClose, details, tags }: Props) {
   };
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose} statusBarTranslucent>
       <View style={styles.root}>
         <View style={styles.top}>
           <PressableScale onPress={onClose} style={styles.round} accessibilityLabel="Cerrar"><Icon name="close" size={20} /></PressableScale>
@@ -106,6 +116,5 @@ export function DetallesModal({ visible, onClose, details, tags }: Props) {
           onClose={() => setCalendarOpen(false)}
         />
       </View>
-    </Modal>
   );
 }
