@@ -12,7 +12,8 @@ const ROWS: KeypadKey[][] = [
   [',', '0', 'back'],
 ];
 
-export function Keypad({ onKey }: { onKey: (key: KeypadKey) => void }) {
+/** `allowNegative` añade la tecla ± junto a la coma (solo para montos con signo, como el saldo de una cuenta). */
+export function Keypad({ onKey, allowNegative = false }: { onKey: (key: KeypadKey) => void; allowNegative?: boolean }) {
   const styles = useThemedStyles((t) => ({
     grid: { gap: t.space[8] },
     row: { flexDirection: 'row', gap: t.space[8] },
@@ -20,15 +21,18 @@ export function Keypad({ onKey }: { onKey: (key: KeypadKey) => void }) {
   }));
   return (
     <View style={styles.grid}>
-      {ROWS.map((row) => (
+      {ROWS.map((base, i) => {
+        const row = allowNegative && i === ROWS.length - 1 ? (['neg', ...base] as KeypadKey[]) : base;
+        return (
         <View key={row.join('')} style={styles.row}>
           {row.map((key) => (
-            <PressableScale key={key} onPress={() => onKey(key)} style={styles.key} accessibilityLabel={key === 'back' ? 'Borrar' : key}>
-              {key === 'back' ? <Icon name="backspace" size={24} /> : <AppText variant="amountMid">{key}</AppText>}
+            <PressableScale key={key} onPress={() => onKey(key)} style={styles.key} accessibilityLabel={key === 'back' ? 'Borrar' : key === 'neg' ? 'Cambiar signo' : key}>
+              {key === 'back' ? <Icon name="backspace" size={24} /> : <AppText variant="amountMid">{key === 'neg' ? '±' : key}</AppText>}
             </PressableScale>
           ))}
         </View>
-      ))}
+        );
+      })}
     </View>
   );
 }
