@@ -1,11 +1,20 @@
 import { parseAmount, parseRate } from './money';
 
-export type KeypadKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | ',' | 'back';
+export type KeypadKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | ',' | 'back' | 'neg';
 
 const MAX_INTEGER_DIGITS = 12;
 
-/** Aplica una tecla al buffer (texto crudo: dígitos y a lo sumo una coma, máx. `maxDecimals` decimales). */
+/** Aplica una tecla al buffer (texto crudo: signo "-" opcional, dígitos y a lo sumo una coma, máx. `maxDecimals` decimales). */
 export function pressKey(buffer: string, key: KeypadKey, maxDecimals = 2): string {
+  const negative = buffer.startsWith('-');
+  const magnitude = negative ? buffer.slice(1) : buffer;
+  if (key === 'neg') return negative ? magnitude : `-${magnitude}`;
+  if (key === 'back' && negative && magnitude === '') return '';
+  const next = pressMagnitude(magnitude, key, maxDecimals);
+  return negative ? `-${next}` : next;
+}
+
+function pressMagnitude(buffer: string, key: Exclude<KeypadKey, 'neg'>, maxDecimals: number): string {
   if (key === 'back') return buffer.slice(0, -1);
 
   const commaAt = buffer.indexOf(',');
@@ -23,16 +32,22 @@ export function pressKey(buffer: string, key: KeypadKey, maxDecimals = 2): strin
 
 /** Texto para mostrar: miles con punto, coma y decimales tal cual se han tecleado. */
 export function bufferToDisplay(buffer: string): string {
-  if (buffer === '') return '0';
-  const [integer = '0', decimals] = buffer.split(',');
+  const sign = buffer.startsWith('-') ? '-' : '';
+  const magnitude = sign ? buffer.slice(1) : buffer;
+  if (magnitude === '') return `${sign}0`;
+  const [integer = '0', decimals] = magnitude.split(',');
   const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  return decimals === undefined ? grouped : `${grouped},${decimals}`;
+  return `${sign}${decimals === undefined ? grouped : `${grouped},${decimals}`}`;
 }
 
 /** Buffer -> unidades menores (0 si está vacío). */
 export function bufferToMinor(buffer: string): number {
-  const clean = buffer.endsWith(',') ? buffer.slice(0, -1) : buffer;
-  return clean === '' ? 0 : parseAmount(clean);
+  const negative = buffer.startsWith('-');
+  const magnitude = negative ? buffer.slice(1) : buffer;
+  const clean = magnitude.endsWith(',') ? magnitude.slice(0, -1) : magnitude;
+  if (clean === '') return 0;
+  const minor = parseAmount(clean);
+  return negative && minor > 0 ? -minor : minor;
 }
 
 /** Buffer -> tasa escalada (0 si está vacío o es cero). */
@@ -44,9 +59,11 @@ export function bufferToRate(buffer: string): number {
 
 /** Unidades menores -> buffer del teclado ("12,5", "7"). Inverso de bufferToMinor. */
 export function minorToBuffer(minor: number): string {
-  const whole = Math.floor(minor / 100);
-  const cents = (minor % 100).toString().padStart(2, '0').replace(/0+$/, '');
-  return cents === '' ? String(whole) : `${whole},${cents}`;
+  const abs = Math.abs(minor);
+  const whole = Math.floor(abs / 100);
+  const cents = (abs % 100).toString().padStart(2, '0').replace(/0+$/, '');
+  const text = cents === '' ? String(whole) : `${whole},${cents}`;
+  return minor < 0 ? `-${text}` : text;
 }
 
 /** Tasa escalada -> buffer del teclado ("875,6505"). Inverso de bufferToRate. */

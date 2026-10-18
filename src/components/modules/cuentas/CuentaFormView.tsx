@@ -71,7 +71,7 @@ export function CuentaFormView({ id }: { id?: string }) {
 
         <PressableScale onPress={() => setKeypad(true)} style={styles.balanceBox}>
           <AppText variant="label" color="textMuted">Saldo actual de la cuenta</AppText>
-          <AppText variant="balance" fit>{vm.balanceDisplay ?? `${vm.currency === 'USD' ? '$ ' : 'Bs '}${vm.balance.display}`}</AppText>
+          <AppText variant="balance" fit>{`${vm.currency === 'USD' ? '$ ' : 'Bs '}${vm.balance.display}`}</AppText>
         </PressableScale>
 
         <View style={styles.toggle}>
@@ -107,7 +107,7 @@ export function CuentaFormView({ id }: { id?: string }) {
 
       <SheetModal visible={keypad} title="SALDO ACTUAL" onClose={() => setKeypad(false)}>
         <AppText variant="display" align="center">{vm.balance.display}</AppText>
-        <Keypad onKey={vm.pressBalance} />
+        <Keypad onKey={vm.pressBalance} allowNegative />
         <Button label="Listo" onPress={() => setKeypad(false)} />
       </SheetModal>
     </ScreenTemplate>

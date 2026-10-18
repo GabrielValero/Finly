@@ -16,7 +16,7 @@ export function useAccountForm(id?: string) {
   const existing = id ? (accounts.find((a) => a.id === id) ?? null) : null;
   const isEdit = id !== undefined;
 
-  const balance = useAmountBuffer();
+  const balance = useAmountBuffer(2, true);
   const [name, setName] = useState('');
   const [currency, setCurrency] = useState<Currency>('USD');
   const [icon, setIcon] = useState('cash');
@@ -33,7 +33,7 @@ export function useAccountForm(id?: string) {
     setCurrency(existing.currency);
     setIcon(existing.icon);
     setIncludeInTotal(existing.includeInTotal);
-    setBalanceFromExisting(Math.max(existing.balanceMinor, 0));
+    setBalanceFromExisting(existing.balanceMinor);
     setHydrated(true);
   }, [hydrated, existing, setBalanceFromExisting]);
 
@@ -99,8 +99,6 @@ export function useAccountForm(id?: string) {
     );
   };
 
-  const negativeBalance = isEdit && existing !== null && existing.balanceMinor < 0 && !balanceTouched;
-
   return {
     isEdit,
     notFound: isEdit && accounts.length > 0 && !existing,
@@ -109,8 +107,7 @@ export function useAccountForm(id?: string) {
     name, setName, currency, setCurrency, icon, setIcon, includeInTotal, setIncludeInTotal,
     currencyLocked,
     balance, pressBalance,
-    balanceDisplay: negativeBalance && existing ? formatMoney(existing.balanceMinor, existing.currency) : null,
-    balanceLabel: negativeBalance && existing ? formatMoney(existing.balanceMinor, existing.currency) : formatMoney(balance.minor, currency),
+    balanceLabel: formatMoney(balance.minor, currency),
     previewName: trimmed || (isEdit ? 'Cuenta' : 'Nueva cuenta'),
     canSave: hydrated && trimmed.length > 0 && !duplicate && !saving,
     error: duplicate ? 'Ya tienes una cuenta con ese nombre' : error,

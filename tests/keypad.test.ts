@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { rateToBuffer, bufferToDisplay, bufferToMinor, bufferToRate, pressKey, type KeypadKey } from '../src/utils/keypad';
+import { minorToBuffer, rateToBuffer, bufferToDisplay, bufferToMinor, bufferToRate, pressKey, type KeypadKey } from '../src/utils/keypad';
 
 const type = (keys: KeypadKey[]) => keys.reduce((b, k) => pressKey(b, k), '');
 
@@ -44,5 +44,41 @@ describe('rateToBuffer', () => {
     expect(rateToBuffer(875_650_500)).toBe('875,6505');
     expect(rateToBuffer(36_000_000)).toBe('36');
     expect(bufferToRate(rateToBuffer(875_650_500))).toBe(875_650_500);
+  });
+});
+
+describe('monto negativo (tecla ±)', () => {
+  const keys = (list: KeypadKey[]) => list.reduce((b, k) => pressKey(b, k), '');
+
+  it('alterna el signo en cualquier momento y se conserva al teclear', () => {
+    expect(keys(['neg'])).toBe('-');
+    expect(keys(['5', '0', 'neg'])).toBe('-50');
+    expect(keys(['5', '0', 'neg', 'neg'])).toBe('50');
+    expect(keys(['neg', '1', '2', ',', '5'])).toBe('-12,5');
+    expect(keys(['neg', '0', '7'])).toBe('-7');
+  });
+
+  it('borrar quita primero los dígitos y luego el signo', () => {
+    expect(keys(['neg', '5', 'back'])).toBe('-');
+    expect(keys(['neg', '5', 'back', 'back'])).toBe('');
+  });
+
+  it('el límite de dígitos no cuenta el signo', () => {
+    const digits = Array<KeypadKey>(14).fill('9');
+    expect(keys(['neg', ...digits])).toBe(`-${'9'.repeat(12)}`);
+  });
+
+  it('muestra y convierte a unidades menores con signo', () => {
+    expect(bufferToDisplay('-4500,5')).toBe('-4.500,5');
+    expect(bufferToDisplay('-')).toBe('-0');
+    expect(bufferToMinor('-12,5')).toBe(-1250);
+    expect(bufferToMinor('-12,')).toBe(-1200);
+    expect(bufferToMinor('-')).toBe(0);
+    expect(Object.is(bufferToMinor('-0'), 0)).toBe(true);
+  });
+
+  it('minorToBuffer es inverso con negativos', () => {
+    for (const m of [-1, -1250, -700, 0, 1250]) expect(bufferToMinor(minorToBuffer(m))).toBe(m);
+    expect(minorToBuffer(-1250)).toBe('-12,5');
   });
 });
