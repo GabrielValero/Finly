@@ -15,12 +15,14 @@ import { PressableScale } from '../../shared/PressableScale';
 import { RowMovimiento } from '../../shared/RowMovimiento';
 import { SheetModal } from '../../shared/SheetModal';
 import { Button } from '../../shared/Button';
+import { CalculadoraSheet } from '../calculadora/CalculadoraSheet';
 import { ScreenTemplate } from '../../template/ScreenTemplate';
 
 export function MovimientosView() {
   const vm = useMovementsScreen();
   const [monthPicker, setMonthPicker] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [calcOpen, setCalcOpen] = useState(false);
   const menu = useHomeMenu();
   const styles = useThemedStyles((t) => ({
     scroll: { paddingHorizontal: t.space[16], paddingBottom: 120, gap: t.space[12] },
@@ -28,6 +30,7 @@ export function MovimientosView() {
     left: { flexDirection: 'row', alignItems: 'center', gap: t.space[12] },
     month: { flexDirection: 'row', alignItems: 'center', gap: t.space[8] },
     hamburger: { width: 36, height: 36, borderRadius: t.radius.full, backgroundColor: t.colors.surface, alignItems: 'center', justifyContent: 'center' },
+    right: { flexDirection: 'row', alignItems: 'center', gap: t.space[8] },
     pill: { height: 28, paddingHorizontal: t.space[12], borderRadius: t.radius.full, backgroundColor: t.colors.surface, justifyContent: 'center' },
     balance: { gap: t.space[8] },
     divider: { height: 1, backgroundColor: t.colors.border, marginVertical: t.space[8] },
@@ -51,9 +54,14 @@ export function MovimientosView() {
               <Icon name="chevronDown" size={16} color="textMuted" />
             </PressableScale>
           </View>
-          <PressableScale onPress={vm.openRate} style={styles.pill} accessibilityLabel="Cambiar tasa">
-            <AppText variant="caption">{vm.rateLabel}</AppText>
-          </PressableScale>
+          <View style={styles.right}>
+            <PressableScale onPress={vm.openRate} style={styles.pill} accessibilityLabel="Cambiar tasa">
+              <AppText variant="caption">{vm.rateLabel}</AppText>
+            </PressableScale>
+            <PressableScale onPress={() => setCalcOpen(true)} style={styles.hamburger} accessibilityLabel="Calculadora de divisas">
+              <Icon name="calculator" size={20} />
+            </PressableScale>
+          </View>
         </View>
 
         <Card>
@@ -125,6 +133,7 @@ export function MovimientosView() {
       {vm.hasAccounts ? <Fab onPress={vm.openCapture} /> : null}
 
       <MenuDrawer visible={menuOpen} items={menu} onClose={() => setMenuOpen(false)} />
+      <CalculadoraSheet visible={calcOpen} onClose={() => setCalcOpen(false)} />
       <SheetModal visible={monthPicker} title="MES" onClose={() => setMonthPicker(false)}>
         <OptionList
           options={vm.months}
