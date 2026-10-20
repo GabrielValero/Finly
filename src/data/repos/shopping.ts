@@ -45,6 +45,7 @@ export interface ItemFields {
   unit: ShopUnit;
   priceMinor: number | null;
   priceCurrency: Currency;
+  taxable: boolean;
   categoryId: string | null;
   priority: 'low' | 'medium' | 'high' | null;
   note: string | null;

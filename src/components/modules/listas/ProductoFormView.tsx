@@ -16,6 +16,7 @@ import { Keypad } from '../../shared/Keypad';
 import { OptionList } from '../../shared/OptionList';
 import { PressableScale } from '../../shared/PressableScale';
 import { Segmented } from '../../shared/Segmented';
+import { SwitchRow } from '../../shared/SwitchRow';
 import { SettingsRow } from '../../shared/SettingsRow';
 import { SheetModal } from '../../shared/SheetModal';
 import { ScreenTemplate } from '../../template/ScreenTemplate';
@@ -81,6 +82,7 @@ export function ProductoFormView({ id, listId }: { id: string; listId: string })
           <AppText variant="label" color="textMuted">{priceTitle} · {vm.currency === 'USD' ? 'USD' : 'Bs'}</AppText>
           <AppText variant="heading">{vm.priceLabel}</AppText>
         </PressableScale>
+        <SwitchRow label="Lleva IVA (16 %)" hint={vm.taxable ? 'El precio es SIN IVA; se suma el 16 % al total.' : undefined} value={vm.taxable} onChange={vm.setTaxable} />
         {vm.lineLabel ? <AppText variant="label" color="accent">{vm.lineLabel}</AppText> : null}
         {vm.currency === 'VES' ? (
           <PressableScale onPress={rateEditor.openSheet} accessibilityLabel="Cambiar tasa">

@@ -11,6 +11,7 @@ import { usdEquivalent } from '../utils/transactions';
 import {
   LIST_KIND_LABEL,
   PRIORITY_LABEL,
+  IVA_LABEL,
   describePrice,
   formatQuantityUnit,
   lineUsd,
@@ -82,7 +83,7 @@ export function useListDetail(id: string) {
       return {
         id: i.id,
         name: i.name,
-        detail: [price, own].filter(Boolean).join(' · '),
+        detail: [price, i.taxable ? `+IVA ${IVA_LABEL}` : null, own].filter(Boolean).join(' · '),
         amount: usd === null ? (i.priceMinor === null ? '—' : 'Sin tasa') : formatMoney(usd, 'USD'),
         checked: i.checked,
         purchased: i.purchasedAt !== null,
@@ -181,6 +182,7 @@ export function useListDetail(id: string) {
     totalBsLabel: rate ? `≈ ${formatMoney(usdToVes(view?.totals.totalUsd ?? 0, rate.rateScaled), 'VES')}` : null,
     cartBsLabel: rate ? `≈ ${formatMoney(usdToVes(view?.totals.checkedUsd ?? 0, rate.rateScaled), 'VES')}` : null,
     checkedCount: view?.totals.checkedCount ?? 0,
+    ivaLabel: view && view.totals.ivaUsd > 0 ? `Incluye IVA ${IVA_LABEL}: ${formatMoney(view.totals.ivaUsd, 'USD')}` : null,
     pendingCount: view?.totals.pendingCount ?? 0,
     limit: list?.limitMinor ? { ...view!.limit, label: formatMoney(list.limitMinor, 'USD'), remaining: formatMoney(Math.abs(view!.limit.remainingMinor), 'USD') } : null,
     incomplete: view ? [view.totals.unpricedCount ? `${view.totals.unpricedCount} sin precio` : null, view.totals.unconvertedCount ? `${view.totals.unconvertedCount} en Bs sin tasa` : null].filter((x): x is string => x !== null).join(' · ') : '',
@@ -201,7 +203,7 @@ export function useListDetail(id: string) {
     quickAdd: (name: string) => {
       const clean = name.trim();
       if (!clean) return;
-      void insertItem(id, { name: clean, quantityMilli: 1000, unit: 'und', priceMinor: null, priceCurrency: 'USD', categoryId: null, priority: null, note: null }, new Date());
+      void insertItem(id, { name: clean, quantityMilli: 1000, unit: 'und', priceMinor: null, priceCurrency: 'USD', taxable: false, categoryId: null, priority: null, note: null }, new Date());
     },
     reopen: () => void reopenList(id, new Date()),
     openItem: (itemId: string) => router.push({ pathname: '/list-item/[id]', params: { id: itemId, listId: id } }),

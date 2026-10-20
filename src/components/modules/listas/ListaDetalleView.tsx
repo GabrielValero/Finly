@@ -57,6 +57,7 @@ export function ListaDetalleView({ id }: { id: string }) {
           <AppText variant="label" color="textMuted">{vm.kindLabel}{vm.categoryLabel ? ` · ${vm.categoryLabel}` : ''}</AppText>
           <AppText variant="display" fit>{vm.totalLabel}</AppText>
           {vm.totalBsLabel ? <AppText variant="amountMid" color="textMuted" fit>{vm.totalBsLabel}</AppText> : null}
+          {vm.ivaLabel ? <AppText variant="caption" color="textMuted">{vm.ivaLabel}</AppText> : null}
           <AppText variant="small" color="textMuted" numberOfLines={2}>
             {vm.pendingCount} {vm.pendingCount === 1 ? 'producto pendiente' : 'productos pendientes'}{vm.incomplete ? ` · ${vm.incomplete}` : ''}
           </AppText>

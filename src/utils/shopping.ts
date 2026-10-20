@@ -12,9 +12,20 @@ export interface ShopItemLike {
   quantityMilli: number;
   priceMinor: number | null;
   priceCurrency: Currency;
+  /** Lleva IVA: el precio es sin IVA y la línea suma el impuesto. */
+  taxable: boolean;
   categoryId: string | null;
   checked: boolean;
   purchasedAt: Date | null;
+}
+
+/** IVA vigente en Venezuela (16 %), en puntos base. */
+export const IVA_RATE_BP = 1600;
+export const IVA_LABEL = '16 %';
+
+/** Impuesto sobre una base (misma moneda, unidades menores). */
+export function ivaOf(baseMinor: number): number {
+  return Math.round((baseMinor * IVA_RATE_BP) / 10_000);
 }
 
 export const UNITS = ['und', 'kg', 'g', 'l', 'ml'] as const;
@@ -50,10 +61,17 @@ export function formatQuantity(milli: number): string {
   return frac === '' ? String(whole) : `${whole},${frac}`;
 }
 
-/** Total de la línea en su moneda (precio unitario x cantidad); null si no tiene precio. */
-export function lineNative(item: Pick<ShopItemLike, 'priceMinor' | 'quantityMilli'>): number | null {
+/** Subtotal de la línea sin IVA (precio unitario x cantidad); null si no tiene precio. */
+export function lineBase(item: Pick<ShopItemLike, 'priceMinor' | 'quantityMilli'>): number | null {
   if (item.priceMinor === null) return null;
   return Math.round((item.priceMinor * item.quantityMilli) / 1000);
+}
+
+/** Total de la línea en su moneda, con IVA si el producto lo lleva; null si no tiene precio. */
+export function lineNative(item: Pick<ShopItemLike, 'priceMinor' | 'quantityMilli'> & { taxable?: boolean }): number | null {
+  const base = lineBase(item);
+  if (base === null) return null;
+  return item.taxable ? base + ivaOf(base) : base;
 }
 
 /** Total de la línea en USD; null si no tiene precio o está en Bs y no hay tasa. */
@@ -64,11 +82,21 @@ export function lineUsd(item: ShopItemLike, rate: number | null): number | null 
   return rate === null ? null : vesToUsd(native, rate);
 }
 
+/** IVA incluido en el total USD de la línea (0 si no lleva IVA o no se puede convertir). */
+export function lineIvaUsd(item: ShopItemLike, rate: number | null): number {
+  if (!item.taxable) return 0;
+  const gross = lineUsd(item, rate);
+  const net = lineUsd({ ...item, taxable: false }, rate);
+  return gross === null || net === null ? 0 : gross - net;
+}
+
 export interface ListTotals {
   /** Productos que aún no se compraron. */
   pendingCount: number;
   /** Suma en USD de todos los pendientes con precio convertible. */
   totalUsd: number;
+  /** IVA incluido en totalUsd. */
+  ivaUsd: number;
   /** Lo ya marcado en el carrito (subconjunto de totalUsd). */
   checkedUsd: number;
   checkedCount: number;
@@ -79,7 +107,7 @@ export interface ListTotals {
 }
 
 export function summarizeList(items: readonly ShopItemLike[], rate: number | null): ListTotals {
-  const out: ListTotals = { pendingCount: 0, totalUsd: 0, checkedUsd: 0, checkedCount: 0, unpricedCount: 0, unconvertedCount: 0 };
+  const out: ListTotals = { pendingCount: 0, totalUsd: 0, ivaUsd: 0, checkedUsd: 0, checkedCount: 0, unpricedCount: 0, unconvertedCount: 0 };
   for (const it of items) {
     if (it.purchasedAt !== null) continue;
     out.pendingCount += 1;
@@ -91,6 +119,7 @@ export function summarizeList(items: readonly ShopItemLike[], rate: number | nul
       continue;
     }
     out.totalUsd += usd;
+    out.ivaUsd += lineIvaUsd(it, rate);
     if (it.checked) out.checkedUsd += usd;
   }
   return out;

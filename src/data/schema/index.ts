@@ -222,6 +222,8 @@ export const shoppingItems = sqliteTable(
     /** Precio unitario en `priceCurrency`; null = aún sin precio. */
     priceMinor: integer('price_minor'),
     priceCurrency: currency('price_currency').notNull().default('USD'),
+    /** Si lleva IVA: el precio ingresado es SIN IVA y el total de la línea suma `IVA_RATE_BP`. */
+    taxable: integer('taxable', { mode: 'boolean' }).notNull().default(false),
     /** Si es null hereda la de la lista. */
     categoryId: text('category_id').references(() => categories.id),
     checked: integer('checked', { mode: 'boolean' }).notNull().default(false),

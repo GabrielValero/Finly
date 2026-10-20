@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { describePrice, formatQuantityUnit, expenseMoney, formatQuantity, limitStatus, lineUsd, parseQuantity, planPurchase, summarizeList, type ShopItemLike } from '../src/utils/shopping';
+import { describePrice, ivaOf, lineIvaUsd, lineNative, formatQuantityUnit, expenseMoney, formatQuantity, limitStatus, lineUsd, parseQuantity, planPurchase, summarizeList, type ShopItemLike } from '../src/utils/shopping';
 
 const item = (o: Partial<ShopItemLike> & { id: string }): ShopItemLike => ({
   quantityMilli: 1000,
   priceMinor: 100,
   priceCurrency: 'USD',
+  taxable: false,
   categoryId: null,
   checked: false,
   purchasedAt: null,
@@ -133,5 +134,31 @@ describe('unidades', () => {
     expect(describePrice(2500, 'kg', '$3,00')).toBe('2,5 kg × $3,00/kg');
     expect(describePrice(1000, 'und', '$1,50')).toBe('$1,50');
     expect(describePrice(2000, 'und', '$1,50')).toBe('2 × $1,50');
+  });
+});
+
+describe('IVA 16 %', () => {
+  it('suma el IVA a la línea solo si el producto lo lleva', () => {
+    expect(lineNative(item({ id: 'a', priceMinor: 1000, quantityMilli: 2000, taxable: true }))).toBe(2320);
+    expect(lineNative(item({ id: 'b', priceMinor: 1000, quantityMilli: 2000 }))).toBe(2000);
+    expect(lineNative(item({ id: 'c', priceMinor: null, taxable: true }))).toBeNull();
+    expect(ivaOf(333)).toBe(53);
+  });
+
+  it('el total, el IVA y el plan de compra lo incluyen', () => {
+    const items = [item({ id: '1', priceMinor: 1000, taxable: true }), item({ id: '2', priceMinor: 500 })];
+    const totals = summarizeList(items, null);
+    expect(totals.totalUsd).toBe(1660);
+    expect(totals.ivaUsd).toBe(160);
+    const plan = planPurchase(items.map((i) => ({ ...i, categoryId: 'c' })), null, null);
+    expect(plan.groups[0]?.usdMinor).toBe(1660);
+  });
+
+  it('en Bs el IVA se calcula antes de convertir', () => {
+    const it = item({ id: 'v', priceMinor: 100_000, priceCurrency: 'VES', taxable: true });
+    expect(lineNative(it)).toBe(116_000);
+    expect(lineUsd(it, 50_000_000)).toBe(2320);
+    expect(lineIvaUsd(it, 50_000_000)).toBe(320);
+    expect(lineIvaUsd(it, null)).toBe(0);
   });
 });
