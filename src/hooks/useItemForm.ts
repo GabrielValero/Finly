@@ -4,7 +4,7 @@ import { Alert } from 'react-native';
 import { deleteItem, insertItem, updateItem } from '../data/repos/shopping';
 import { categoryPath } from '../utils/categories';
 import { formatMoney, vesToUsd, type Currency } from '../utils/money';
-import { UNIT_LABEL, formatQuantity, lineNative, parseQuantity, resolveListRate, type ShopUnit } from '../utils/shopping';
+import { IVA_LABEL, UNIT_LABEL, formatQuantity, lineNative, parseQuantity, resolveListRate, type ShopUnit } from '../utils/shopping';
 import { useAmountBuffer } from './useAmountBuffer';
 import { useCreatedCategory } from './useCreatedCategory';
 import { useCategoryRows } from './useData';
@@ -26,6 +26,7 @@ export function useItemForm(id: string, listId: string) {
   const [quantity, setQuantity] = useState('1');
   const [unit, setUnit] = useState<ShopUnit>('und');
   const [currency, setCurrency] = useState<Currency>('USD');
+  const [taxable, setTaxable] = useState(false);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [priority, setPriority] = useState<Priority | null>(null);
   const [note, setNote] = useState('');
@@ -40,6 +41,7 @@ export function useItemForm(id: string, listId: string) {
     setQuantity(formatQuantity(existing.quantityMilli));
     setUnit(existing.unit);
     setCurrency(existing.priceCurrency);
+    setTaxable(existing.taxable);
     setCategoryId(existing.categoryId);
     setPriority(existing.priority);
     setNote(existing.note ?? '');
@@ -79,6 +81,7 @@ export function useItemForm(id: string, listId: string) {
       // Precio 0 = "sin precio": el teclado vacío no distingue un 0 intencional, y un producto gratis no tiene sentido en una lista.
       priceMinor: price.minor > 0 ? price.minor : null,
       priceCurrency: currency,
+      taxable,
       categoryId,
       priority: list?.kind === 'wish' ? priority : null,
       note: note.trim() === '' ? null : note.trim(),
@@ -117,17 +120,19 @@ export function useItemForm(id: string, listId: string) {
     lineLabel: (() => {
       if (price.minor <= 0) return null;
       try {
-        const total = lineNative({ priceMinor: price.minor, quantityMilli: parseQuantity(quantity) });
+        const total = lineNative({ priceMinor: price.minor, quantityMilli: parseQuantity(quantity), taxable });
         if (total === null) return null;
         const rate = list ? resolveListRate(list, rates) : null;
         const usd = currency === 'VES' && rate ? ` ≈ ${formatMoney(vesToUsd(total, rate.rateScaled), 'USD')}` : '';
-        return `Total del producto: ${formatMoney(total, currency)}${usd}`;
+        return `Total del producto${taxable ? ` (con IVA ${IVA_LABEL})` : ''}: ${formatMoney(total, currency)}${usd}`;
       } catch {
         return null;
       }
     })(),
     currency,
     setCurrency,
+    taxable,
+    setTaxable,
     price,
     priceLabel: price.minor > 0 ? formatMoney(price.minor, currency) : 'Sin precio',
     categoryId,

@@ -1,0 +1,1 @@
+ALTER TABLE `shopping_items` ADD `taxable` integer DEFAULT false NOT NULL;
