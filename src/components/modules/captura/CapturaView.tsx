@@ -67,6 +67,7 @@ export function CapturaView() {
               />
             </View>
             <AppText variant="display" fit>{vm.amountDisplay}</AppText>
+            {vm.amountResult ? <AppText variant="bodyRegular" color={vm.equalsLabel ? 'accent' : 'expense'}>{vm.amountResult}</AppText> : null}
             {vm.preview ? <AppText variant="bodyRegular" color="textMuted">{vm.preview}</AppText> : null}
             {vm.rateLabel ? (
               <PressableScale onPress={vm.openRate}>
@@ -111,7 +112,7 @@ export function CapturaView() {
 
         {typing ? null : (
           <View style={styles.keypad}>
-            <Keypad onKey={vm.pressKey} />
+            <Keypad onKey={vm.pressKey} operators equals={vm.equalsLabel} />
           </View>
         )}
       </View>
