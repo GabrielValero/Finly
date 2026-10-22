@@ -40,6 +40,7 @@ const REGISTRY: Record<string, Glyph> = {
   download: { lib: 'feather', name: 'download' },
   users: { lib: 'feather', name: 'users' },
   folder: { lib: 'feather', name: 'folder' },
+  calculator: { lib: 'mci', name: 'calculator-variant-outline' },
 };
 
 export const CATEGORY_ICON_KEYS = ['cart', 'food', 'bus', 'heart', 'home', 'phone', 'coffee', 'briefcase', 'wallet', 'cash'] as const;
