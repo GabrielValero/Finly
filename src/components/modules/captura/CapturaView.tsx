@@ -6,7 +6,6 @@ import { useCaptureForm } from '../../../hooks/useCaptureForm';
 import { useTheme, useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
 import { Button } from '../../shared/Button';
-import { CategoryChip } from '../../shared/CategoryChip';
 import { CategoryPickerModal } from '../../shared/CategoryPickerModal';
 import { Icon } from '../../shared/Icon';
 import { Keypad } from '../../shared/Keypad';
@@ -16,6 +15,9 @@ import { Segmented } from '../../shared/Segmented';
 import { SelectRow } from '../../shared/SelectRow';
 import { SheetModal } from '../../shared/SheetModal';
 import { ScreenTemplate } from '../../template/ScreenTemplate';
+import { DateTimeBox } from '../../shared/DateTimeBox';
+import { Field } from '../../shared/Field';
+import { CaptureRateSheet } from './CaptureRateSheet';
 import { DetallesModal } from './DetallesModal';
 
 export function CapturaView() {
@@ -27,6 +29,8 @@ export function CapturaView() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [kindPicker, setKindPicker] = useState(false);
   const [categoryPicker, setCategoryPicker] = useState(false);
+  // Con el teclado del sistema abierto (concepto) se oculta el teclado numérico para que quepa la pantalla.
+  const [typing, setTyping] = useState(false);
   const styles = useThemedStyles((t) => ({
     body: { flex: 1, paddingHorizontal: t.space[16], gap: t.space[12] },
     topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -34,9 +38,9 @@ export function CapturaView() {
     kind: { flexDirection: 'row', alignItems: 'center', gap: t.space[8], height: 36, paddingHorizontal: t.space[16], borderRadius: t.radius.full, backgroundColor: t.colors.surface },
     center: { alignItems: 'center', gap: t.space[8], paddingHorizontal: t.space[8] },
     seg: { width: 140 },
-    chips: { gap: t.space[8], paddingRight: t.space[16] },
     conceptBox: { minHeight: 48, borderRadius: t.radius[16], backgroundColor: t.colors.surface, paddingHorizontal: t.space[16], justifyContent: 'center' },
-    subLabel: { paddingTop: t.space[4] },
+    categoryBox: { backgroundColor: t.colors.surface, borderRadius: t.radius[16], borderWidth: 1, borderColor: t.colors.border, paddingHorizontal: t.space[16], paddingVertical: t.space[12], gap: t.space[4] },
+    categoryRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: t.space[8] },
     keypad: { marginTop: 'auto' },
   }));
 
@@ -77,40 +81,44 @@ export function CapturaView() {
             <Button label="Crear tu primera cuenta" onPress={vm.openNewAccount} variant="outline" />
           )}
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-            {vm.categories.map((c) => (
-              <CategoryChip key={c.id} label={c.name} icon={c.icon} selected={c.id === vm.categoryId} onPress={() => vm.selectCategory(c.id)} />
-            ))}
-            {vm.hasMoreCategories ? <CategoryChip label="Más" icon="list" selected={false} onPress={() => setCategoryPicker(true)} /> : null}
-            <CategoryChip label="Nueva" icon="plus" selected={false} onPress={vm.openNewCategory} />
-          </ScrollView>
+          <Field
+            label="CONCEPTO"
+            value={vm.details.concept}
+            onChangeText={vm.details.setConcept}
+            onFocus={() => setTyping(true)}
+            onBlur={() => setTyping(false)}
+            placeholder="Ej. Mercado semanal"
+            maxLength={120}
+          />
 
-          {vm.categoryId ? (
-            <View style={styles.subLabel}>
-              <AppText variant="label" color="textMuted">SUBCATEGORÍA (OPCIONAL)</AppText>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-                {vm.subcategories.map((c) => (
-                  <CategoryChip key={c.id} label={c.name} icon={c.icon} selected={c.id === vm.subcategoryId} onPress={() => vm.selectSubcategory(c.id)} />
-                ))}
-                {vm.openNewSubcategory ? <CategoryChip label="Nueva" icon="plus" selected={false} onPress={vm.openNewSubcategory} /> : null}
-              </ScrollView>
+          <DateTimeBox details={vm.details} />
+
+          <PressableScale onPress={() => setCategoryPicker(true)} style={styles.categoryBox} accessibilityLabel="Elegir categoría">
+            <AppText variant="label" color="textMuted">CATEGORÍA</AppText>
+            <View style={styles.categoryRow}>
+              <AppText variant="heading" color={vm.categoryLabel ? 'text' : 'textMuted'} numberOfLines={1}>{vm.categoryLabel ?? 'Elegir categoría'}</AppText>
+              <Icon name="chevronDown" size={18} color="textMuted" />
             </View>
-          ) : null}
+          </PressableScale>
 
           <PressableScale onPress={() => setDetailsOpen(true)} style={styles.conceptBox}>
-            <AppText variant="bodyRegular" color={vm.hasDetails ? 'text' : 'textMuted'} numberOfLines={1}>{vm.detailsLabel}</AppText>
+            <AppText variant="bodyRegular" color={vm.hasTags ? 'text' : 'textMuted'} numberOfLines={1}>{vm.tagsLabel}</AppText>
           </PressableScale>
 
           {vm.error ? <AppText variant="small" color="expense">{vm.error}</AppText> : null}
           <Button label={vm.isEdit ? 'Guardar cambios' : 'Guardar'} onPress={() => void vm.save()} disabled={!vm.canSave} />
         </ScrollView>
 
-        <View style={styles.keypad}>
-          <Keypad onKey={vm.pressKey} />
-        </View>
+        {typing ? null : (
+          <View style={styles.keypad}>
+            <Keypad onKey={vm.pressKey} />
+          </View>
+        )}
       </View>
 
+      <CaptureRateSheet sheet={vm.rateSheet} />
       <DetallesModal
+        basics={false}
         visible={detailsOpen}
         onClose={() => setDetailsOpen(false)}
         details={vm.details}

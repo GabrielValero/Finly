@@ -109,6 +109,13 @@ export function withTime(iso: string, time: string): string {
   return `${dayOf(iso)}T${time}:00`;
 }
 
+/** Suma `deltaMinutes` a una hora "HH:mm" dando la vuelta a las 24 h (23:50 + 20 = 00:10). */
+export function shiftTime(time: string, deltaMinutes: number): string {
+  const [h = 0, m = 0] = time.split(':').map(Number);
+  const total = (((h * 60 + m + deltaMinutes) % 1440) + 1440) % 1440;
+  return `${pad(Math.floor(total / 60))}:${pad(total % 60)}`;
+}
+
 export function timeOf(iso: string): string {
   return iso.slice(11, 16);
 }
