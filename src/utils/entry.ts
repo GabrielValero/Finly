@@ -61,3 +61,26 @@ export function enteredFromTx(tx: {
   }
   return { minor: Math.abs(tx.amountMinor), currency: tx.accountCurrency };
 }
+
+export interface CaptureRate {
+  source: RateSource;
+  rateScaled: number;
+  validFrom: string;
+}
+
+/**
+ * Tasa que usa un movimiento al capturarlo. Prioridad: la congelada del movimiento (al editar),
+ * la manual que el usuario tecleó para ESTE movimiento y, si no, la vigente del día.
+ */
+export function pickCaptureRate(input: {
+  frozen: CaptureRate | null;
+  manualRateScaled: number | null;
+  latest: CaptureRate | null;
+  today: string;
+}): CaptureRate | null {
+  if (input.frozen) return input.frozen;
+  if (input.manualRateScaled !== null && input.manualRateScaled > 0) {
+    return { source: 'manual', rateScaled: input.manualRateScaled, validFrom: input.today };
+  }
+  return input.latest;
+}

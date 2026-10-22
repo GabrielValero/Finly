@@ -1,23 +1,23 @@
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { insertTransaction, updateTransaction } from '../data/repos/transactions';
 import { findOrCreateTag } from '../data/repos/tags';
 import { transactionInputSchema } from '../schemas/transaction';
 import { usePreferences } from '../store/preferences';
-import { enteredFromTx, resolveEntry } from '../utils/entry';
+import { categoryPath } from '../utils/categories';
+import { dayOf, toLocalIso } from '../utils/dates';
+import { enteredFromTx, pickCaptureRate, resolveEntry } from '../utils/entry';
 import { formatMoney, formatRate, MoneyError, type Currency } from '../utils/money';
 import { newId } from '../utils/ids';
 import { needsRate, type RateRecord } from '../utils/rates';
 import { signedAmount } from '../utils/transactions';
 import { useAmountBuffer } from './useAmountBuffer';
 import { useCreatedCategory } from './useCreatedCategory';
+import { useDiscardGuard } from './useDiscardGuard';
 import { useMovementDetails } from './useMovementDetails';
 import { useAccountsWithBalance, useAllCategoryRows, useLatestRate, useTags, useTagsOfTransaction, useTransactionById } from './useData';
 
 export type CaptureKind = 'expense' | 'income';
-
-/** Cuántas categorías caben en la fila antes del botón "Más". */
-const VISIBLE_CATEGORIES = 5;
 
 interface Options {
   /** Edita este movimiento (conserva su tasa congelada y su fecha). */
@@ -40,6 +40,7 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
   const lastAccountId = usePreferences((s) => s.lastAccountId);
   const setLastAccountId = usePreferences((s) => s.setLastAccountId);
   const amount = useAmountBuffer();
+  const manualRate = useAmountBuffer(4);
 
   const [kind, setKindState] = useState<CaptureKind>('expense');
   const [accountId, setAccountId] = useState<string | null>(null);
@@ -53,6 +54,11 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
   const [saving, setSaving] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [tagsHydrated, setTagsHydrated] = useState(false);
+  /** Tasa manual elegida para ESTE movimiento (null = la vigente del día). */
+  const [manualRateScaled, setManualRateScaled] = useState<number | null>(null);
+  const [rateSheetOpen, setRateSheetOpen] = useState(false);
+  const [rateMode, setRateMode] = useState<'auto' | 'manual'>('auto');
+  const [initialSignature, setInitialSignature] = useState<string | null>(null);
 
   const setAmount = amount.set;
   // Precarga al editar/duplicar: una sola vez, cuando llegan los datos del movimiento.
@@ -95,12 +101,6 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
   const sub = subs.find((c) => c.id === subId) ?? null;
   const category = sub ?? parent;
 
-  const shownParents = useMemo(() => {
-    const first = parents.slice(0, VISIBLE_CATEGORIES);
-    // Si la elegida quedó fuera de la fila, se sube al frente para que siempre se vea.
-    return parent && !first.some((c) => c.id === parent.id) ? [parent, ...first.slice(0, VISIBLE_CATEGORIES - 1)] : first;
-  }, [parents, parent]);
-
   const pickerCategories = useMemo(
     () => activeCategories.filter((c) => c.kind === kind).map((c) => ({ id: c.id, name: c.name, icon: c.icon, parentId: c.parentId })),
     [activeCategories, kind],
@@ -134,13 +134,17 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
     setSubId(null);
   }, []);
 
-  // Al editar se respeta la tasa congelada del movimiento; si no, rige la más reciente.
-  const rate: RateRecord | null = useMemo(() => {
-    if (isEdit && source?.rateScaled && source.rateSource) {
-      return { source: source.rateSource, rateScaled: source.rateScaled, validFrom: source.occurredAt.slice(0, 10) };
-    }
-    return latestRate;
-  }, [isEdit, source, latestRate]);
+  // Al editar se respeta la tasa congelada; si no, la manual de este movimiento o la vigente.
+  const rate: RateRecord | null = useMemo(
+    () =>
+      pickCaptureRate({
+        frozen: isEdit && source?.rateScaled && source.rateSource ? { source: source.rateSource, rateScaled: source.rateScaled, validFrom: source.occurredAt.slice(0, 10) } : null,
+        manualRateScaled,
+        latest: latestRate,
+        today: dayOf(toLocalIso(new Date())),
+      }),
+    [isEdit, source, latestRate, manualRateScaled],
+  );
 
   const currency: Currency = enteredCurrency ?? account?.currency ?? 'USD';
   const rateNeeded = account ? needsRate(account.currency, currency === account.currency ? null : currency) : false;
@@ -165,6 +169,37 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
   }, [account, amount.minor, currency, rate, kind]);
 
   const rateLabel = !rateNeeded ? null : rate ? `Tasa ${rate.source === 'bcv' ? 'BCV' : 'manual'} ${formatRate(rate.rateScaled)}${isEdit ? '' : ' · cambiar'}` : 'Define la tasa del día para continuar';
+
+  const setManual = manualRate.setRate;
+  const openRateSheet = () => {
+    if (isEdit) return;
+    setRateMode(manualRateScaled === null ? 'auto' : 'manual');
+    setManual(manualRateScaled ?? 0);
+    setRateSheetOpen(true);
+  };
+  const canApplyRate = rateMode === 'auto' || manualRate.rateScaled > 0;
+  const applyRate = () => {
+    if (!canApplyRate) return;
+    setManualRateScaled(rateMode === 'manual' ? manualRate.rateScaled : null);
+    setRateSheetOpen(false);
+  };
+
+  // Aviso al salir con un movimiento a medias: se compara contra el estado inicial (ya hidratado al editar/duplicar).
+  const signature = JSON.stringify([kind, accountId, parentId, subId, enteredCurrency, amount.buffer, concept, tagIds, occurredAt, manualRateScaled]);
+  const signatureRef = useRef(signature);
+  signatureRef.current = signature;
+  const ready = (sourceId === '' || hydrated) && (sourceId === '' || sourceTags.length === 0 || tagsHydrated);
+  useEffect(() => {
+    if (ready && initialSignature === null) setInitialSignature(signatureRef.current);
+  }, [ready, initialSignature]);
+  useEffect(() => {
+    if (tagsHydrated) setInitialSignature(signatureRef.current);
+  }, [tagsHydrated]);
+  const dirty = initialSignature !== null && signature !== initialSignature && !saving;
+  const allowExit = useDiscardGuard(dirty, {
+    title: isEdit ? '¿Descartar los cambios?' : '¿Descartar este movimiento?',
+    message: isEdit ? 'Si sales ahora perderás los cambios que hiciste en este movimiento.' : 'Si sales ahora perderás el movimiento que estás registrando.',
+  });
 
   const sourceReady = sourceId === '' || hydrated;
   const canSave = !saving && sourceReady && !!account && !!category && amount.minor > 0 && !(rateNeeded && !rate) && !conversion.blocked;
@@ -216,12 +251,13 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
         await insertTransaction({ ...row, id: newId(), transferId: null, deletedAt: null }, parsed.tagIds);
       }
       setLastAccountId(account.id);
+      allowExit();
       router.back();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo guardar');
       setSaving(false);
     }
-  }, [account, category, amount.minor, currency, rate, kind, occurredAt, concept, tagIds, isEdit, editId, source, setLastAccountId, router]);
+  }, [account, category, amount.minor, currency, rate, kind, occurredAt, concept, tagIds, isEdit, editId, source, setLastAccountId, router, allowExit]);
 
   const toggleTag = useCallback((id: string) => setTagIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id])), []);
   const addTag = useCallback(async (raw: string) => {
@@ -229,7 +265,7 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
     if (id) setTagIds((ids) => (ids.includes(id) ? ids : [...ids, id]));
   }, []);
 
-  const hasDetails = concept.trim().length > 0 || tagIds.length > 0;
+  const hasTags = tagIds.length > 0;
 
   return {
     title: isEdit ? 'EDITAR MOVIMIENTO' : null,
@@ -245,8 +281,10 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
       ...(isEdit ? [] : [{ value: 'transfer', label: 'Transferencia entre cuentas' }]),
     ],
     selectKind: (value: string) => {
-      if (value === 'transfer') router.replace('/transfer');
-      else setKind(value === 'income' ? 'income' : 'expense');
+      if (value === 'transfer') {
+        allowExit();
+        router.replace('/transfer');
+      } else setKind(value === 'income' ? 'income' : 'expense');
     },
     amountDisplay: amount.display,
     pressKey: amount.press,
@@ -255,7 +293,17 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
     preview: conversion.preview,
     rateLabel,
     rateMissing: rateNeeded && !rate,
-    openRate: () => router.push('/rate'),
+    openRate: openRateSheet,
+    rateSheet: {
+      open: rateSheetOpen,
+      close: () => setRateSheetOpen(false),
+      mode: rateMode,
+      setMode: setRateMode,
+      manual: manualRate,
+      autoLabel: latestRate ? `${latestRate.source === 'bcv' ? 'BCV' : 'Manual'} ${formatRate(latestRate.rateScaled)} Bs por USD` : 'Aún no hay una tasa registrada',
+      canApply: canApplyRate,
+      apply: applyRate,
+    },
     accounts: accounts.map((a) => ({ value: a.id, label: a.name, hint: `${a.currency} · ${formatMoney(a.balanceMinor, a.currency)}` })),
     accountName: account?.name ?? 'Sin cuentas',
     accountId: account?.id ?? null,
@@ -265,26 +313,15 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
     },
     hasAccounts: accounts.length > 0,
     openNewAccount: () => router.push('/account/new'),
-    categories: shownParents.map((c) => ({ id: c.id, name: c.name, icon: c.icon })),
-    hasMoreCategories: parents.length > VISIBLE_CATEGORIES || activeCategories.some((c) => c.parentId && parents.some((p) => p.id === c.parentId)),
     pickerCategories,
     selectedCategoryValue: category?.id ?? null,
     selectAnyCategory,
     openNewCategory: () => router.push({ pathname: '/category/[id]', params: { id: 'new', kind, pick: '1' } }),
     openNewSubcategoryOf: (parentId: string) => router.push({ pathname: '/category/[id]', params: { id: 'new', kind, parentId, pick: '1' } }),
-    /** Fila de subcategorías: la subcategoría nace dentro de la categoría elegida. */
-    openNewSubcategory: parent ? () => router.push({ pathname: '/category/[id]', params: { id: 'new', kind, parentId: parent.id, pick: '1' } }) : null,
-    categoryId: parent?.id ?? null,
-    selectCategory: (id: string) => {
-      setParentId(id);
-      setSubId(null);
-    },
-    subcategories: subs.map((c) => ({ id: c.id, name: c.name, icon: c.icon })),
-    subcategoryId: sub?.id ?? null,
-    selectSubcategory: (id: string) => setSubId((cur) => (cur === id ? null : id)),
-    // Más detalles
-    hasDetails,
-    detailsLabel: hasDetails ? [concept.trim(), ...tagIds.map((id) => `#${allTags.find((t) => t.id === id)?.name ?? ''}`)].filter(Boolean).join(' · ') : '+ Concepto, etiquetas, fecha',
+    categoryLabel: category ? (categoryPath(sub?.name ?? null, parent?.name ?? null) ?? category.name) : null,
+    // Etiquetas (en «Más detalles»)
+    hasTags,
+    tagsLabel: hasTags ? tagIds.map((id) => `#${allTags.find((t) => t.id === id)?.name ?? ''}`).join(' · ') : '+ Más detalles (etiquetas)',
     details,
     tags: allTags.map((t) => ({ id: t.id, name: t.name, selected: tagIds.includes(t.id) })),
     toggleTag,

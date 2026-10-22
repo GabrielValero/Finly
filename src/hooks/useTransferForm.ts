@@ -7,6 +7,7 @@ import { newId } from '../utils/ids';
 import { buildTransfer } from '../utils/transactions';
 import { convertAtRate, transferDifferenceVes } from '../utils/transfers';
 import { useAmountBuffer } from './useAmountBuffer';
+import { useDiscardGuard } from './useDiscardGuard';
 import { categoryPath } from '../utils/categories';
 import { useCreatedCategory } from './useCreatedCategory';
 import { useAccountsWithBalance, useCategoryRows, useLatestRate } from './useData';
@@ -29,6 +30,10 @@ export function useTransferForm() {
   const [toId, setToId] = useState<string | null>(null);
   const [active, setActive] = useState<Side>('from');
   const [error, setError] = useState<string | null>(null);
+  const allowExit = useDiscardGuard(outBuf.buffer !== '' || inBuf.buffer !== '' || details.concept.trim() !== '', {
+    title: '¿Descartar esta transferencia?',
+    message: 'Si sales ahora perderás la transferencia que estás registrando.',
+  });
   const [saving, setSaving] = useState(false);
 
   const from = useMemo(() => accounts.find((a) => a.id === (fromId ?? lastAccountId)) ?? accounts[0] ?? null, [accounts, fromId, lastAccountId]);
@@ -102,12 +107,13 @@ export function useTransferForm() {
         { ...base, id: newId(), ...legs[0] },
         { ...base, id: newId(), ...legs[1] },
       ]);
+      allowExit();
       router.back();
     } catch (e) {
       setError(e instanceof MoneyError || e instanceof Error ? e.message : 'No se pudo transferir');
       setSaving(false);
     }
-  }, [from, to, outMinor, inMinor, details.concept, details.occurredAt, category, router]);
+  }, [from, to, outMinor, inMinor, details.concept, details.occurredAt, category, router, allowExit]);
 
   // Saldo actual y cómo quedará con el monto tecleado (para ver de un vistazo si alcanza).
   const balanceInfo = (a: typeof from, deltaMinor: number) => {

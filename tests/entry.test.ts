@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveEntry } from '../src/utils/entry';
+import { pickCaptureRate, resolveEntry } from '../src/utils/entry';
 import { MoneyError } from '../src/utils/money';
 
 const RATE = 36_500_000; // 36,5 Bs/$
@@ -37,5 +37,21 @@ describe('resolveEntry', () => {
   it('rechaza montos inválidos o que se redondean a cero', () => {
     expect(() => resolveEntry({ ...base, enteredMinor: 0, enteredCurrency: 'USD', accountCurrency: 'USD' })).toThrow(MoneyError);
     expect(() => resolveEntry({ ...base, enteredMinor: 1, enteredCurrency: 'VES', accountCurrency: 'USD' })).toThrow(MoneyError);
+  });
+});
+
+describe('pickCaptureRate', () => {
+  const latest = { source: 'bcv' as const, rateScaled: 480_000_000, validFrom: '2026-10-21' };
+  const frozen = { source: 'bcv' as const, rateScaled: 450_000_000, validFrom: '2026-10-01' };
+
+  it('la manual del movimiento gana sobre la BCV vigente', () => {
+    const r = pickCaptureRate({ frozen: null, manualRateScaled: 520_500_000, latest, today: '2026-10-21' });
+    expect(r).toEqual({ source: 'manual', rateScaled: 520_500_000, validFrom: '2026-10-21' });
+  });
+
+  it('sin manual usa la vigente; al editar, la congelada', () => {
+    expect(pickCaptureRate({ frozen: null, manualRateScaled: null, latest, today: 'x' })).toBe(latest);
+    expect(pickCaptureRate({ frozen, manualRateScaled: 520_500_000, latest, today: 'x' })).toBe(frozen);
+    expect(pickCaptureRate({ frozen: null, manualRateScaled: 0, latest: null, today: 'x' })).toBeNull();
   });
 });

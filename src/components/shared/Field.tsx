@@ -2,7 +2,7 @@ import { TextInput, View, type TextInputProps } from 'react-native';
 import { useTheme, useThemedStyles } from '../../hooks/useTheme';
 import { AppText } from './AppText';
 
-interface Props extends Pick<TextInputProps, 'value' | 'onChangeText' | 'placeholder' | 'maxLength' | 'autoFocus' | 'keyboardType' | 'returnKeyType' | 'onSubmitEditing' | 'onBlur'> {
+interface Props extends Pick<TextInputProps, 'value' | 'onChangeText' | 'placeholder' | 'maxLength' | 'autoFocus' | 'keyboardType' | 'returnKeyType' | 'onSubmitEditing' | 'onBlur' | 'onFocus'> {
   label: string;
   error?: boolean;
 }
