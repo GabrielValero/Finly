@@ -1,6 +1,6 @@
 import { parseAmount, parseRate } from './money';
 
-export type KeypadKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | ',' | 'back' | 'neg';
+export type KeypadKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | ',' | 'back' | 'neg' | '+' | '-' | '×' | '÷' | '=';
 
 const MAX_INTEGER_DIGITS = 12;
 
@@ -8,13 +8,15 @@ const MAX_INTEGER_DIGITS = 12;
 export function pressKey(buffer: string, key: KeypadKey, maxDecimals = 2): string {
   const negative = buffer.startsWith('-');
   const magnitude = negative ? buffer.slice(1) : buffer;
+  // Los operadores solo existen en el modo expresión (utils/expression.ts).
+  if (key === '+' || key === '-' || key === '×' || key === '÷' || key === '=') return buffer;
   if (key === 'neg') return negative ? magnitude : `-${magnitude}`;
   if (key === 'back' && negative && magnitude === '') return '';
   const next = pressMagnitude(magnitude, key, maxDecimals);
   return negative ? `-${next}` : next;
 }
 
-function pressMagnitude(buffer: string, key: Exclude<KeypadKey, 'neg'>, maxDecimals: number): string {
+function pressMagnitude(buffer: string, key: Exclude<KeypadKey, 'neg' | '+' | '-' | '×' | '÷' | '='>, maxDecimals: number): string {
   if (key === 'back') return buffer.slice(0, -1);
 
   const commaAt = buffer.indexOf(',');

@@ -39,7 +39,7 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
   const latestRate = useLatestRate();
   const lastAccountId = usePreferences((s) => s.lastAccountId);
   const setLastAccountId = usePreferences((s) => s.setLastAccountId);
-  const amount = useAmountBuffer();
+  const amount = useAmountBuffer(2, false, true);
 
   const [kind, setKindState] = useState<CaptureKind>('expense');
   const [accountId, setAccountId] = useState<string | null>(null);
@@ -249,6 +249,10 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
       else setKind(value === 'income' ? 'income' : 'expense');
     },
     amountDisplay: amount.display,
+    /** «= $12,50» mientras haya una operación en curso; null si no la hay. */
+    amountResult: amount.operation ? (amount.result === null ? 'Operación inválida' : `= ${formatMoney(amount.result, currency)}`) : null,
+    /** Monto para la tecla «=» (solo si el resultado es válido y positivo). */
+    equalsLabel: amount.operation && amount.result !== null && amount.result > 0 ? formatMoney(amount.result, currency) : null,
     pressKey: amount.press,
     currency,
     setCurrency: setEnteredCurrency,
