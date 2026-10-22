@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addMonths, daysBetween, formatDateTimeLong, formatDayLabel, formatMonthLabel, monthBounds, recentMonths, toLocalIso } from '../src/utils/dates';
+import { addMonths, daysBetween, formatDateTimeLong, formatDayLabel, formatMonthLabel, monthBounds, recentMonths, shiftTime, toLocalIso } from '../src/utils/dates';
 
 describe('dates', () => {
   it('toLocalIso usa hora local', () => {
@@ -74,5 +74,14 @@ describe('monthGrid', () => {
   });
   it('withDay conserva la hora', () => {
     expect(withDay('2026-10-09T08:14:00', '2026-09-30')).toBe('2026-09-30T08:14:00');
+  });
+});
+
+describe('shiftTime', () => {
+  it('suma minutos dando la vuelta al día', () => {
+    expect(shiftTime('08:14', 1)).toBe('08:15');
+    expect(shiftTime('08:59', 1)).toBe('09:00');
+    expect(shiftTime('23:50', 20)).toBe('00:10');
+    expect(shiftTime('00:05', -10)).toBe('23:55');
   });
 });
