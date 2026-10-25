@@ -3,6 +3,7 @@
 
 Uso:
   python3 -I scripts/excel-merge-backup.py EXCEL.xlsx RESPALDO.json SALIDA.json \
+      --salario 700 --salario-desde 2026-02 --salario-dia 2 [--mesada 100 --mesada-hasta 2026-09] \
       [--saldo "Para gastar=123,45" ...] [--hasta 2026-10-10]
 
 Qué hace:
@@ -38,9 +39,7 @@ PURCHASE_CATS = {'Ropa', 'Tecnología'}
 LOAN_RE = re.compile(r'pr[eé]st', re.I)
 LOAN_CATEGORY = ('Préstamos', 'cash')
 
-SALARY_MINOR, SALARY_DAY, SALARY_FROM = 70000, 2, '2026-02'
-MESADA_MINOR = 10000
-MESADA_UNTIL = '2026-09'  # octubre ya lo registró el usuario a mano
+# Salario y mesada mensuales: se pasan por línea de comandos (--salario, --mesada...) para no dejar cifras personales en el repo.
 
 
 def sid(*parts) -> str:
@@ -218,17 +217,18 @@ def main(args: argparse.Namespace) -> None:
             sys.exit(f'Ingreso sin regla: {r.f.date()} {r.cat} ${r.usd} {r.com}')
 
     # --- 3. Salario y mesada mensuales (no vienen en el Excel) ---
-    y, m = map(int, SALARY_FROM.split('-'))
+    salary_minor, mesada_minor = minor(args.salario.replace(',', '.')), minor(args.mesada.replace(',', '.'))
+    y, m = map(int, args.salario_desde.split('-'))
     last = args.hasta[:7]
     while f'{y:04d}-{m:02d}' <= last:
         month = f'{y:04d}-{m:02d}'
-        day = f'{month}-{SALARY_DAY:02d}'
-        txs.append(base(id=sid('salary', month), account_id=acc['Binance Principal'], kind='income', amount_minor=SALARY_MINOR,
+        day = f'{month}-{args.salario_dia:02d}'
+        txs.append(base(id=sid('salary', month), account_id=acc['Binance Principal'], kind='income', amount_minor=salary_minor,
                         occurred_at=f'{day}T09:00:00', category_id=cats[('income', 'Salario')], concept='Salario'))
         report['salarios generados'] += 1
-        if month <= MESADA_UNTIL:
-            transfer(sid('mesada', month), 'Binance Principal', 'Binance padres', MESADA_MINOR, f'{day}T09:00:01', 'Mesada padres')
-            txs.append(base(id=sid('mesada-gasto', month), account_id=acc['Binance padres'], kind='expense', amount_minor=-MESADA_MINOR,
+        if mesada_minor > 0 and month <= args.mesada_hasta:
+            transfer(sid('mesada', month), 'Binance Principal', 'Binance padres', mesada_minor, f'{day}T09:00:01', 'Mesada padres')
+            txs.append(base(id=sid('mesada-gasto', month), account_id=acc['Binance padres'], kind='expense', amount_minor=-mesada_minor,
                             occurred_at=f'{day}T09:00:02', category_id=cats[('expense', 'Mesada')], concept='Mesada padres'))
             report['mesadas generadas'] += 1
         y, m = (y + 1, 1) if m == 12 else (y, m + 1)
@@ -290,5 +290,10 @@ if __name__ == '__main__':
     p.add_argument('backup')
     p.add_argument('out')
     p.add_argument('--saldo', action='append', default=[], metavar='"Cuenta=monto"')
+    p.add_argument('--salario', required=True, help='salario mensual en USD que entra a Binance Principal')
+    p.add_argument('--salario-desde', required=True, metavar='YYYY-MM', help='primer mes con salario')
+    p.add_argument('--salario-dia', type=int, default=2)
+    p.add_argument('--mesada', default='0', help='mesada mensual en USD de Binance Principal a Binance padres (0 = no generar)')
+    p.add_argument('--mesada-hasta', default='0000-00', metavar='YYYY-MM', help='último mes con mesada generada')
     p.add_argument('--hasta', default='2026-10-10', help='último día cubierto por el Excel (YYYY-MM-DD)')
     main(p.parse_args())
