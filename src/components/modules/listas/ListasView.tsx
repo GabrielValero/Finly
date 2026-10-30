@@ -5,6 +5,7 @@ import { AppText } from '../../shared/AppText';
 import { Button } from '../../shared/Button';
 import { Card } from '../../shared/Card';
 import { Fab } from '../../shared/Fab';
+import { PressableScale } from '../../shared/PressableScale';
 import { RowLista } from '../../shared/RowLista';
 
 /** Contenido de la sección "Listas" dentro de la pestaña Presupuesto. */
@@ -33,12 +34,16 @@ export function ListasView() {
             {vm.open.map((r) => (
               <RowLista key={r.id} title={r.title} kindLabel={r.kindLabel} subtitle={r.subtitle} amount={r.amount} progress={r.progress} state={r.state} showBar={r.showBar} onPress={() => vm.openList(r.id)} />
             ))}
-            {vm.done.length > 0 ? (
+            {vm.history.length > 0 ? (
               <>
-                <View style={styles.section}><AppText variant="label" color="textMuted">Completadas</AppText></View>
-                {vm.done.map((r) => (
-                  <RowLista key={r.id} title={r.title} kindLabel={r.kindLabel} subtitle={r.subtitle} amount={r.amount} progress={r.progress} state={r.state} showBar={r.showBar} onPress={() => vm.openList(r.id)} />
-                ))}
+                <PressableScale onPress={vm.toggleHistory} style={styles.section} accessibilityLabel={vm.historyOpen ? 'Ocultar historial' : 'Mostrar historial'}>
+                  <AppText variant="label" color="textMuted">{vm.historyOpen ? '▾' : '▸'} Historial ({vm.history.length})</AppText>
+                </PressableScale>
+                {vm.historyOpen
+                  ? vm.history.map((r) => (
+                      <RowLista key={r.id} title={r.title} kindLabel={r.kindLabel} subtitle={r.subtitle} amount={r.amount} progress={r.progress} state={r.state} showBar={r.showBar} onPress={() => vm.openList(r.id)} />
+                    ))
+                  : null}
               </>
             ) : null}
           </>

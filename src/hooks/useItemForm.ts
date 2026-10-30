@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
-import { deleteItem, insertItem, updateItem } from '../data/repos/shopping';
+import { deleteItem, insertItem, undoPurchase, updateItem } from '../data/repos/shopping';
 import { categoryPath } from '../utils/categories';
 import { formatMoney, vesToUsd, type Currency } from '../utils/money';
 import { IVA_LABEL, UNIT_LABEL, formatQuantity, lineNative, parseQuantity, resolveListRate, type ShopUnit } from '../utils/shopping';
@@ -104,8 +104,25 @@ export function useItemForm(id: string, listId: string) {
     ]);
   };
 
+  const confirmUndo = () => {
+    if (!existing) return;
+    Alert.alert('Deshacer compra', `"${existing.name}" volverá a estar pendiente. Si el gasto que lo registró era solo de este producto, también se eliminará.`, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Deshacer',
+        style: 'destructive',
+        onPress: () =>
+          void undoPurchase(existing.id, new Date()).then((r) => {
+            if (r.movement === 'shared') Alert.alert('El gasto se mantiene', 'Ese gasto incluye otros productos, así que no se eliminó. Edítalo si quieres ajustar su monto.');
+            router.back();
+          }),
+      },
+    ]);
+  };
+
   return {
     isNew,
+    isPurchased: existing?.purchasedAt != null,
     notFound: !isNew && items.length > 0 && !existing,
     title: isNew ? 'NUEVO PRODUCTO' : 'EDITAR PRODUCTO',
     isWish: list?.kind === 'wish',
@@ -153,6 +170,7 @@ export function useItemForm(id: string, listId: string) {
     error,
     save,
     confirmDelete,
+    confirmUndo,
     close: () => router.back(),
   };
 }

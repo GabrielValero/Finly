@@ -124,9 +124,12 @@ export function ListaDetalleView({ id }: { id: string }) {
           </Card>
         )}
         {vm.completed ? <Button label="Reabrir lista" variant="outline" onPress={vm.reopen} /> : null}
+        {vm.archived ? <Button label="Sacar del historial" variant="outline" onPress={vm.unarchive} /> : null}
+        {isMarket && (vm.completed || vm.archived) ? <Button label="Duplicar lista" variant="outline" onPress={vm.duplicate} /> : null}
+        {!vm.completed && !vm.archived ? <Button label="Archivar lista" variant="outline" onPress={vm.archive} /> : null}
       </ScrollView>
 
-      {isMarket && !vm.completed ? (
+      {isMarket && !vm.completed && !vm.archived ? (
         <View style={styles.footer}>
           <Button label={vm.checkedCount > 0 ? `Registrar compra (${vm.checkedCount})` : 'Registrar compra'} onPress={() => vm.openPurchase()} disabled={vm.pendingCount === 0} />
         </View>

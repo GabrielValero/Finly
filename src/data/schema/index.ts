@@ -196,6 +196,8 @@ export const shoppingLists = sqliteTable(
     rateMode: text('rate_mode', { enum: ['bcv', 'manual'] }).notNull().default('bcv'),
     manualRateScaled: integer('manual_rate_scaled'),
     completedAt: ts('completed_at'),
+    /** Archivada a mano (p. ej. una lista abandonada): sale de las activas y va al historial. */
+    archivedAt: ts('archived_at'),
     createdAt: ts('created_at').notNull(),
     updatedAt: ts('updated_at').notNull(),
   },
@@ -229,6 +231,8 @@ export const shoppingItems = sqliteTable(
     checked: integer('checked', { mode: 'boolean' }).notNull().default(false),
     /** Cuándo se compró (lo marca "Registrar compra" / "Marcar como comprado"). */
     purchasedAt: ts('purchased_at'),
+    /** Movimiento que pagó este producto. Sin FK (como en deudas): borrar el movimiento no debe bloquearse. */
+    transactionId: text('transaction_id'),
     /** Solo listas de deseos. */
     priority: text('priority', { enum: ['low', 'medium', 'high'] }),
     note: text('note'),

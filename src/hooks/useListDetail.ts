@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Alert } from 'react-native';
-import { finalizePurchase, insertItem, reopenList, setItemChecked } from '../data/repos/shopping';
+import { duplicateList, finalizePurchase, insertItem, reopenList, setItemChecked, setListArchived } from '../data/repos/shopping';
 import { usePreferences } from '../store/preferences';
 import { allocateSpending, budgetKind, itemResolver, type BudgetTx } from '../utils/budget';
 import { categoryPath, isExcluded } from '../utils/categories';
@@ -175,6 +175,7 @@ export function useListDetail(id: string) {
     kind: list?.kind ?? 'market',
     kindLabel: list ? LIST_KIND_LABEL[list.kind] : '',
     completed: list?.completedAt != null,
+    archived: list?.archivedAt != null,
     categoryLabel: list ? labelOf(list.categoryId) : null,
     totalLabel: formatMoney(view?.totals.totalUsd ?? 0, 'USD'),
     cartLabel: formatMoney(view?.totals.checkedUsd ?? 0, 'USD'),
@@ -206,6 +207,13 @@ export function useListDetail(id: string) {
       void insertItem(id, { name: clean, quantityMilli: 1000, unit: 'und', priceMinor: null, priceCurrency: 'USD', taxable: false, categoryId: null, priority: null, note: null }, new Date());
     },
     reopen: () => void reopenList(id, new Date()),
+    archive: () => void setListArchived(id, true, new Date()).then(() => router.back()),
+    unarchive: () => void setListArchived(id, false, new Date()),
+    duplicate: () =>
+      void duplicateList(id, new Date()).then(
+        (newId) => router.replace({ pathname: '/list/[id]', params: { id: newId } }),
+        (e: unknown) => Alert.alert('No se pudo duplicar', e instanceof Error ? e.message : 'Inténtalo de nuevo'),
+      ),
     openItem: (itemId: string) => router.push({ pathname: '/list-item/[id]', params: { id: itemId, listId: id } }),
     addItem: () => router.push({ pathname: '/list-item/[id]', params: { id: 'new', listId: id } }),
     edit: () => router.push({ pathname: '/list-form/[id]', params: { id } }),
