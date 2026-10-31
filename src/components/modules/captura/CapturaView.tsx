@@ -3,6 +3,7 @@ import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { useCaptureForm } from '../../../hooks/useCaptureForm';
+import { useKeyboardVisible } from '../../../hooks/useKeyboardVisible';
 import { useTheme, useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
 import { Button } from '../../shared/Button';
@@ -29,8 +30,9 @@ export function CapturaView() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [kindPicker, setKindPicker] = useState(false);
   const [categoryPicker, setCategoryPicker] = useState(false);
-  // Con el teclado del sistema abierto (concepto) se oculta el teclado numérico para que quepa la pantalla.
-  const [typing, setTyping] = useState(false);
+  // Con el teclado del sistema abierto (concepto) se oculta el teclado numérico para que quepa la pantalla;
+  // vuelve en cuanto el teclado se cierra (por Atrás, «Listo» o tocando fuera), no solo al perder el foco.
+  const typing = useKeyboardVisible();
   const styles = useThemedStyles((t) => ({
     body: { flex: 1, paddingHorizontal: t.space[16], gap: t.space[12] },
     topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -86,8 +88,6 @@ export function CapturaView() {
             label="CONCEPTO"
             value={vm.details.concept}
             onChangeText={vm.details.setConcept}
-            onFocus={() => setTyping(true)}
-            onBlur={() => setTyping(false)}
             placeholder="Ej. Mercado semanal"
             maxLength={120}
           />
