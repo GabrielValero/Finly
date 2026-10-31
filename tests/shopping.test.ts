@@ -162,3 +162,52 @@ describe('IVA 16 %', () => {
     expect(lineIvaUsd(it, null)).toBe(0);
   });
 });
+
+import { buildPurchaseNote, isHistoryList, purchaseConcept, purchaseLine, purchaseNote, type PurchaseLineItem } from '../src/utils/shopping';
+
+const line = (o: Partial<PurchaseLineItem> & { name: string }): PurchaseLineItem => ({ quantityMilli: 1000, unit: 'und', priceMinor: 100, priceCurrency: 'USD', taxable: false, ...o });
+
+describe('descripción de la compra', () => {
+  it('una línea por producto: cantidad solo si no es 1 und; monto original solo si se pagó en Bs', () => {
+    expect(purchaseLine(line({ name: 'Arroz' }))).toBe('• Arroz');
+    expect(purchaseLine(line({ name: 'Harina', quantityMilli: 2000 }))).toBe('• Harina × 2');
+    expect(purchaseLine(line({ name: 'Queso', quantityMilli: 2500, unit: 'kg' }))).toBe('• Queso 2,5 kg');
+    expect(purchaseLine(line({ name: 'Pan', priceMinor: 45_000, priceCurrency: 'VES' }))).toBe('• Pan (Bs 450,00)');
+    // El monto de la línea incluye cantidad e IVA: 2 x Bs 100,00 + 16 % = Bs 232,00.
+    expect(purchaseLine(line({ name: 'Aceite', priceMinor: 10_000, priceCurrency: 'VES', quantityMilli: 2000, taxable: true }))).toBe('• Aceite × 2 (Bs 232,00)');
+  });
+
+  it('une las líneas y es null sin productos', () => {
+    expect(buildPurchaseNote([line({ name: 'Arroz' }), line({ name: 'Leche' })])).toBe('• Arroz\n• Leche');
+    expect(buildPurchaseNote([])).toBeNull();
+  });
+
+  it('si no cabe, corta en una línea completa y resume el resto sin pasarse del tope', () => {
+    const many = Array.from({ length: 60 }, (_, i) => line({ name: `Producto número ${i + 1}` }));
+    const note = buildPurchaseNote(many, 200)!;
+    expect(note.length).toBeLessThanOrEqual(200);
+    const lines = note.split('\n');
+    expect(lines[lines.length - 1]).toMatch(/^• … y \d+ más$/);
+    const hidden = Number(/y (\d+) más/.exec(lines[lines.length - 1]!)![1]);
+    expect(lines.length - 1 + hidden).toBe(60);
+    expect(lines.slice(0, -1).every((l) => l.startsWith('• Producto número '))).toBe(true);
+  });
+
+  it('el título: en Deseos con un solo producto lleva su nombre; en Mercado, el de la lista', () => {
+    expect(purchaseConcept('wish', 'Tecnología', [{ name: 'Teclado' }])).toBe('Teclado');
+    expect(purchaseConcept('market', 'Mercado semanal', [{ name: 'Arroz' }])).toBe('Mercado semanal');
+    expect(purchaseConcept('wish', 'Tecnología', [{ name: 'A' }, { name: 'B' }])).toBe('Tecnología');
+  });
+
+  it('un deseo simple no repite su nombre en la nota, pero sí si hay algo más que decir', () => {
+    expect(purchaseNote('wish', [line({ name: 'Teclado' })])).toBeNull();
+    expect(purchaseNote('wish', [line({ name: 'Teclado', priceMinor: 9_000_000, priceCurrency: 'VES' })])).toBe('• Teclado (Bs 90.000,00)');
+    expect(purchaseNote('market', [line({ name: 'Arroz' })])).toBe('• Arroz');
+  });
+
+  it('historial: completadas o archivadas', () => {
+    expect(isHistoryList({ completedAt: null, archivedAt: null })).toBe(false);
+    expect(isHistoryList({ completedAt: new Date(), archivedAt: null })).toBe(true);
+    expect(isHistoryList({ completedAt: null, archivedAt: new Date() })).toBe(true);
+  });
+});

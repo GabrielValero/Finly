@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { formatMoney } from '../utils/money';
-import { LIST_KIND_LABEL, limitStatus, resolveListRate, summarizeList, type LimitState } from '../utils/shopping';
+import { LIST_KIND_LABEL, isHistoryList, limitStatus, resolveListRate, summarizeList, type LimitState } from '../utils/shopping';
 import { useAllShoppingItems, useRateRows, useShoppingLists } from './useShopping';
 
 export interface ListRowVm {
@@ -20,6 +20,7 @@ export function useListsScreen() {
   const lists = useShoppingLists();
   const items = useAllShoppingItems();
   const rates = useRateRows();
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const rows = useMemo(() => {
     const toRow = (l: (typeof lists)[number]): ListRowVm => {
@@ -28,9 +29,12 @@ export function useListsScreen() {
       const totals = summarizeList(own, rate?.rateScaled ?? null);
       const limit = limitStatus(totals.totalUsd, l.limitMinor);
       const bought = own.length - totals.pendingCount;
+      const count = `${bought} ${bought === 1 ? 'producto' : 'productos'}`;
       const subtitle = l.completedAt
-        ? `Completada · ${bought} ${bought === 1 ? 'producto' : 'productos'}`
-        : totals.pendingCount === 0
+        ? `Completada · ${count}`
+        : l.archivedAt
+          ? `Archivada · ${own.length} ${own.length === 1 ? 'producto' : 'productos'}`
+          : totals.pendingCount === 0
           ? 'Sin productos'
           : `${totals.pendingCount} ${totals.pendingCount === 1 ? 'pendiente' : 'pendientes'}${l.kind === 'market' ? ` · ${totals.checkedCount} en el carrito` : ''}`;
       return {
@@ -38,21 +42,23 @@ export function useListsScreen() {
         title: l.name,
         kindLabel: LIST_KIND_LABEL[l.kind],
         subtitle,
-        amount: l.completedAt ? '' : formatMoney(totals.totalUsd, 'USD'),
+        amount: isHistoryList(l) ? '' : formatMoney(totals.totalUsd, 'USD'),
         progress: Math.min(limit.ratio, 1),
         state: limit.state,
-        showBar: !l.completedAt && limit.state !== 'none',
+        showBar: !isHistoryList(l) && limit.state !== 'none',
       };
     };
     return {
-      open: lists.filter((l) => !l.completedAt).map(toRow),
-      done: lists.filter((l) => l.completedAt).map(toRow),
+      open: lists.filter((l) => !isHistoryList(l)).map(toRow),
+      history: lists.filter(isHistoryList).map(toRow),
     };
   }, [lists, items, rates]);
 
   return {
     ...rows,
     isEmpty: lists.length === 0,
+    historyOpen,
+    toggleHistory: () => setHistoryOpen((v) => !v),
     openList: (id: string) => router.push({ pathname: '/list/[id]', params: { id } }),
     newList: () => router.push({ pathname: '/list-form/[id]', params: { id: 'new' } }),
   };

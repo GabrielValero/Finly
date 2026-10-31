@@ -1,4 +1,4 @@
-import { MoneyError, usdToVes, vesToUsd, type Currency } from './money';
+import { MoneyError, formatMoney, usdToVes, vesToUsd, type Currency } from './money';
 import { pickLatestRate, type RateRecord, type RateSource } from './rates';
 
 /** Tasa efectiva de una lista (la elegida por el usuario o la última BCV). */
@@ -200,6 +200,77 @@ export function expenseMoney(accountCurrency: Currency, usdMinor: number, rate: 
     listedAmountMinor: usdMinor,
     listedCurrency: 'USD',
   };
+}
+
+/** Lo mínimo de un producto para describirlo en el movimiento que lo pagó. */
+export interface PurchaseLineItem {
+  name: string;
+  quantityMilli: number;
+  unit: ShopUnit;
+  priceMinor: number | null;
+  priceCurrency: Currency;
+  taxable: boolean;
+}
+
+/** Máximo de la nota de un movimiento (el mismo tope que valida el esquema de captura). */
+export const NOTE_MAX = 500;
+
+/**
+ * Una línea de la nota: "• Harina × 2" o "• Queso (Bs 450,00)". Si el producto se pagó en Bs
+ * se conserva el monto original de la línea; en USD basta el nombre (el total ya va en el movimiento).
+ */
+export function purchaseLine(item: PurchaseLineItem): string {
+  const qty = item.quantityMilli === 1000 && item.unit === 'und' ? '' : item.unit === 'und' ? ` × ${formatQuantity(item.quantityMilli)}` : ` ${formatQuantityUnit(item.quantityMilli, item.unit)}`;
+  const native = item.priceCurrency === 'VES' ? lineNative(item) : null;
+  const price = native === null ? '' : ` (${formatMoney(native, 'VES')})`;
+  return `• ${item.name}${qty}${price}`;
+}
+
+/**
+ * Nota del movimiento: una línea por producto comprado. Si no cabe en `max` caracteres, corta en una
+ * línea completa y resume el resto ("• … y 7 más"), para no guardar una nota truncada a medias.
+ */
+export function buildPurchaseNote(items: readonly PurchaseLineItem[], max: number = NOTE_MAX): string | null {
+  if (items.length === 0) return null;
+  const lines = items.map(purchaseLine);
+  const whole = lines.join('\n');
+  if (whole.length <= max) return whole;
+  const kept: string[] = [];
+  let used = 0;
+  for (let i = 0; i < lines.length; i += 1) {
+    const rest = lines.length - (i + 1);
+    const tail = rest > 0 ? `\n• … y ${rest} más` : '';
+    const next = used + (kept.length > 0 ? 1 : 0) + lines[i]!.length;
+    // Reserva sitio para el resumen del resto; siempre entra al menos una línea.
+    if (kept.length > 0 && next + tail.length > max) break;
+    kept.push(lines[i]!);
+    used = next;
+  }
+  const hidden = lines.length - kept.length;
+  return hidden > 0 ? `${kept.join('\n')}\n• … y ${hidden} más` : kept.join('\n');
+}
+
+/**
+ * Título (concepto) del movimiento. En Deseos, un gasto por producto lleva el nombre del producto;
+ * en Mercado (o si hay varios productos) lleva el nombre de la lista.
+ */
+export function purchaseConcept(kind: 'market' | 'wish', listName: string, items: readonly Pick<PurchaseLineItem, 'name'>[]): string {
+  return kind === 'wish' && items.length === 1 ? items[0]!.name : listName;
+}
+
+/**
+ * Nota que lleva el movimiento de un grupo de productos. Si el título ya es el nombre del único
+ * producto y la línea no aporta nada más (1 und, en USD), no hace falta repetirlo en la nota.
+ */
+export function purchaseNote(kind: 'market' | 'wish', items: readonly PurchaseLineItem[]): string | null {
+  const note = buildPurchaseNote(items);
+  if (kind === 'wish' && items.length === 1 && note === `• ${items[0]!.name}`) return null;
+  return note;
+}
+
+/** Historial: listas completadas o archivadas. Activas: el resto. */
+export function isHistoryList(list: { completedAt: Date | null; archivedAt: Date | null }): boolean {
+  return list.completedAt !== null || list.archivedAt !== null;
 }
 
 export const LIST_KIND_LABEL = { market: 'Mercado', wish: 'Deseos' } as const;

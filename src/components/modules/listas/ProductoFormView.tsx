@@ -124,6 +124,7 @@ export function ProductoFormView({ id, listId }: { id: string; listId: string })
           </PressableScale>
         )}
 
+        {vm.isPurchased ? <Card style={styles.list}><SettingsRow label="Deshacer compra" danger onPress={vm.confirmUndo} last /></Card> : null}
         {!vm.isNew ? <Card style={styles.list}><SettingsRow label="Quitar de la lista" danger onPress={vm.confirmDelete} last /></Card> : null}
         {vm.error ? <AppText variant="small" color="expense">{vm.error}</AppText> : null}
       </ScrollView>
