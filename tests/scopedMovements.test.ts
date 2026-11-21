@@ -88,3 +88,16 @@ describe('lista de movimientos de una cuenta', () => {
     expect(f.inMinor - f.outMinor).toBe(500);
   });
 });
+
+describe('accountFlow sin transferencias', () => {
+  it('con includeTransfers false ignora las patas de transferencia', () => {
+    const rows = [
+      { amountMinor: -400, kind: 'expense' as const },
+      { amountMinor: 1000, kind: 'income' as const },
+      { amountMinor: -5000, kind: 'transfer' as const },
+      { amountMinor: 3000, kind: 'transfer' as const },
+    ];
+    expect(accountFlow(rows, { includeTransfers: false })).toEqual({ inMinor: 1000, outMinor: 400 });
+    expect(accountFlow(rows)).toEqual({ inMinor: 4000, outMinor: 5400 });
+  });
+});

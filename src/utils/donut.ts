@@ -52,3 +52,27 @@ export function arcPath(cx: number, cy: number, r: number, startDeg: number, end
 function round(n: number): number {
   return Math.round(n * 100) / 100;
 }
+
+export interface LegendPercent {
+  value: number;
+  label: string;
+}
+
+/**
+ * Porcentajes enteros que suman 100 (método del mayor resto). Lo que es mayor que 0 pero menor a 1 %
+ * se rotula "<1 %" y no recibe resto.
+ */
+export function legendPercents(shares: readonly number[]): LegendPercent[] {
+  const total = shares.reduce((s, x) => s + x, 0);
+  if (shares.length === 0 || total <= 0) return shares.map(() => ({ value: 0, label: '0 %' }));
+  const exact = shares.map((s) => (s / total) * 100);
+  const tiny = exact.map((x) => x > 0 && x < 1);
+  const values = exact.map((x, i) => (tiny[i] ? 0 : Math.floor(x)));
+  let left = 100 - values.reduce((s, x) => s + x, 0);
+  const order = exact
+    .map((x, i) => ({ i, frac: x - Math.floor(x) }))
+    .filter(({ i }) => !tiny[i])
+    .sort((a, b) => b.frac - a.frac || a.i - b.i);
+  for (let k = 0; left > 0 && order.length > 0; k = (k + 1) % order.length, left--) values[order[k]!.i]! += 1;
+  return values.map((value, i) => ({ value, label: tiny[i] ? '<1 %' : `${value} %` }));
+}

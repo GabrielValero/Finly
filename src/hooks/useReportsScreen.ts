@@ -3,7 +3,7 @@ import { useUi } from '../store/ui';
 import { isExcluded } from '../utils/categories';
 import { resolveCategoryColor } from '../utils/categoryColor';
 import { addMonths, dayOf, formatMonthLabel, MONTH_NAMES, monthOf, recentMonths, toLocalIso } from '../utils/dates';
-import { donutSlices } from '../utils/donut';
+import { donutSlices, legendPercents } from '../utils/donut';
 import { reportHeadlineSegments, topCategoryInsight } from '../utils/humanVoice';
 import { formatMoney } from '../utils/money';
 import { expenseByCategory, expenseByTag, monthlyFlow, topSlices, totalsOf, type ReportTx } from '../utils/reports';
@@ -41,10 +41,12 @@ export function useReportsScreen() {
     const monthName = (m: string) => MONTH_NAMES[Number(m.slice(5, 7)) - 1]!.toLowerCase();
     const byCategory = expenseByCategory(cur, categories);
     const colorOf = new Map(categories.map((c) => [c.id, c.color]));
-    const arcs = donutSlices(byCategory).map((s) => ({
+    const donutArcs = donutSlices(byCategory);
+    const percents = legendPercents(donutArcs.map((s) => s.share));
+    const arcs = donutArcs.map((s, i) => ({
       key: s.key,
       label: s.label,
-      percent: Math.round(s.share * 100),
+      percent: percents[i]!.label,
       color: s.key === 'none' || s.key === 'others' ? null : resolveCategoryColor(colorOf.get(s.key) ?? null, s.key),
       startDeg: s.startDeg,
       endDeg: s.endDeg,
@@ -75,6 +77,7 @@ export function useReportsScreen() {
       flow: flow.map((f) => ({
         month: f.month,
         label: formatMonthLabel(f.month).slice(0, 3),
+        fullLabel: formatMonthLabel(f.month),
         incomeRatio: f.incomeUsdMinor / peak,
         expenseRatio: f.expenseUsdMinor / peak,
         incomeLabel: formatMoney(f.incomeUsdMinor, 'USD'),

@@ -94,7 +94,7 @@ export function topCategoryInsight(slices: readonly Slice[]): CategoryInsight | 
   const top = slices[0];
   if (!top || top.key === 'none' || top.share <= 0) return null;
   return {
-    title: `${top.label} sigue siendo lo que más pesa.`,
+    title: `${top.label} es lo que más pesa.`,
     detail: `${Math.round(top.share * 100)} de cada 100 dólares se fueron ahí.`,
   };
 }

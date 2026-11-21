@@ -19,10 +19,49 @@ import { StatTile } from '../../shared/StatTile';
 import { ScreenTemplate } from '../../template/ScreenTemplate';
 import { ListasView } from '../listas/ListasView';
 
+interface SectionProps {
+  title: string;
+  rows: BudgetRowVm[];
+  onOpen: (id: string) => void;
+  /** Acción "Copiar mes anterior" (solo en la primera sección con partidas). */
+  onCopy?: () => void;
+}
+
+function BudgetSection({ title, rows, onOpen, onCopy }: SectionProps) {
+  const styles = useThemedStyles((t) => ({
+    sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    group: { gap: t.space[8] },
+    rows: { paddingVertical: t.space[4], paddingHorizontal: t.space[16] },
+    divider: { borderBottomWidth: 1, borderBottomColor: t.colors.border },
+  }));
+  if (rows.length === 0) return null;
+  return (
+    <View style={styles.group}>
+      <View style={styles.sectionHead}>
+        <AppText variant="label" color="textMuted">{title}</AppText>
+        {onCopy ? (
+          <PressableScale onPress={onCopy} accessibilityRole="button" accessibilityLabel="Copiar mes anterior">
+            <AppText variant="label" color="accent">Copiar mes anterior</AppText>
+          </PressableScale>
+        ) : null}
+      </View>
+      <Card style={styles.rows}>
+        {rows.map((r, i) => (
+          <View key={r.id} style={i < rows.length - 1 ? styles.divider : null}>
+            <RowPresupuesto {...r} onPress={() => onOpen(r.id)} />
+          </View>
+        ))}
+      </Card>
+    </View>
+  );
+}
+
 export function PresupuestoView() {
   const vm = usePresupuestoScreen();
   const theme = useTheme();
   const [monthPicker, setMonthPicker] = useState(false);
+  /** "Copiar mes anterior" va en la primera sección que tenga partidas. */
+  const copyOn = vm.fixed.length > 0 ? 'fixed' : vm.variable.length > 0 ? 'variable' : 'income';
   const section = useUi((s) => s.presupuestoSection);
   const setSection = useUi((s) => s.setPresupuestoSection);
   const styles = useThemedStyles((t) => ({
@@ -33,32 +72,9 @@ export function PresupuestoView() {
     bar: { marginTop: t.space[12] },
     barLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: t.space[8] },
     tiles: { flexDirection: 'row', gap: t.space[12], marginTop: t.space[16] },
-    sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    group: { gap: t.space[8] },
-    rows: { paddingVertical: t.space[4], paddingHorizontal: t.space[16] },
-    divider: { borderBottomWidth: 1, borderBottomColor: t.colors.border },
     empty: { alignItems: 'center', gap: t.space[12] },
     emptyIcon: { marginBottom: t.space[4] },
   }));
-
-  const Section = ({ title, rows, action }: { title: string; rows: BudgetRowVm[]; action?: boolean }) =>
-    rows.length === 0 ? null : (
-      <View style={styles.group}>
-        <View style={styles.sectionHead}>
-          <AppText variant="label" color="textMuted">{title}</AppText>
-          {action ? (
-            <PressableScale onPress={vm.copyPrevious}><AppText variant="label" color="accent">Copiar mes anterior</AppText></PressableScale>
-          ) : null}
-        </View>
-        <Card style={styles.rows}>
-          {rows.map((r, i) => (
-            <View key={r.id} style={i < rows.length - 1 ? styles.divider : null}>
-              <RowPresupuesto {...r} onPress={() => vm.openItem(r.id)} />
-            </View>
-          ))}
-        </Card>
-      </View>
-    );
 
   return (
     <ScreenTemplate>
@@ -97,9 +113,9 @@ export function PresupuestoView() {
                 </View>
               </Card>
               {vm.unplanned ? <AppText variant="small" color="textMuted">Sin planificar este mes: {vm.unplanned} en categorías fuera del presupuesto.</AppText> : null}
-              <Section title="GASTOS FIJOS" rows={vm.fixed} action />
-              <Section title="GASTOS VARIABLES" rows={vm.variable} action={vm.fixed.length === 0} />
-              <Section title="INGRESOS" rows={vm.income} />
+              <BudgetSection title="GASTOS FIJOS" rows={vm.fixed} onOpen={vm.openItem} onCopy={copyOn === 'fixed' ? vm.copyPrevious : undefined} />
+              <BudgetSection title="GASTOS VARIABLES" rows={vm.variable} onOpen={vm.openItem} onCopy={copyOn === 'variable' ? vm.copyPrevious : undefined} />
+              <BudgetSection title="INGRESOS" rows={vm.income} onOpen={vm.openItem} onCopy={copyOn === 'income' ? vm.copyPrevious : undefined} />
               <Button label="Planificar categoría" icon="plus" variant="secondary" onPress={vm.openAdd} />
             </>
           )}

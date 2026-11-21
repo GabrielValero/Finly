@@ -83,6 +83,15 @@ export function deriveTheme(seed: ThemeSeed): Theme {
   return { id: seed.id, name: seed.name, kind: seed.kind, colors: { ...derived, ...seed.overrides } };
 }
 
+/** Rol de texto legible (>= 4.5) sobre `background`: prefiere onAccent, luego bg y text; si ninguno llega, el mejor. */
+export function readableRoleOn(colors: ThemeColors, background: string): 'onAccent' | 'bg' | 'text' {
+  const candidates = ['onAccent', 'bg', 'text'] as const;
+  const ratios = candidates.map((k) => contrastRatio(colors[k], background));
+  const ok = ratios.findIndex((r) => r >= 4.5);
+  if (ok >= 0) return candidates[ok]!;
+  return candidates[ratios.indexOf(Math.max(...ratios))]!;
+}
+
 export interface ThemeIssue {
   role: string;
   ratio: number;

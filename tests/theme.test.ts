@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { themeSeedSchema } from '../src/schemas/theme';
+import { contrastRatio } from '../src/utils/color';
 import {
-  BUILTIN_SEEDS, DEFAULT_THEME_ID, deriveTheme, finlyDark, finlyLight, resolveTheme, THEME_COLOR_KEYS, validateTheme,
+  BUILTIN_SEEDS, DEFAULT_THEME_ID, deriveTheme, finlyDark, finlyLight, readableRoleOn, resolveTheme, THEME_COLOR_KEYS, validateTheme,
 } from '../src/utils/theme';
 
 describe('temas integrados', () => {
@@ -59,5 +60,19 @@ describe('themeSeedSchema', () => {
     expect(themeSeedSchema.safeParse({ ...finlyDark, bg: 'red' }).success).toBe(false);
     expect(themeSeedSchema.safeParse({ ...finlyDark, overrides: { nope: '#000000' } }).success).toBe(false);
     expect(themeSeedSchema.safeParse({ ...finlyDark, kind: 'sepia' }).success).toBe(false);
+  });
+});
+
+describe('readableRoleOn', () => {
+  it('el texto del insight sobre el color de ingreso cumple 4.5 en los temas integrados', () => {
+    for (const seed of BUILTIN_SEEDS) {
+      const theme = deriveTheme(seed);
+      const role = readableRoleOn(theme.colors, theme.colors.income);
+      expect(contrastRatio(theme.colors[role], theme.colors.income)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+  it('prefiere onAccent si ya es legible', () => {
+    const theme = deriveTheme(BUILTIN_SEEDS[0]!);
+    expect(readableRoleOn(theme.colors, theme.colors.income)).toBe('onAccent');
   });
 });

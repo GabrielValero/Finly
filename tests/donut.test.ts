@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arcPath, donutSlices } from '../src/utils/donut';
+import { arcPath, donutSlices, legendPercents } from '../src/utils/donut';
 import type { Slice } from '../src/utils/reports';
 
 const slice = (key: string, share: number, usdMinor = share * 10_000): Slice => ({ key, label: key, usdMinor, share });
@@ -48,5 +48,23 @@ describe('arcPath', () => {
     const d = arcPath(50, 50, 40, 0, 360);
     expect(d).toContain('A 40 40 0 1 1');
     expect(d).not.toContain('NaN');
+  });
+});
+
+describe('legendPercents', () => {
+  it('suma 100 con el método del mayor resto', () => {
+    const p = legendPercents([1 / 3, 1 / 3, 1 / 3]);
+    expect(p.map((x) => x.value).reduce((a, b) => a + b, 0)).toBe(100);
+    expect(p.map((x) => x.value)).toEqual([34, 33, 33]);
+  });
+  it('un valor chico pero no cero se muestra como <1 %', () => {
+    const p = legendPercents([0.97, 0.025, 0.005]);
+    expect(p.map((x) => x.label)).toEqual(['97 %', '3 %', '<1 %']);
+  });
+  it('los casos redondos quedan igual', () => {
+    expect(legendPercents([0.5, 0.25, 0.25]).map((x) => x.label)).toEqual(['50 %', '25 %', '25 %']);
+  });
+  it('sin porciones no hay nada', () => {
+    expect(legendPercents([])).toEqual([]);
   });
 });

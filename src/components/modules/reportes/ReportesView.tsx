@@ -4,13 +4,14 @@ import { useReportsScreen } from '../../../hooks/useReportsScreen';
 import { useTheme, useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
 import { Card } from '../../shared/Card';
-import { DonutChart } from '../../shared/DonutChart';
+import { arcColor, DonutChart } from '../../shared/DonutChart';
 import { HumanLine } from '../../shared/HumanLine';
 import { MonthPill } from '../../shared/MonthPill';
 import { OptionList } from '../../shared/OptionList';
 import { SheetModal } from '../../shared/SheetModal';
 import { StatTile } from '../../shared/StatTile';
 import { ScreenTemplate } from '../../template/ScreenTemplate';
+import { readableRoleOn } from '../../../utils/theme';
 
 const BAR_HEIGHT = 96;
 
@@ -48,6 +49,7 @@ export function ReportesView() {
   const vm = useReportsScreen();
   const theme = useTheme();
   const [monthPicker, setMonthPicker] = useState(false);
+  const insightText = readableRoleOn(theme.colors, theme.colors.income);
   const styles = useThemedStyles((t) => ({
     header: { height: 56, paddingHorizontal: t.space[16], flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     scroll: { paddingHorizontal: t.space[16], paddingBottom: t.space[32], gap: t.space[16] },
@@ -93,9 +95,9 @@ export function ReportesView() {
             <View style={styles.legend}>
               {vm.donut.arcs.map((a) => (
                 <View key={a.key} style={styles.legendRow}>
-                  <View style={[styles.swatch, { backgroundColor: a.color ?? theme.colors.textMuted }]} />
+                  <View style={[styles.swatch, { backgroundColor: arcColor(theme, a) }]} />
                   <View style={styles.legendLabel}><AppText variant="bodyRegular" numberOfLines={1}>{a.label}</AppText></View>
-                  <AppText variant="caption" color="textMuted">{a.percent} %</AppText>
+                  <AppText variant="caption" color="textMuted">{a.percent}</AppText>
                 </View>
               ))}
             </View>
@@ -104,16 +106,16 @@ export function ReportesView() {
 
         {vm.insight ? (
           <View style={styles.insight}>
-            <AppText variant="subtitle" color="onAccent">{vm.insight.title}</AppText>
-            <AppText variant="bodyRegular" color="onAccent">{vm.insight.detail}</AppText>
+            <AppText variant="subtitle" color={insightText}>{vm.insight.title}</AppText>
+            <AppText variant="bodyRegular" color={insightText}>{vm.insight.detail}</AppText>
           </View>
         ) : null}
 
         <Card style={styles.card}>
-          <AppText variant="label" color="textMuted">GASTOS · ÚLTIMOS 6 MESES</AppText>
+          <AppText variant="label" color="textMuted">INGRESOS Y GASTOS · ÚLTIMOS 6 MESES</AppText>
           <View style={styles.bars}>
             {vm.flow.map((f) => (
-              <View key={f.month} style={styles.barCol}>
+              <View key={f.month} style={styles.barCol} accessible accessibilityLabel={`${f.fullLabel}: ingresos ${f.incomeLabel}, gastos ${f.expenseLabel}`}>
                 <View style={styles.pair}>
                   <View style={{ width: 12, height: Math.max(2, Math.round(f.incomeRatio * BAR_HEIGHT)), borderRadius: 3, backgroundColor: theme.colors.income, opacity: f.selected ? 1 : 0.4 }} />
                   <View style={{ width: 12, height: Math.max(2, Math.round(f.expenseRatio * BAR_HEIGHT)), borderRadius: 3, backgroundColor: theme.colors.expense, opacity: f.selected ? 1 : 0.4 }} />

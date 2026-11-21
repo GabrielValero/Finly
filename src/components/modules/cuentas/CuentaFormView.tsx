@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { accountKindLabel } from '../../../utils/accounts';
 import { useAccountForm } from '../../../hooks/useAccountForm';
 import { useTheme, useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
@@ -65,7 +66,7 @@ export function CuentaFormView({ id }: { id?: string }) {
         <AppText variant="label" color="textMuted">Ícono</AppText>
         <View style={styles.icons}>
           {ACCOUNT_ICON_KEYS.map((k) => (
-            <PressableScale key={k} onPress={() => vm.setIcon(k)} style={[styles.iconBtn, k === vm.icon ? styles.iconSelected : null]} accessibilityLabel={k} accessibilityState={{ selected: k === vm.icon }}>
+            <PressableScale key={k} onPress={() => vm.setIcon(k)} style={[styles.iconBtn, k === vm.icon ? styles.iconSelected : null]} accessibilityLabel={accountKindLabel(k) ?? k} accessibilityState={{ selected: k === vm.icon }}>
               <Icon name={k} size={22} color={k === vm.icon ? 'accent' : 'text'} />
             </PressableScale>
           ))}

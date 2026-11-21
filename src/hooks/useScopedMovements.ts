@@ -30,6 +30,7 @@ export type ScopeCard =
       equivalent: string | null;
       human: Segment[];
       stats: ScopeStat[];
+      note: string;
     }
   | {
       type: 'budget';
@@ -84,7 +85,7 @@ export function useScopedMovements(scope: MovementScope) {
     if (scope.type === 'account') {
       const account = accounts.find((a) => a.id === scope.id) ?? null;
       const own = rows.filter((r) => r.accountId === scope.id);
-      const flow = accountFlow(own);
+      const flow = accountFlow(own, { includeTransfers: false });
       const currency = account?.currency ?? 'USD';
       let equivalent: string | null = null;
       if (account && rate) {
@@ -102,6 +103,7 @@ export function useScopedMovements(scope: MovementScope) {
               { label: 'ENTRADAS', value: formatMoney(flow.inMinor, currency), tone: 'income' },
               { label: 'SALIDAS', value: formatMoney(flow.outMinor, currency), tone: 'expense' },
             ],
+            note: 'Entradas y salidas no incluyen transferencias.',
           }
         : null;
       return {

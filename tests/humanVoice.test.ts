@@ -96,7 +96,7 @@ describe('reportHeadlineSegments', () => {
 describe('topCategoryInsight', () => {
   const slice = (key: string, label: string, usdMinor: number, share: number): Slice => ({ key, label, usdMinor, share });
   it('la categoría que más pesa y cuántos de cada 100 dólares', () => {
-    expect(topCategoryInsight([slice('c', 'Comida', 4200, 0.42), slice('h', 'Hogar', 3000, 0.3)])).toEqual({ title: 'Comida sigue siendo lo que más pesa.', detail: '42 de cada 100 dólares se fueron ahí.' });
+    expect(topCategoryInsight([slice('c', 'Comida', 4200, 0.42), slice('h', 'Hogar', 3000, 0.3)])).toEqual({ title: 'Comida es lo que más pesa.', detail: '42 de cada 100 dólares se fueron ahí.' });
   });
   it('sin gastos no hay insight', () => {
     expect(topCategoryInsight([])).toBeNull();

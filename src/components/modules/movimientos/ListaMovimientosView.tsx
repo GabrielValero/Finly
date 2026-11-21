@@ -37,6 +37,7 @@ function ScopeSummary({ card }: { card: ScopeCard }) {
         <View style={styles.tiles}>
           {card.stats.map((s) => <StatTile key={s.label} label={s.label} value={s.value} tone={s.tone} />)}
         </View>
+        <View style={styles.human}><AppText variant="caption" color="textMuted">{card.note}</AppText></View>
       </Card>
     );
   }
