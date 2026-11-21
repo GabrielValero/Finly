@@ -12,13 +12,14 @@ import { Card } from '../../shared/Card';
 import { Chip } from '../../shared/Chip';
 import { Field } from '../../shared/Field';
 import { Icon } from '../../shared/Icon';
+import { IconBadge } from '../../shared/IconBadge';
 import { Keypad } from '../../shared/Keypad';
 import { OptionList } from '../../shared/OptionList';
 import { PressableScale } from '../../shared/PressableScale';
 import { Segmented } from '../../shared/Segmented';
-import { SwitchRow } from '../../shared/SwitchRow';
 import { SettingsRow } from '../../shared/SettingsRow';
 import { SheetModal } from '../../shared/SheetModal';
+import { SwitchRow } from '../../shared/SwitchRow';
 import { ScreenTemplate } from '../../template/ScreenTemplate';
 import { ListRateSheet } from './ListRateSheet';
 
@@ -42,6 +43,8 @@ export function ProductoFormView({ id, listId }: { id: string; listId: string })
     scroll: { paddingHorizontal: t.space[16], paddingBottom: t.space[16], gap: t.space[12] },
     box: { backgroundColor: t.colors.surface, borderRadius: t.radius[16], borderWidth: 1, borderColor: t.colors.border, paddingHorizontal: t.space[16], paddingVertical: t.space[12], gap: t.space[4] },
     boxRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: t.space[8] },
+    boxHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: t.space[8] },
+    currency: { width: 120 },
     qtyRow: { flexDirection: 'row', gap: t.space[12], alignItems: 'stretch' },
     qty: { flex: 1, minWidth: 0 },
     unit: { width: 120 },
@@ -49,11 +52,14 @@ export function ProductoFormView({ id, listId }: { id: string; listId: string })
     flex: { flex: 1, minWidth: 0 },
     more: { alignSelf: 'flex-start', paddingVertical: t.space[8] },
     list: { paddingVertical: 0, paddingHorizontal: t.space[16] },
+    switchBox: { paddingVertical: t.space[12] },
+    undoRow: { flexDirection: 'row', alignItems: 'center', gap: t.space[12], minHeight: 49 },
+    divider: { borderBottomWidth: 1, borderBottomColor: t.colors.border },
     footer: { paddingHorizontal: t.space[16], paddingTop: t.space[8], paddingBottom: t.space[16] + Math.max(insets.bottom, t.space[8]) },
   }));
   if (vm.notFound) {
     return (
-      <ScreenTemplate title={vm.title} left="close" onLeft={vm.close}>
+      <ScreenTemplate title={vm.title} titleBold left="close" onLeft={vm.close}>
         <View style={styles.scroll}><AppText variant="small" color="textMuted">Este producto ya no existe.</AppText></View>
       </ScreenTemplate>
     );
@@ -61,7 +67,7 @@ export function ProductoFormView({ id, listId }: { id: string; listId: string })
   const priceTitle = vm.isWish ? `${vm.priceTitle} (objetivo)` : vm.priceTitle;
   const showMore = moreOpen || vm.hasExtras;
   return (
-    <ScreenTemplate title={vm.title} left="close" onLeft={vm.close}>
+    <ScreenTemplate title={vm.title} titleBold left="close" onLeft={vm.close}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Field label="Producto" value={vm.name} onChangeText={vm.setName} placeholder="Ej. Harina PAN" maxLength={80} autoFocus={vm.isNew} />
 
@@ -78,23 +84,44 @@ export function ProductoFormView({ id, listId }: { id: string; listId: string })
           </PressableScale>
         </View>
 
-        <PressableScale onPress={() => setKeypad(true)} style={styles.box}>
-          <AppText variant="label" color="textMuted">{priceTitle} · {vm.currency === 'USD' ? 'USD' : 'Bs'}</AppText>
-          <AppText variant="heading">{vm.priceLabel}</AppText>
-        </PressableScale>
-        <SwitchRow label="Lleva IVA (16 %)" hint={vm.taxable ? 'El precio es SIN IVA; se suma el 16 % al total.' : undefined} value={vm.taxable} onChange={vm.setTaxable} />
-        {vm.lineLabel ? <AppText variant="label" color="accent">{vm.lineLabel}</AppText> : null}
+        <View style={styles.box}>
+          <View style={styles.boxHead}>
+            <View style={styles.flex}><AppText variant="label" color="textMuted" numberOfLines={1}>{priceTitle}</AppText></View>
+            <View style={styles.currency}>
+              <Segmented small onSurface options={[{ value: 'USD', label: 'USD' }, { value: 'VES', label: 'Bs' }]} value={vm.currency} onChange={vm.setCurrency} />
+            </View>
+          </View>
+          <PressableScale onPress={() => setKeypad(true)} accessibilityLabel="Editar precio">
+            <AppText variant="balance" color={vm.price.minor > 0 ? 'text' : 'textMuted'} fit>{vm.priceLabel}</AppText>
+          </PressableScale>
+        </View>
         {vm.currency === 'VES' ? (
           <PressableScale onPress={rateEditor.openSheet} accessibilityLabel="Cambiar tasa">
             <AppText variant="small" color="textMuted">
-              Se convierte a USD con {rateEditor.label}. <AppText variant="small" color="accent">Cambiar tasa</AppText>
+              Se convierte a USD con {rateEditor.label}. <AppText variant="label" color="accent">Cambiar tasa</AppText>
             </AppText>
           </PressableScale>
         ) : null}
 
-        <PressableScale onPress={() => setPicker(true)} style={styles.box}>
+        <Card style={styles.list}>
+          <View style={styles.switchBox}>
+            <SwitchRow label="Lleva IVA (16 %)" value={vm.taxable} onChange={vm.setTaxable} />
+          </View>
+        </Card>
+        <AppText variant="small" color="textMuted">El precio que escribes es SIN IVA; si lo activas, se suma el 16 % al total.</AppText>
+
+        {vm.lineTotal ? (
+          <Card>
+            <AppText variant="label" color="textMuted">Total de la línea</AppText>
+            <AppText variant="balance" color="accent" fit>{vm.lineTotal.amount}</AppText>
+            {vm.lineTotal.note ? <AppText variant="caption" color="textMuted">{vm.lineTotal.note}</AppText> : null}
+          </Card>
+        ) : null}
+
+        <PressableScale onPress={() => setPicker(true)} style={styles.box} accessibilityLabel="Elegir categoría">
           <AppText variant="label" color="textMuted">Categoría</AppText>
           <View style={styles.boxRow}>
+            {vm.categoryLabel || vm.inheritedLabel ? <IconBadge icon={vm.categoryIcon} size={32} tint={vm.categoryColor} /> : null}
             <View style={styles.flex}>
               <AppText variant="body" color={vm.categoryLabel ? 'text' : 'textMuted'} numberOfLines={1}>
                 {vm.categoryLabel ?? (vm.inheritedLabel ? `Hereda: ${vm.inheritedLabel}` : 'Hereda la de la lista')}
@@ -111,7 +138,7 @@ export function ProductoFormView({ id, listId }: { id: string; listId: string })
                 <AppText variant="label" color="textMuted">Prioridad (opcional)</AppText>
                 <View style={styles.chips}>
                   {([['high', 'Alta'], ['medium', 'Media'], ['low', 'Baja']] as const).map(([value, label]) => (
-                    <Chip key={value} label={label} selected={vm.priority === value} onPress={() => vm.setPriority(vm.priority === value ? null : value)} />
+                    <Chip key={value} label={label} shape="tile" selected={vm.priority === value} onPress={() => vm.setPriority(vm.priority === value ? null : value)} />
                   ))}
                 </View>
               </>
@@ -124,8 +151,17 @@ export function ProductoFormView({ id, listId }: { id: string; listId: string })
           </PressableScale>
         )}
 
-        {vm.isPurchased ? <Card style={styles.list}><SettingsRow label="Deshacer compra" danger onPress={vm.confirmUndo} last /></Card> : null}
-        {!vm.isNew ? <Card style={styles.list}><SettingsRow label="Quitar de la lista" danger onPress={vm.confirmDelete} last /></Card> : null}
+        {vm.isPurchased || !vm.isNew ? (
+          <Card style={styles.list}>
+            {vm.isPurchased ? (
+              <PressableScale onPress={vm.confirmUndo} style={[styles.undoRow, styles.divider]} accessibilityLabel="Deshacer compra">
+                <Icon name="undo" size={18} color="accent" />
+                <AppText variant="bodyRegular" color="accent">Deshacer compra</AppText>
+              </PressableScale>
+            ) : null}
+            {!vm.isNew ? <SettingsRow label="Quitar de la lista" danger onPress={vm.confirmDelete} last /> : null}
+          </Card>
+        ) : null}
         {vm.error ? <AppText variant="small" color="expense">{vm.error}</AppText> : null}
       </ScrollView>
       <View style={styles.footer}><Button label="Guardar" onPress={() => void vm.save()} disabled={!vm.canSave} /></View>
@@ -164,7 +200,7 @@ export function ProductoFormView({ id, listId }: { id: string; listId: string })
       </SheetModal>
       <ListRateSheet editor={rateEditor} />
       <SheetModal visible={keypad} title={priceTitle.toUpperCase()} onClose={() => setKeypad(false)}>
-        <Segmented options={[{ value: 'USD', label: 'USD' }, { value: 'VES', label: 'Bs' }]} value={vm.currency} onChange={vm.setCurrency} />
+        <Segmented options={[{ value: 'USD', label: 'USD' }, { value: 'VES', label: 'Bs' }]} value={vm.currency} onChange={vm.setCurrency} onSurface />
         <AppText variant="display" align="center">{vm.price.display}</AppText>
         <Keypad onKey={vm.price.press} />
         <Button label="Listo" onPress={() => setKeypad(false)} />

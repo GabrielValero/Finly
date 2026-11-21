@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   accountMonthSegments,
   budgetPlanSegments,
+  listLimitSegments,
   portfolioSegments,
   reportHeadlineSegments,
   scopeRemainingSegments,
   topCategoryInsight,
+  wishSummarySegments,
   type Segment,
 } from '../src/utils/humanVoice';
 import type { Slice } from '../src/utils/reports';
@@ -103,5 +105,32 @@ describe('topCategoryInsight', () => {
   });
   it('si lo más grande es "sin categoría" no hay insight', () => {
     expect(topCategoryInsight([slice('none', 'Sin categoría', 100, 1)])).toBeNull();
+  });
+});
+
+describe('listLimitSegments', () => {
+  it('te quedan X de tu límite de Y', () => {
+    const s = listLimitSegments({ over: false, amount: '$ 34,50', limit: '$ 100,00' });
+    expect(plain(s)).toBe('Te quedan $ 34,50 de tu límite de $ 100,00.');
+    expect(bold(s)).toEqual(['$ 34,50']);
+  });
+  it('te pasas X del límite, con el exceso en color de gasto', () => {
+    const s = listLimitSegments({ over: true, amount: '$ 12,00', limit: '$ 100,00' });
+    expect(plain(s)).toBe('Te pasas $ 12,00 del límite de $ 100,00.');
+    expect(s.find((x) => x.bold)?.tone).toBe('expense');
+  });
+});
+
+describe('wishSummarySegments', () => {
+  it('ya compraste N de M y lo más importante', () => {
+    const s = wishSummarySegments({ bought: 1, total: 4, topName: 'Auriculares' });
+    expect(plain(s!)).toBe('Ya compraste 1 de 4. Lo más importante es Auriculares.');
+    expect(bold(s!)).toEqual(['1 de 4', 'Auriculares']);
+  });
+  it('sin prioridad definida omite la segunda frase', () => {
+    expect(plain(wishSummarySegments({ bought: 0, total: 3, topName: null })!)).toBe('Ya compraste 0 de 3.');
+  });
+  it('sin deseos no hay frase', () => {
+    expect(wishSummarySegments({ bought: 0, total: 0, topName: null })).toBeNull();
   });
 });

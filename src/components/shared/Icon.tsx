@@ -31,6 +31,8 @@ const REGISTRY: Record<string, Glyph> = {
   calendar: { lib: 'feather', name: 'calendar' },
   swap: { lib: 'feather', name: 'arrow-down' },
   check: { lib: 'feather', name: 'check' },
+  star: { lib: 'feather', name: 'star' },
+  undo: { lib: 'feather', name: 'rotate-ccw' },
   backspace: { lib: 'feather', name: 'delete' },
   list: { lib: 'feather', name: 'list' },
   pie: { lib: 'feather', name: 'pie-chart' },

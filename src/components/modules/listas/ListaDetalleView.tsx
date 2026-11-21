@@ -1,18 +1,21 @@
 import { useState } from 'react';
 import { ScrollView, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useListDetail } from '../../../hooks/useListDetail';
+import { useListDetail, type ProductRowVm } from '../../../hooks/useListDetail';
 import { useListRateEditor } from '../../../hooks/useListRate';
-import { ListRateSheet } from './ListRateSheet';
 import { useTheme, useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
 import { Button } from '../../shared/Button';
 import { Card } from '../../shared/Card';
-import { OptionList } from '../../shared/OptionList';
+import { HumanLine } from '../../shared/HumanLine';
+import { Icon } from '../../shared/Icon';
 import { PressableScale } from '../../shared/PressableScale';
+import { ProgressBar } from '../../shared/ProgressBar';
 import { RowProducto } from '../../shared/RowProducto';
-import { SheetModal } from '../../shared/SheetModal';
+import { StatTile } from '../../shared/StatTile';
 import { ScreenTemplate } from '../../template/ScreenTemplate';
+import { ListRateSheet } from './ListRateSheet';
+import { PurchaseSheet } from './PurchaseSheet';
 
 export function ListaDetalleView({ id }: { id: string }) {
   const vm = useListDetail(id);
@@ -23,20 +26,21 @@ export function ListaDetalleView({ id }: { id: string }) {
   const styles = useThemedStyles((t) => ({
     scroll: { paddingHorizontal: t.space[16], paddingBottom: t.space[24], gap: t.space[12] },
     summary: { gap: t.space[8] },
-    cols: { flexDirection: 'row', gap: t.space[8] },
-    col: { flex: 1, gap: t.space[4], minWidth: 0 },
-    track: { height: 6, borderRadius: 3, backgroundColor: t.colors.surface2, overflow: 'hidden' },
-    add: { flexDirection: 'row', alignItems: 'center', gap: t.space[8] },
-    input: { flex: 1, height: 48, borderRadius: t.radius[16], backgroundColor: t.colors.surface, borderWidth: 1, borderColor: t.colors.border, paddingHorizontal: t.space[16], color: t.colors.text, fontFamily: t.font.sans.medium, fontSize: 16 },
-    list: { paddingVertical: 0, paddingHorizontal: t.space[16] },
-    footer: { paddingHorizontal: t.space[16], paddingBottom: t.space[16] + insets.bottom, paddingTop: t.space[8], gap: t.space[8] },
-    sheetRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: t.space[12] },
-    flex: { flex: 1, minWidth: 0 },
+    tiles: { flexDirection: 'row', gap: t.space[12], marginTop: t.space[4] },
+    rateTile: { flex: 1, minWidth: 0, gap: t.space[4], padding: t.space[12], borderRadius: t.radius[16], backgroundColor: t.colors.surface2 },
+    rateFoot: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: t.space[4] },
+    add: { flexDirection: 'row', alignItems: 'center', gap: t.space[12], minHeight: 52, paddingHorizontal: t.space[16], borderRadius: t.radius[16], backgroundColor: t.colors.surface, borderWidth: 1, borderColor: t.colors.border },
+    input: { flex: 1, height: 48, color: t.colors.text, fontFamily: t.font.sans.medium, fontSize: 16, padding: 0 },
+    sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: t.space[8] },
+    group: { gap: t.space[8] },
+    rows: { paddingVertical: t.space[4], paddingHorizontal: t.space[16] },
+    divider: { borderBottomWidth: 1, borderBottomColor: t.colors.border },
+    footer: { paddingHorizontal: t.space[16], paddingBottom: t.space[16] + Math.max(insets.bottom, t.space[8]), paddingTop: t.space[8], gap: t.space[8] },
   }));
 
   if (vm.notFound) {
     return (
-      <ScreenTemplate title="LISTA" left="back" onLeft={vm.back}>
+      <ScreenTemplate title="Lista" titleBold left="back" onLeft={vm.back}>
         <View style={styles.scroll}><AppText variant="small" color="textMuted">Esta lista ya no existe.</AppText></View>
       </ScreenTemplate>
     );
@@ -48,56 +52,74 @@ export function ListaDetalleView({ id }: { id: string }) {
   };
   const isMarket = vm.kind === 'market';
   const limit = vm.limit;
-  const barColor = limit?.state === 'over' ? theme.colors.expense : limit?.state === 'near' ? theme.colors.accent : theme.colors.income;
+  const barTone = limit?.state === 'over' ? 'expense' : limit?.state === 'near' ? 'warning' : 'accent';
+  const label = `${vm.kindLabel}${vm.categoryLabel ? ` · ${vm.categoryLabel}` : ''}`;
+  const pendingInfo = [
+    `${vm.pendingCount} ${vm.pendingCount === 1 ? 'producto pendiente' : 'productos pendientes'}`,
+    vm.incomplete || null,
+  ].filter(Boolean).join(' · ');
+
+  const row = (r: ProductRowVm, i: number, all: readonly ProductRowVm[]) => (
+    <View key={r.id} style={i < all.length - 1 ? styles.divider : null}>
+      <RowProducto
+        {...r}
+        mode={vm.kind}
+        onPress={() => vm.openItem(r.id)}
+        onToggle={() => (isMarket ? vm.toggle(r.id, !r.checked) : vm.openPurchase([r.id]))}
+      />
+    </View>
+  );
+  const section = (title: string, subtotal: string | null, rows: readonly ProductRowVm[]) =>
+    rows.length === 0 ? null : (
+      <View style={styles.group}>
+        <View style={styles.sectionHead}>
+          <AppText variant="label" color="textMuted">{title} · {rows.length}</AppText>
+          {subtotal ? <AppText variant="caption" color="textMuted">{subtotal}</AppText> : null}
+        </View>
+        <Card style={styles.rows}>{rows.map(row)}</Card>
+      </View>
+    );
 
   return (
-    <ScreenTemplate title={vm.title} left="back" onLeft={vm.back} right={{ label: 'Editar', onPress: vm.edit }}>
+    <ScreenTemplate title={vm.title} titleBold left="back" onLeft={vm.back} right={{ label: 'Editar', onPress: vm.edit }}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Card highlight style={styles.summary}>
-          <AppText variant="label" color="textMuted">{vm.kindLabel}{vm.categoryLabel ? ` · ${vm.categoryLabel}` : ''}</AppText>
+          <AppText variant="label" color="textMuted" numberOfLines={1}>{label}</AppText>
           <AppText variant="display" fit>{vm.totalLabel}</AppText>
-          {vm.totalBsLabel ? <AppText variant="amountMid" color="textMuted" fit>{vm.totalBsLabel}</AppText> : null}
-          {vm.ivaLabel ? <AppText variant="caption" color="textMuted">{vm.ivaLabel}</AppText> : null}
-          <AppText variant="small" color="textMuted" numberOfLines={2}>
-            {vm.pendingCount} {vm.pendingCount === 1 ? 'producto pendiente' : 'productos pendientes'}{vm.incomplete ? ` · ${vm.incomplete}` : ''}
-          </AppText>
-          {limit ? (
-            <>
-              <View style={styles.track}>
-                <View style={{ height: 6, borderRadius: 3, backgroundColor: barColor, width: `${Math.round(Math.min(limit.ratio, 1) * 100)}%` }} />
-              </View>
-              <AppText variant="label" color={limit.state === 'over' ? 'expense' : 'textMuted'}>
-                {limit.state === 'over' ? `Te pasas ${limit.remaining} del límite de ${limit.label}` : `Te quedan ${limit.remaining} de ${limit.label}`}
-              </AppText>
-            </>
-          ) : null}
+          {vm.totalBsLabel ? <AppText variant="amount" color="textMuted" fit>{vm.totalBsLabel}</AppText> : null}
+          {isMarket && vm.limitSegments ? <HumanLine segments={vm.limitSegments} variant="bodyRegular" /> : null}
+          {isMarket && limit ? <ProgressBar value={Math.min(limit.ratio, 1)} color={barTone} /> : null}
+          {!isMarket && vm.wishSummary ? <HumanLine segments={vm.wishSummary} variant="bodyRegular" /> : null}
           {isMarket ? (
-            <View style={styles.cols}>
-              <View style={styles.col}>
-                <AppText variant="label" color="textMuted">En el carrito</AppText>
-                <AppText variant="amountMid" fit>{vm.cartLabel}</AppText>
-                {vm.cartBsLabel ? <AppText variant="caption" color="textMuted" numberOfLines={1}>{vm.cartBsLabel}</AppText> : null}
-              </View>
-              <PressableScale onPress={rateEditor.openSheet} style={styles.col} accessibilityLabel="Cambiar tasa">
+            <View style={styles.tiles}>
+              <StatTile label="EN EL CARRITO" value={vm.cartLabel} note={vm.cartBsLabel} />
+              <PressableScale onPress={rateEditor.openSheet} style={styles.rateTile} accessibilityLabel="Cambiar tasa">
                 <AppText variant="label" color="textMuted">Tasa</AppText>
-                <AppText variant="small" numberOfLines={1}>{vm.rateLabel}</AppText>
-                <AppText variant="caption" color="accent">Cambiar</AppText>
+                <AppText variant="amount" fit>{vm.rateValue}</AppText>
+                <View style={styles.rateFoot}>
+                  <AppText variant="caption" color="textMuted" numberOfLines={1}>{vm.rateSource ?? '—'}</AppText>
+                  <AppText variant="label" color="accent">Cambiar</AppText>
+                </View>
               </PressableScale>
             </View>
           ) : (
-            <PressableScale onPress={rateEditor.openSheet} accessibilityLabel="Cambiar tasa">
-              <AppText variant="small" color="textMuted">Tasa: {vm.rateLabel} · <AppText variant="small" color="accent">Cambiar</AppText></AppText>
+            <PressableScale onPress={rateEditor.openSheet} accessibilityLabel="Cambiar tasa" style={styles.sectionHead}>
+              <AppText variant="label" color="textMuted" numberOfLines={1}>Tasa: {vm.rateLabel}</AppText>
+              <AppText variant="label" color="accent">Cambiar</AppText>
             </PressableScale>
           )}
           {vm.budgetHint ? <AppText variant="small" color="textMuted">{vm.budgetHint}</AppText> : null}
+          {vm.ivaLabel ? <AppText variant="caption" color="textMuted">{vm.ivaLabel}</AppText> : null}
+          {isMarket && vm.pendingCount > 0 ? <AppText variant="small" color="textMuted" numberOfLines={2}>{pendingInfo}</AppText> : null}
         </Card>
 
         <View style={styles.add}>
+          <Icon name="plus" size={20} color="accent" />
           <TextInput
             value={draft}
             onChangeText={setDraft}
             onSubmitEditing={submit}
-            placeholder="Añadir producto…"
+            placeholder={isMarket ? 'Añadir producto…' : 'Añadir deseo…'}
             placeholderTextColor={theme.colors.textMuted}
             returnKeyType="done"
             blurOnSubmit={false}
@@ -110,61 +132,32 @@ export function ListaDetalleView({ id }: { id: string }) {
 
         {vm.rows.length === 0 ? (
           <AppText variant="small" color="textMuted">Escribe el nombre y pulsa intro. Luego toca el producto para ponerle precio, cantidad o categoría.</AppText>
+        ) : isMarket ? (
+          <>
+            {section('EN EL CARRITO', vm.cartSection.subtotal, vm.cartSection.rows)}
+            {section('PENDIENTES', vm.pendingSection.subtotal, vm.pendingSection.rows)}
+            {section('COMPRADOS', null, vm.purchasedRows)}
+          </>
         ) : (
-          <Card style={styles.list}>
-            {vm.rows.map((r) => (
-              <RowProducto
-                key={r.id}
-                {...r}
-                mode={vm.kind}
-                onPress={() => vm.openItem(r.id)}
-                onToggle={() => (isMarket ? vm.toggle(r.id, !r.checked) : vm.openPurchase([r.id]))}
-              />
-            ))}
-          </Card>
+          <>
+            <Card style={styles.rows}>{vm.rows.map(row)}</Card>
+            <AppText variant="small" color="textMuted">Cada deseo se registra como gasto cuando lo compras.</AppText>
+          </>
         )}
-        {vm.completed ? <Button label="Reabrir lista" variant="outline" onPress={vm.reopen} /> : null}
-        {vm.archived ? <Button label="Sacar del historial" variant="outline" onPress={vm.unarchive} /> : null}
-        {isMarket && (vm.completed || vm.archived) ? <Button label="Duplicar lista" variant="outline" onPress={vm.duplicate} /> : null}
-        {!vm.completed && !vm.archived ? <Button label="Archivar lista" variant="outline" onPress={vm.archive} /> : null}
+        {vm.completed ? <Button label="Reabrir lista" variant="secondary" onPress={vm.reopen} /> : null}
+        {vm.archived ? <Button label="Sacar del historial" variant="secondary" onPress={vm.unarchive} /> : null}
+        {isMarket && (vm.completed || vm.archived) ? <Button label="Duplicar lista" variant="secondary" onPress={vm.duplicate} /> : null}
+        {!vm.completed && !vm.archived ? <Button label="Archivar lista" variant="secondary" onPress={vm.archive} /> : null}
       </ScrollView>
 
       {isMarket && !vm.completed && !vm.archived ? (
         <View style={styles.footer}>
-          <Button label={vm.checkedCount > 0 ? `Registrar compra (${vm.checkedCount})` : 'Registrar compra'} onPress={() => vm.openPurchase()} disabled={vm.pendingCount === 0} />
+          <Button label={vm.checkedCount > 0 ? `Registrar compra (${vm.checkedCount})` : 'Registrar compra'} icon="cart" onPress={() => vm.openPurchase()} disabled={vm.pendingCount === 0} />
         </View>
       ) : null}
 
       <ListRateSheet editor={rateEditor} />
-      <SheetModal visible={vm.purchaseOpen} title="REGISTRAR COMPRA" onClose={vm.closePurchase}>
-        {vm.purchase ? (
-          <>
-            <AppText variant="label" color="textMuted">Pagar desde</AppText>
-            <View style={{ maxHeight: 180 }}>
-              <OptionList options={vm.accountOptions} selected={vm.accountId} onSelect={vm.setAccountId} />
-            </View>
-            {vm.purchase.groups.map((g) => (
-              <View key={g.key} style={styles.sheetRow}>
-                <View style={styles.flex}>
-                  <AppText variant="body" numberOfLines={1}>{g.label}</AppText>
-                  <AppText variant="caption" color="textMuted">{g.count} {g.count === 1 ? 'producto' : 'productos'}</AppText>
-                </View>
-                <AppText variant="amountMid">{g.amount}</AppText>
-              </View>
-            ))}
-            <View style={styles.sheetRow}>
-              <AppText variant="label" color="textMuted">Total</AppText>
-              <AppText variant="heading">{vm.purchase.totalLabel}</AppText>
-            </View>
-            {vm.purchase.inBs ? <AppText variant="small" color="textMuted">Saldrán {vm.purchase.inBs} de la cuenta, a la tasa {vm.rateLabel}.</AppText> : null}
-            {vm.purchase.warnings.map((w) => (
-              <AppText key={w} variant="small" color="expense">{w}</AppText>
-            ))}
-            {vm.purchaseError ? <AppText variant="small" color="expense">{vm.purchaseError}</AppText> : null}
-            <Button label="Registrar gasto" onPress={() => void vm.confirmPurchase()} disabled={vm.purchase.blocked || vm.purchaseSaving} />
-          </>
-        ) : null}
-      </SheetModal>
+      <PurchaseSheet vm={vm} />
     </ScreenTemplate>
   );
 }
