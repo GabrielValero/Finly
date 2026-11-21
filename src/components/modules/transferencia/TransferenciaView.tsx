@@ -1,42 +1,39 @@
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTransferForm } from '../../../hooks/useTransferForm';
 import { useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
 import { Button } from '../../shared/Button';
 import { CategoryPickerModal } from '../../shared/CategoryPickerModal';
+import { Chip } from '../../shared/Chip';
+import { FormSheet } from '../../shared/FormSheet';
 import { Icon } from '../../shared/Icon';
 import { Keypad } from '../../shared/Keypad';
 import { OptionList } from '../../shared/OptionList';
 import { PressableScale } from '../../shared/PressableScale';
+import { Segmented } from '../../shared/Segmented';
 import { SheetModal } from '../../shared/SheetModal';
 import { ScreenTemplate } from '../../template/ScreenTemplate';
 import { DetallesModal } from '../captura/DetallesModal';
 
 export function TransferenciaView() {
   const vm = useTransferForm();
-  const insets = useSafeAreaInsets();
   const [picker, setPicker] = useState<'from' | 'to' | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(false);
   const styles = useThemedStyles((t) => ({
-    body: { flex: 1, paddingHorizontal: t.space[16], gap: t.space[12] },
-    topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    close: { width: 40, height: 40, borderRadius: t.radius.full, backgroundColor: t.colors.surface, alignItems: 'center', justifyContent: 'center' },
-    kind: { height: 36, paddingHorizontal: t.space[16], borderRadius: t.radius.full, backgroundColor: t.colors.surface, justifyContent: 'center' },
-    box: { backgroundColor: t.colors.surface, borderRadius: t.radius[20], borderWidth: 1, borderColor: t.colors.border, padding: t.space[16], gap: t.space[8] },
+    scroll: { flex: 1 },
+    scrollContent: { gap: t.space[8] },
+    box: { backgroundColor: t.colors.surface2, borderRadius: t.radius[20], borderWidth: 1, borderColor: t.colors.border, padding: t.space[12], gap: t.space[4] },
     boxActive: { borderColor: t.colors.accent, borderWidth: 2 },
     boxHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: t.space[12] },
     selector: { flexDirection: 'row', alignItems: 'center', gap: t.space[4], flexShrink: 1, minWidth: 0 },
     balanceRow: { flexDirection: 'row', justifyContent: 'space-between', gap: t.space[8] },
-    swapRow: { alignItems: 'center', marginVertical: -t.space[4] },
-    swap: { width: 36, height: 36, borderRadius: t.radius.full, backgroundColor: t.colors.surface2, alignItems: 'center', justifyContent: 'center' },
-    rateBox: { backgroundColor: t.colors.surface2, borderRadius: t.radius[16], padding: t.space[16], gap: t.space[4] },
-    rateHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    optional: { height: 44, borderRadius: t.radius[16], borderWidth: 1, borderColor: t.colors.border, alignItems: 'center', justifyContent: 'center', paddingHorizontal: t.space[16] },
+    swapRow: { alignItems: 'center', marginVertical: -t.space[8], zIndex: 1 },
+    swap: { width: 36, height: 36, borderRadius: t.radius.full, backgroundColor: t.colors.surface, borderWidth: 1, borderColor: t.colors.border, alignItems: 'center', justifyContent: 'center' },
+    wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: t.space[8] },
     empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: t.space[16], padding: t.space[24] },
-    scroll: { gap: t.space[12] },
+    footer: { gap: t.space[8] },
   }));
 
   if (!vm.hasEnoughAccounts) {
@@ -50,24 +47,24 @@ export function TransferenciaView() {
     );
   }
 
+  const concept = vm.details.concept.trim();
+
   return (
     <ScreenTemplate>
-      <View style={[styles.body, { paddingBottom: insets.bottom + 8 }]}>
-        <View style={styles.topRow}>
-          <PressableScale onPress={vm.close} style={styles.close} accessibilityLabel="Cerrar"><Icon name="close" size={20} /></PressableScale>
-          <View style={styles.kind}><AppText variant="label">TRANSFERENCIA</AppText></View>
-        </View>
+      <FormSheet title="Nuevo movimiento" onClose={vm.close}>
+        <Segmented options={vm.kindOptions} value="transfer" onChange={vm.selectKind} onSurface />
 
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll}>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <PressableScale onPress={() => vm.setActive('from')} style={[styles.box, vm.active === 'from' ? styles.boxActive : null]}>
             <View style={styles.boxHead}>
               <AppText variant="label" color="textMuted">DESDE</AppText>
-              <PressableScale onPress={() => setPicker('from')} style={styles.selector}>
+              <PressableScale onPress={() => setPicker('from')} style={styles.selector} accessibilityLabel="Elegir cuenta de origen">
                 <AppText variant="heading" numberOfLines={1}>{vm.fromLabel}</AppText>
                 <Icon name="chevronDown" size={16} color="textMuted" />
               </PressableScale>
             </View>
-            <AppText variant="display" fit>{vm.fromAmount}</AppText>
+            {vm.active === 'from' && vm.expression ? <AppText variant="bodyRegular" color="textMuted">{vm.expression}</AppText> : null}
+            <AppText variant="balance" fit>{vm.fromAmount}</AppText>
             {vm.fromBalance ? (
               <View style={styles.balanceRow}>
                 <AppText variant="caption" color="textMuted">{vm.fromBalance.current}</AppText>
@@ -83,12 +80,13 @@ export function TransferenciaView() {
           <PressableScale onPress={() => vm.setActive('to')} style={[styles.box, vm.active === 'to' && !vm.sameCurrency ? styles.boxActive : null]}>
             <View style={styles.boxHead}>
               <AppText variant="label" color="textMuted">HACIA</AppText>
-              <PressableScale onPress={() => setPicker('to')} style={styles.selector}>
+              <PressableScale onPress={() => setPicker('to')} style={styles.selector} accessibilityLabel="Elegir cuenta de destino">
                 <AppText variant="heading" numberOfLines={1}>{vm.toLabel}</AppText>
                 <Icon name="chevronDown" size={16} color="textMuted" />
               </PressableScale>
             </View>
-            <AppText variant="display" fit>{vm.toAmount}</AppText>
+            {vm.active === 'to' && !vm.sameCurrency && vm.expression ? <AppText variant="bodyRegular" color="textMuted">{vm.expression}</AppText> : null}
+            <AppText variant="balance" fit>{vm.toAmount}</AppText>
             {vm.toBalance ? (
               <View style={styles.balanceRow}>
                 <AppText variant="caption" color="textMuted">{vm.toBalance.current}</AppText>
@@ -98,32 +96,26 @@ export function TransferenciaView() {
             {vm.convertHint ? <AppText variant="caption" color="textMuted">{vm.convertHint}</AppText> : null}
           </PressableScale>
 
-          {vm.rateCard ? (
-            <View style={styles.rateBox}>
-              <View style={styles.rateHead}>
-                <AppText variant="label" color="textMuted">TASA OBTENIDA</AppText>
-                <AppText variant="amount" color="accent" numberOfLines={1}>{vm.rateCard.value}</AppText>
-              </View>
-              <AppText variant="caption" color="textMuted">{vm.rateCard.note}</AppText>
-            </View>
-          ) : null}
+          {vm.rateCard ? <AppText variant="caption" color="textMuted" align="center">{vm.rateCard.note}</AppText> : null}
 
-          <PressableScale onPress={() => setCategoryOpen(true)} style={styles.optional}>
-            <AppText variant="bodyRegular" color={vm.categoryLabel ? 'text' : 'textMuted'} numberOfLines={1}>{vm.categoryLabel ?? '+ Categoría (cuenta en el presupuesto)'}</AppText>
-          </PressableScale>
+          <View style={styles.wrap}>
+            {vm.rateChip ? <Chip shape="tile" label={vm.rateChip} /> : null}
+            <Chip shape="tile" label={vm.details.dateChip} onPress={() => setDetailsOpen(true)} />
+            <Chip shape="tile" label={concept === '' ? 'Concepto' : concept} accessibilityLabel={`Concepto: ${concept === '' ? 'sin definir' : concept}`} onPress={() => setDetailsOpen(true)} />
+            <Chip shape="tile" label={vm.categoryLabel ?? 'Categoría'} onPress={() => setCategoryOpen(true)} />
+          </View>
           {vm.categoryLabel ? <AppText variant="small" color="textMuted">Cuenta como gasto en el presupuesto. Si luego gastas ese dinero con la misma categoría, se contaría dos veces.</AppText> : null}
 
-          <PressableScale onPress={() => setDetailsOpen(true)} style={styles.optional}>
-            <AppText variant="bodyRegular" color="textMuted" numberOfLines={1}>{vm.detailsLabel}</AppText>
-          </PressableScale>
-
+          {vm.invalidOperation ? <AppText variant="small" color="expense">Operación inválida</AppText> : null}
           {vm.warning ? <AppText variant="small" color="warning">{vm.warning}</AppText> : null}
           {vm.error ? <AppText variant="small" color="expense">{vm.error}</AppText> : null}
-          <Button label="Transferir" onPress={() => void vm.save()} disabled={!vm.canSave} />
         </ScrollView>
 
-        <Keypad onKey={vm.pressKey} />
-      </View>
+        <View style={styles.footer}>
+          <Keypad onKey={vm.pressKey} operators equals={vm.equalsLabel} compact />
+          <Button label="Transferir" onPress={() => void vm.save()} disabled={!vm.canSave} />
+        </View>
+      </FormSheet>
 
       <SheetModal visible={picker !== null} title={picker === 'from' ? 'DESDE' : 'HACIA'} onClose={() => setPicker(null)}>
         <OptionList

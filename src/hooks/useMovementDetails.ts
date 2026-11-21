@@ -1,23 +1,32 @@
 import { useState } from 'react';
-import { dayOf, formatDateTimeLong, shiftDay, timeOf, toLocalIso, withDay, withTime } from '../utils/dates';
+import { dateChipLabel, dateChoice } from '../utils/captureChips';
+import { dayOf, formatDayShort, shiftDay, toLocalIso, withDay } from '../utils/dates';
 
-/** Concepto + fecha/hora de un movimiento (compartido por captura y transferencia). */
+/**
+ * Concepto + fecha de un movimiento (compartido por captura y transferencia).
+ * La hora no se edita en la UI: se conserva la guardada (ahora si es nuevo, la original al editar).
+ */
 export function useMovementDetails() {
   const [concept, setConcept] = useState('');
   const [occurredAt, setOccurredAt] = useState(() => toLocalIso(new Date()));
+  const nowIso = toLocalIso(new Date());
+  const today = dayOf(nowIso);
+  const day = dayOf(occurredAt);
 
   return {
     concept,
     setConcept,
     occurredAt,
     setOccurredAt,
-    day: dayOf(occurredAt),
-    setDay: (day: string) => setOccurredAt((iso) => withDay(iso, day)),
-    dateLabel: formatDateTimeLong(occurredAt),
-    /** Solo la hora, "HH:mm" (24 h). */
-    time: timeOf(occurredAt),
-    setTime: (time: string) => setOccurredAt((iso) => withTime(iso, time)),
-    shiftDate: (delta: number) => setOccurredAt((iso) => shiftDay(iso, delta)),
-    resetDateToNow: () => setOccurredAt(toLocalIso(new Date())),
+    day,
+    setDay: (next: string) => setOccurredAt((iso) => withDay(iso, next)),
+    /** Etiqueta corta del chip de fecha: «Hoy», «Ayer», «12 nov». */
+    dateChip: dateChipLabel(day, today),
+    /** Cuál de «Hoy / Ayer / Elegir fecha» corresponde a la fecha actual. */
+    dateChoice: dateChoice(day, today),
+    /** «12 nov 2026» para la fila de fecha. */
+    dateLong: formatDayShort(day),
+    pickToday: () => setOccurredAt((iso) => withDay(iso, today)),
+    pickYesterday: () => setOccurredAt((iso) => withDay(iso, dayOf(shiftDay(nowIso, -1)))),
   };
 }
