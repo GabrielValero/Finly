@@ -8,6 +8,14 @@ export function useCurrentIconLabel(): string {
   return useMemo(() => iconLabel(currentAppIcon()), []);
 }
 
+/** Forma y fondo del ícono activo, para dibujarlo dentro de la app (bienvenida). */
+export function useCurrentIconTile(): { shape: string; background: string } {
+  return useMemo(() => {
+    const cur = currentAppIcon();
+    return { shape: cur.shape, background: ICON_COLORS.find((c) => c.id === cur.color)?.background ?? ICON_COLORS[0]!.background };
+  }, []);
+}
+
 export function useAppIconSettings() {
   const router = useRouter();
   const [active, setActive] = useState<IconChoice>(() => currentAppIcon());
