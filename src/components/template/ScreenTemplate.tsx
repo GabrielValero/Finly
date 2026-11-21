@@ -55,7 +55,7 @@ export function ScreenTemplate({ title, titleStyle = 'center', titleBold = false
               ) : null}
               <View style={styles.sideRight}>
                 {right ? (
-                  <PressableScale onPress={right.onPress} accessibilityLabel={right.label ?? 'Acción'}>
+                  <PressableScale onPress={right.onPress} style={right.icon ? styles.round : undefined} accessibilityLabel={right.label ?? 'Acción'}>
                     {right.icon ? <Icon name={right.icon} size={20} /> : <AppText variant="label" color="accent">{right.label ?? ''}</AppText>}
                   </PressableScale>
                 ) : null}

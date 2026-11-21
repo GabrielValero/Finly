@@ -87,7 +87,7 @@ export function useCategoryForm({ id, kind: kindParam, parentId: parentParam, pi
   return {
     isNew,
     notFound: !isNew && rows.length > 0 && !existing,
-    title: isNew ? (parentId ? 'NUEVA SUBCATEGORÍA' : 'NUEVA CATEGORÍA') : 'EDITAR CATEGORÍA',
+    title: isNew ? (parentId ? 'Nueva subcategoría' : 'Nueva categoría') : 'Editar categoría',
     previewName: trimmed || 'Nueva categoría',
     previewSub: parent ? `SUBCATEGORÍA DE ${parent.name.toUpperCase()}` : effectiveKind === 'expense' ? 'GASTO' : 'INGRESO',
     name,

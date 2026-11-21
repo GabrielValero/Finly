@@ -37,23 +37,27 @@ export function CategoriaFormView({ id, kind, parentId, pick }: Props) {
     iconBtn: { width: 52, height: 52, borderRadius: t.radius[16], backgroundColor: t.colors.surface2, borderWidth: 2, borderColor: t.colors.surface2, alignItems: 'center', justifyContent: 'center' },
     iconSelected: { borderColor: t.colors.accent },
     archive: { alignItems: 'center', paddingVertical: t.space[12] },
+    swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: t.space[12] },
+    swatch: { width: 40, height: 40, borderRadius: 20, borderWidth: 3, borderColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
+    swatchSelected: { borderColor: t.colors.text },
+    swatchDot: { width: 28, height: 28, borderRadius: 14 },
     center: { padding: t.space[24], alignItems: 'center' },
   }));
 
   if (vm.notFound) {
     return (
-      <ScreenTemplate title="CATEGORÍA" left="close" onLeft={vm.close}>
+      <ScreenTemplate title="Categoría" titleBold left="close" onLeft={vm.close}>
         <View style={styles.center}><AppText variant="body" color="textMuted">Esta categoría ya no existe.</AppText></View>
       </ScreenTemplate>
     );
   }
 
   return (
-    <ScreenTemplate title={vm.title} left="close" onLeft={vm.close}>
+    <ScreenTemplate title={vm.title} titleBold left="close" onLeft={vm.close}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Card>
           <View style={styles.preview}>
-            <IconBadge icon={vm.icon} />
+            <IconBadge icon={vm.icon} tint={vm.color} />
             <View style={styles.texts}>
               <AppText variant="heading" numberOfLines={1}>{vm.previewName}</AppText>
               <AppText variant="caption" color="textMuted" numberOfLines={1}>{vm.previewSub}</AppText>
@@ -68,6 +72,15 @@ export function CategoriaFormView({ id, kind, parentId, pick }: Props) {
 
         {vm.canNest ? <SelectRow label="DENTRO DE" value={vm.parentLabel} onPress={() => setParentPicker(true)} /> : null}
         <AppText variant="small" color="textMuted">Máximo 2 niveles: una subcategoría no puede tener otras dentro.</AppText>
+
+        <AppText variant="label" color="textMuted">COLOR</AppText>
+        <View style={styles.swatches}>
+          {vm.swatches.map((c) => (
+            <PressableScale key={c} onPress={() => vm.setColor(c)} style={[styles.swatch, c === vm.color ? styles.swatchSelected : null]} accessibilityLabel={`Color ${c}`}>
+              <View style={[styles.swatchDot, { backgroundColor: c }]} />
+            </PressableScale>
+          ))}
+        </View>
 
         <AppText variant="label" color="textMuted">ICONO</AppText>
         <View style={styles.icons}>
