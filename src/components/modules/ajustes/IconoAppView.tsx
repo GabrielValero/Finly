@@ -16,7 +16,8 @@ export function IconoAppView() {
     scroll: { paddingHorizontal: t.space[16], paddingBottom: t.space[16], gap: t.space[12] },
     hero: { alignItems: 'center', gap: t.space[8], paddingVertical: t.space[16] },
     grid: { flexDirection: 'row', flexWrap: 'wrap', gap: t.space[12] },
-    cell: { width: '22%', aspectRatio: 1, borderRadius: t.radius[16], borderWidth: 2, borderColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
+    item: { width: '22%', alignItems: 'center', gap: t.space[4] },
+    cell: { width: '100%', aspectRatio: 1, borderRadius: t.radius[16], borderWidth: 2, borderColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
     cellSelected: { borderColor: t.colors.accent },
     colors: { flexDirection: 'row', gap: t.space[12] },
     color: { flex: 1, backgroundColor: t.colors.surface, borderRadius: t.radius[16], borderWidth: 1, borderColor: t.colors.border, paddingVertical: t.space[12], alignItems: 'center', gap: t.space[8] },
@@ -25,18 +26,21 @@ export function IconoAppView() {
     footer: { paddingHorizontal: t.space[16], paddingBottom: t.space[16] + insets.bottom, gap: t.space[8] },
   }));
   return (
-    <ScreenTemplate title="ÍCONO DE LA APP" left="back" onLeft={vm.back}>
+    <ScreenTemplate title="Ícono de la app" titleBold left="back" onLeft={vm.back}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.hero}>
-          <AppIconPreview shape={vm.draft.shape} background={vm.background} size={112} />
-          <AppText variant="body">{vm.label}</AppText>
+          <AppIconPreview shape={vm.draft.shape} background={vm.background} size={120} />
+          <AppText variant="subtitle">{vm.label}</AppText>
         </View>
         <AppText variant="label" color="textMuted">Forma</AppText>
         <View style={styles.grid}>
           {vm.shapes.map((s) => (
-            <PressableScale key={s.id} onPress={() => vm.selectShape(s.id)} style={[styles.cell, s.selected ? styles.cellSelected : null]} accessibilityLabel={s.name}>
-              <AppIconPreview shape={s.id} background={vm.background} size={64} />
+            <View key={s.id} style={styles.item}>
+            <PressableScale onPress={() => vm.selectShape(s.id)} style={[styles.cell, s.selected ? styles.cellSelected : null]} accessibilityLabel={s.name}>
+              <AppIconPreview shape={s.id} background={vm.background} size={56} />
             </PressableScale>
+            <AppText variant="caption" color={s.selected ? 'accent' : 'textMuted'} numberOfLines={1}>{s.name}</AppText>
+            </View>
           ))}
         </View>
         <AppText variant="label" color="textMuted">Color</AppText>

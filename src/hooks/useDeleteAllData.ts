@@ -45,5 +45,6 @@ export function useDeleteAllData() {
     error,
     run,
     back: () => router.back(),
+    openBackup: () => router.push('/settings/backup'),
   };
 }
