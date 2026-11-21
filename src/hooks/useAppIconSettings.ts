@@ -1,19 +1,24 @@
-import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { applyAppIcon, canChangeAppIcon, currentAppIcon } from '../services/appIcon';
 import { ICON_COLORS, ICON_MARK_COLOR, ICON_SHAPES, iconLabel, type IconChoice } from '../utils/appIcons';
 
+/** Ícono activo, releído cada vez que la pantalla vuelve a enfocarse (se pudo cambiar en otra pantalla). */
+function useActiveIcon(): IconChoice {
+  const [icon, setIcon] = useState<IconChoice>(() => currentAppIcon());
+  useFocusEffect(useCallback(() => setIcon(currentAppIcon()), []));
+  return icon;
+}
+
 /** Etiqueta del ícono activo (para la fila de Ajustes). */
 export function useCurrentIconLabel(): string {
-  return useMemo(() => iconLabel(currentAppIcon()), []);
+  return iconLabel(useActiveIcon());
 }
 
 /** Forma y fondo del ícono activo, para dibujarlo dentro de la app (bienvenida). */
 export function useCurrentIconTile(): { shape: string; background: string } {
-  return useMemo(() => {
-    const cur = currentAppIcon();
-    return { shape: cur.shape, background: ICON_COLORS.find((c) => c.id === cur.color)?.background ?? ICON_COLORS[0]!.background };
-  }, []);
+  const cur = useActiveIcon();
+  return { shape: cur.shape, background: ICON_COLORS.find((c) => c.id === cur.color)?.background ?? ICON_COLORS[0]!.background };
 }
 
 export function useAppIconSettings() {

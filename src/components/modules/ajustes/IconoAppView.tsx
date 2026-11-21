@@ -36,17 +36,17 @@ export function IconoAppView() {
         <View style={styles.grid}>
           {vm.shapes.map((s) => (
             <View key={s.id} style={styles.item}>
-            <PressableScale onPress={() => vm.selectShape(s.id)} style={[styles.cell, s.selected ? styles.cellSelected : null]} accessibilityLabel={s.name}>
-              <AppIconPreview shape={s.id} background={vm.background} size={56} />
-            </PressableScale>
-            <AppText variant="caption" color={s.selected ? 'accent' : 'textMuted'} numberOfLines={1}>{s.name}</AppText>
+              <PressableScale onPress={() => vm.selectShape(s.id)} style={[styles.cell, s.selected ? styles.cellSelected : null]} accessibilityRole="radio" accessibilityState={{ selected: s.selected, checked: s.selected }} accessibilityLabel={s.name}>
+                <AppIconPreview shape={s.id} background={vm.background} size={56} />
+              </PressableScale>
+              <AppText variant="caption" color={s.selected ? 'accent' : 'textMuted'} numberOfLines={1}>{s.name}</AppText>
             </View>
           ))}
         </View>
         <AppText variant="label" color="textMuted">Color</AppText>
         <View style={styles.colors}>
           {vm.colors.map((c) => (
-            <PressableScale key={c.id} onPress={() => vm.selectColor(c.id)} style={[styles.color, c.selected ? styles.colorSelected : null]} accessibilityLabel={c.name}>
+            <PressableScale key={c.id} onPress={() => vm.selectColor(c.id)} style={[styles.color, c.selected ? styles.colorSelected : null]} accessibilityRole="radio" accessibilityState={{ selected: c.selected, checked: c.selected }} accessibilityLabel={c.name}>
               <View style={[styles.dot, { backgroundColor: c.background }]} />
               <AppText variant="caption" color={c.selected ? 'accent' : 'text'}>{c.name}</AppText>
             </PressableScale>

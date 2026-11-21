@@ -21,7 +21,7 @@ export function RespaldoView() {
   return (
     <ScreenTemplate title="Respaldo" titleBold left="back" onLeft={vm.back}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Banner text={vm.status.text} action={vm.status.hasBackup ? "EXPORTAR" : "RESPALDAR"} onPress={() => void vm.doExport()} />
+        <Banner text={vm.status.text} action={vm.status.hasBackup ? 'EXPORTAR' : 'RESPALDAR'} onPress={() => void vm.doExport()} />
         <Card style={styles.info}>
           <AppText variant="label" color="textMuted">Un solo archivo</AppText>
           <AppText variant="bodyRegular">Cuentas, movimientos, categorías, etiquetas, tasas y presupuestos. Guárdalo en Drive, WhatsApp o donde prefieras.</AppText>

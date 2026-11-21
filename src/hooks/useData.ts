@@ -7,11 +7,11 @@ import { accounts, budgetItems, budgets, categories, exchangeRates, tags, transa
 import { usePreferences } from '../store/preferences';
 import { monthBounds } from '../utils/dates';
 import { pickLatestRate, type RateRecord } from '../utils/rates';
-import { useDbQuery } from './useDbQuery';
+import { useDbQuery, useDbQueryState } from './useDbQuery';
 
-/** Cuentas activas con su saldo derivado (apertura + suma de movimientos vivos). */
-export function useAccountsWithBalance() {
-  const accountRows = useDbQuery(
+/** Cuentas con saldo y si ya se cargaron (para distinguir "cargando" de "sin cuentas"). */
+export function useAccountsWithBalanceState() {
+  const { data: accountRows, loaded } = useDbQueryState(
     () => db.select().from(accounts).where(isNull(accounts.archivedAt)).orderBy(accounts.sortOrder, accounts.name),
     ['accounts'],
   );
@@ -24,10 +24,16 @@ export function useAccountsWithBalance() {
         .groupBy(transactions.accountId),
     ['transactions'],
   );
-  return useMemo(() => {
+  const withBalance = useMemo(() => {
     const byAccount = new Map(sums.map((s) => [s.accountId, { total: Number(s.total), count: Number(s.n) }]));
     return accountRows.map((a) => ({ ...a, balanceMinor: a.openingMinor + (byAccount.get(a.id)?.total ?? 0), txCount: byAccount.get(a.id)?.count ?? 0 }));
   }, [accountRows, sums]);
+  return { accounts: withBalance, loaded };
+}
+
+/** Cuentas activas con su saldo derivado (apertura + suma de movimientos vivos). */
+export function useAccountsWithBalance() {
+  return useAccountsWithBalanceState().accounts;
 }
 
 export type AccountWithBalance = ReturnType<typeof useAccountsWithBalance>[number];

@@ -3,6 +3,7 @@ import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCategoryForm } from '../../../hooks/useCategoryForm';
 import { useThemedStyles } from '../../../hooks/useTheme';
+import { swatchName } from '../../../utils/categoryColor';
 import { AppText } from '../../shared/AppText';
 import { Button } from '../../shared/Button';
 import { Card } from '../../shared/Card';
@@ -76,7 +77,7 @@ export function CategoriaFormView({ id, kind, parentId, pick }: Props) {
         <AppText variant="label" color="textMuted">COLOR</AppText>
         <View style={styles.swatches}>
           {vm.swatches.map((c) => (
-            <PressableScale key={c} onPress={() => vm.setColor(c)} style={[styles.swatch, c === vm.color ? styles.swatchSelected : null]} accessibilityLabel={`Color ${c}`}>
+            <PressableScale key={c} onPress={() => vm.setColor(c)} style={[styles.swatch, c === vm.color ? styles.swatchSelected : null]} accessibilityRole="radio" accessibilityState={{ selected: c === vm.color, checked: c === vm.color }} accessibilityLabel={swatchName(c)}>
               <View style={[styles.swatchDot, { backgroundColor: c }]} />
             </PressableScale>
           ))}
@@ -85,7 +86,7 @@ export function CategoriaFormView({ id, kind, parentId, pick }: Props) {
         <AppText variant="label" color="textMuted">ICONO</AppText>
         <View style={styles.icons}>
           {CATEGORY_ICON_KEYS.map((k) => (
-            <PressableScale key={k} onPress={() => vm.setIcon(k)} style={[styles.iconBtn, k === vm.icon ? styles.iconSelected : null]} accessibilityLabel={k}>
+            <PressableScale key={k} onPress={() => vm.setIcon(k)} style={[styles.iconBtn, k === vm.icon ? styles.iconSelected : null]} accessibilityRole="radio" accessibilityState={{ selected: k === vm.icon, checked: k === vm.icon }} accessibilityLabel={k}>
               <Icon name={k} size={24} color={k === vm.icon ? 'accent' : 'text'} />
             </PressableScale>
           ))}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CATEGORY_PALETTE, CATEGORY_SWATCHES, colorToSave, resolveCategoryColor, swatchFor } from '../src/utils/categoryColor';
+import { CATEGORY_PALETTE, CATEGORY_SWATCHES, colorForSave, colorToSave, previewColor, resolveCategoryColor, swatchName } from '../src/utils/categoryColor';
 import { isHex } from '../src/utils/color';
 
 describe('resolveCategoryColor', () => {
@@ -28,15 +28,31 @@ describe('CATEGORY_SWATCHES', () => {
   });
 });
 
-describe('swatchFor', () => {
-  it('usa el color guardado si es válido', () => {
-    expect(swatchFor('#5B8DEF', 'x')).toBe('#5B8DEF');
+describe('previewColor', () => {
+  it('lo elegido gana sobre lo guardado y sobre el padre', () => {
+    expect(previewColor({ picked: '#A78BFA', saved: '#5B8DEF', id: 'x', parentColor: '#F472B6' })).toBe('#A78BFA');
   });
-  it('sin color guardado usa el color estable de la categoría', () => {
-    expect(swatchFor(null, 'cat-1')).toBe(resolveCategoryColor(null, 'cat-1'));
+  it('sin elegir usa el color guardado', () => {
+    expect(previewColor({ picked: null, saved: '#5B8DEF', id: 'x', parentColor: null })).toBe('#5B8DEF');
   });
-  it('una categoría nueva arranca con el primer color', () => {
-    expect(swatchFor(null, null)).toBe(CATEGORY_SWATCHES[0]);
+  it('una subcategoría sin color propio muestra el del padre', () => {
+    expect(previewColor({ picked: null, saved: null, id: 's', parentColor: '#F472B6' })).toBe('#F472B6');
+  });
+  it('una categoría principal sin color usa el estable por id', () => {
+    expect(previewColor({ picked: null, saved: null, id: 'cat-1', parentColor: null })).toBe(resolveCategoryColor(null, 'cat-1'));
+  });
+  it('una categoría nueva usa el color estable de reserva, no el primer color', () => {
+    expect(previewColor({ picked: null, saved: null, id: null, parentColor: null })).toBe(resolveCategoryColor(null, 'new'));
+  });
+});
+
+describe('colorForSave', () => {
+  it('sin elegir conserva lo guardado (abrir y guardar no persiste nada nuevo)', () => {
+    expect(colorForSave(null, null)).toBeNull();
+    expect(colorForSave(null, '#5B8DEF')).toBe('#5B8DEF');
+  });
+  it('lo elegido reemplaza lo guardado', () => {
+    expect(colorForSave('#A78BFA', '#5B8DEF')).toBe('#A78BFA');
   });
 });
 
@@ -45,5 +61,12 @@ describe('colorToSave', () => {
     expect(colorToSave('#A78BFA')).toBe('#A78BFA');
     expect(colorToSave('rojo')).toBeNull();
     expect(colorToSave(null)).toBeNull();
+  });
+});
+
+describe('swatchName', () => {
+  it('cada color de la paleta tiene un nombre en español', () => {
+    for (const c of CATEGORY_SWATCHES) expect(swatchName(c).length).toBeGreaterThan(0);
+    expect(swatchName('#5B8DEF')).toBe('Azul');
   });
 });

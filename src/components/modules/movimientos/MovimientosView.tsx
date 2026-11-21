@@ -175,7 +175,7 @@ export function MovimientosView() {
           </PressableScale>
         ) : null}
 
-        {!vm.hasAccounts ? (
+        {!vm.accountsLoaded ? null : !vm.hasAccounts ? (
           <PrimerUso onCreateAccount={vm.openNewAccount} />
         ) : vm.isEmpty ? (
           <View style={styles.empty}>

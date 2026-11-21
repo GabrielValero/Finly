@@ -29,7 +29,6 @@ export function useAjustesScreen() {
     categoriesValue: String(categories.length),
     themeValue: seeds.find((s) => s.id === activeId)?.name ?? '',
     backupBanner: backup.hasBackup ? null : backup.text,
-
     lockValue: lock.enabled ? 'Activado' : 'Apagado',
     lockError: lock.error,
     toggleLock: () => void lock.toggle(),

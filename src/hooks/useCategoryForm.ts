@@ -4,7 +4,7 @@ import { Alert } from 'react-native';
 import { archiveCategory, insertCategory, updateCategory } from '../data/repos/categories';
 import { useUi } from '../store/ui';
 import { validateCategory, type CategoryKind } from '../utils/categories';
-import { CATEGORY_SWATCHES, colorToSave, swatchFor } from '../utils/categoryColor';
+import { CATEGORY_SWATCHES, colorForSave, previewColor, resolveCategoryColor } from '../utils/categoryColor';
 import { useCategoryRows } from './useData';
 
 interface Params {
@@ -28,7 +28,8 @@ export function useCategoryForm({ id, kind: kindParam, parentId: parentParam, pi
   const [parentId, setParentId] = useState<string | null>(parentParam ?? null);
   const [icon, setIcon] = useState<string>('cart');
   const [exclude, setExclude] = useState(false);
-  const [color, setColor] = useState<string>(CATEGORY_SWATCHES[0]);
+  // Opt-in: null hasta que el usuario toca un color (abrir y guardar no persiste nada nuevo).
+  const [pickedColor, setPickedColor] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(isNew);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +41,6 @@ export function useCategoryForm({ id, kind: kindParam, parentId: parentParam, pi
     setParentId(existing.parentId);
     setIcon(existing.icon);
     setExclude(existing.excludeFromReports);
-    setColor(swatchFor(existing.color, existing.id));
     setHydrated(true);
   }, [hydrated, existing]);
 
@@ -63,7 +63,7 @@ export function useCategoryForm({ id, kind: kindParam, parentId: parentParam, pi
     setSaving(true);
     setError(null);
     try {
-      const fields = { name: name.trim(), icon, kind: effectiveKind, parentId, excludeFromReports: exclude, color: colorToSave(color) };
+      const fields = { name: name.trim(), icon, kind: effectiveKind, parentId, excludeFromReports: exclude, color: colorForSave(pickedColor, existing?.color ?? null) };
       if (isNew) {
         const createdId = await insertCategory(fields);
         if (pick === '1') setCreatedCategoryId(createdId);
@@ -104,8 +104,8 @@ export function useCategoryForm({ id, kind: kindParam, parentId: parentParam, pi
     setIcon,
     exclude,
     setExclude,
-    color,
-    setColor,
+    color: previewColor({ picked: pickedColor, saved: existing?.color ?? null, id: isNew ? null : id, parentColor: parent ? resolveCategoryColor(parent.color, parent.id) : null }),
+    setColor: setPickedColor,
     swatches: CATEGORY_SWATCHES,
     canSave,
     error: problem ?? error,

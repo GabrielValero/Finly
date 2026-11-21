@@ -10,8 +10,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * Los cambios en ráfaga (varias filas de una transacción) se agrupan en una sola relectura.
  */
 export function useDbQuery<T>(build: () => PromiseLike<T[]>, tables: readonly string[], deps: readonly unknown[] = []): T[] {
+  return useDbQueryState(build, tables, deps).data;
+}
+
+/** Igual que `useDbQuery`, pero además informa si ya terminó la primera lectura (para no confundir "cargando" con "vacío"). */
+export function useDbQueryState<T>(build: () => PromiseLike<T[]>, tables: readonly string[], deps: readonly unknown[] = []): { data: T[]; loaded: boolean } {
   const [data, setData] = useState<T[]>([]);
   const [error, setError] = useState<Error | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const reload = useRef<() => void>(() => undefined);
 
   useEffect(() => {
@@ -20,7 +26,9 @@ export function useDbQuery<T>(build: () => PromiseLike<T[]>, tables: readonly st
     const load = () => {
       Promise.resolve(build()).then(
         (rows) => {
-          if (!cancelled) setData(rows);
+          if (cancelled) return;
+          setData(rows);
+          setLoaded(true);
         },
         (e: unknown) => {
           if (!cancelled) setError(e instanceof Error ? e : new Error(String(e)));
@@ -47,5 +55,5 @@ export function useDbQuery<T>(build: () => PromiseLike<T[]>, tables: readonly st
   useFocusEffect(useCallback(() => reload.current(), []));
 
   if (error) throw error;
-  return data;
+  return { data, loaded };
 }
