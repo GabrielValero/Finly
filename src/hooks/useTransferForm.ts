@@ -2,7 +2,8 @@ import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { insertTransfer } from '../data/repos/transactions';
 import { usePreferences } from '../store/preferences';
-import { formatMoney, formatRate, MoneyError } from '../utils/money';
+import { rateChipLabel } from '../utils/captureChips';
+import { formatMinor, formatMoney, formatRate, MoneyError } from '../utils/money';
 import { newId } from '../utils/ids';
 import { buildTransfer } from '../utils/transactions';
 import { convertAtRate, transferDifferenceVes } from '../utils/transfers';
@@ -20,8 +21,9 @@ export function useTransferForm() {
   const accounts = useAccountsWithBalance();
   const rate = useLatestRate();
   const lastAccountId = usePreferences((s) => s.lastAccountId);
-  const outBuf = useAmountBuffer();
-  const inBuf = useAmountBuffer();
+  // Calculadora (+ − × ÷) en ambos montos: `minor` es el resultado de la expresión.
+  const outBuf = useAmountBuffer(2, false, true);
+  const inBuf = useAmountBuffer(2, false, true);
   const details = useMovementDetails();
 
   const categories = useCategoryRows();
@@ -84,6 +86,11 @@ export function useTransferForm() {
   const insufficient = !!from && outMinor > 0 && from.balanceMinor < outMinor;
   const canSave = !saving && !!from && !!to && outMinor > 0 && inMinor > 0;
 
+  const activeBuf = effectiveActive === 'from' ? outBuf : inBuf;
+  const activeAccount = effectiveActive === 'from' ? from : to;
+  /** Texto de un monto: el resultado si hay una operación en curso; si no, lo tecleado. */
+  const shown = (buf: typeof outBuf) => (buf.operation ? (buf.result === null ? '0' : formatMinor(buf.result)) : buf.display);
+
   const swap = useCallback(() => {
     if (!from || !to) return;
     setFromId(to.id);
@@ -137,8 +144,25 @@ export function useTransferForm() {
     toId: to?.id ?? null,
     fromBalance: balanceInfo(from, -outMinor),
     toBalance: balanceInfo(to, inMinor),
-    fromAmount: money(from, outBuf.display),
-    toAmount: money(to, sameCurrency ? outBuf.display : inBuf.display),
+    fromAmount: money(from, shown(outBuf)),
+    toAmount: money(to, shown(sameCurrency ? outBuf : inBuf)),
+    /** «500 + 395,23» del monto activo mientras haya una operación; null si no la hay. */
+    expression: activeBuf.operation ? activeBuf.display : null,
+    invalidOperation: activeBuf.operation && activeBuf.result === null,
+    /** Monto para la tecla «=» del monto activo (solo si el resultado es válido y positivo). */
+    equalsLabel: activeAccount && activeBuf.operation && activeBuf.result !== null && activeBuf.result > 0 ? formatMoney(activeBuf.result, activeAccount.currency) : null,
+    kindOptions: [
+      { value: 'expense', label: 'Gasto' },
+      { value: 'income', label: 'Ingreso' },
+      { value: 'transfer', label: 'Transferencia' },
+    ],
+    /** Gasto/Ingreso vuelven a la captura sin avisar de descarte (el cambio de pantalla no pierde nada). */
+    selectKind: (value: string) => {
+      if (value === 'transfer') return;
+      allowExit();
+      router.replace('/capture');
+    },
+    rateChip: implied === null ? 'Tasa' : rateChipLabel(implied),
     active: effectiveActive,
     setActive,
     sameCurrency,
@@ -157,7 +181,6 @@ export function useTransferForm() {
     clearCategory: () => setCategoryId(null),
     openNewCategory: () => router.push({ pathname: '/category/[id]', params: { id: 'new', kind: 'expense', pick: '1' } }),
     openNewSubcategoryOf: (parentId: string) => router.push({ pathname: '/category/[id]', params: { id: 'new', kind: 'expense', parentId, pick: '1' } }),
-    detailsLabel: details.concept.trim() ? details.concept.trim() : '+ Concepto, fecha',
     details,
     canSave,
     error,
