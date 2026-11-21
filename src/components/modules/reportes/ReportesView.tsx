@@ -4,10 +4,12 @@ import { useReportsScreen } from '../../../hooks/useReportsScreen';
 import { useTheme, useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
 import { Card } from '../../shared/Card';
-import { Icon } from '../../shared/Icon';
+import { DonutChart } from '../../shared/DonutChart';
+import { HumanLine } from '../../shared/HumanLine';
+import { MonthPill } from '../../shared/MonthPill';
 import { OptionList } from '../../shared/OptionList';
-import { PressableScale } from '../../shared/PressableScale';
 import { SheetModal } from '../../shared/SheetModal';
+import { StatTile } from '../../shared/StatTile';
 import { ScreenTemplate } from '../../template/ScreenTemplate';
 
 const BAR_HEIGHT = 96;
@@ -47,67 +49,85 @@ export function ReportesView() {
   const theme = useTheme();
   const [monthPicker, setMonthPicker] = useState(false);
   const styles = useThemedStyles((t) => ({
-    scroll: { paddingHorizontal: t.space[16], paddingBottom: 56, gap: t.space[12] },
-    pill: { alignSelf: 'flex-start', height: 32, paddingHorizontal: t.space[12], borderRadius: t.radius.full, backgroundColor: t.colors.surface, flexDirection: 'row', alignItems: 'center', gap: t.space[8] },
-    cols: { flexDirection: 'row', paddingTop: t.space[8] },
-    col: { flex: 1, gap: t.space[4], minWidth: 0, paddingRight: t.space[8] },
-    card: { gap: t.space[8] },
+    header: { height: 56, paddingHorizontal: t.space[16], flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    scroll: { paddingHorizontal: t.space[16], paddingBottom: t.space[32], gap: t.space[16] },
+    tiles: { flexDirection: 'row', gap: t.space[12] },
+    card: { gap: t.space[12] },
+    donutWrap: { alignItems: 'center', paddingVertical: t.space[4] },
+    legend: { gap: t.space[8] },
+    legendRow: { flexDirection: 'row', alignItems: 'center', gap: t.space[8] },
+    swatch: { width: 10, height: 10, borderRadius: 5 },
+    legendLabel: { flex: 1, minWidth: 0 },
+    insight: { backgroundColor: t.colors.income, borderRadius: t.radius[24], padding: t.space[20], gap: t.space[4] },
     bars: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: BAR_HEIGHT + 24, paddingTop: t.space[8] },
     barCol: { flex: 1, alignItems: 'center', gap: t.space[4] },
     pair: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: BAR_HEIGHT },
-    legend: { flexDirection: 'row', gap: t.space[16] },
+    barLegend: { flexDirection: 'row', gap: t.space[16] },
     dot: { width: 8, height: 8, borderRadius: 4 },
     legendItem: { flexDirection: 'row', alignItems: 'center', gap: t.space[4] },
   }));
   return (
-    <ScreenTemplate title="Reportes" titleStyle="large">
+    <ScreenTemplate>
+      <View style={styles.header}>
+        <AppText variant="title">Reportes</AppText>
+        <MonthPill label={vm.monthLabel} onPress={() => setMonthPicker(true)} />
+      </View>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <PressableScale onPress={() => setMonthPicker(true)} style={styles.pill} accessibilityLabel="Cambiar de mes">
-          <AppText variant="label">{vm.monthLabel}</AppText>
-          <Icon name="chevronDown" size={16} color="textMuted" />
-        </PressableScale>
-
-        <Card highlight style={styles.card}>
-          <AppText variant="label" color="textMuted">Gastado en el mes</AppText>
-          <AppText variant="display" fit>{vm.expense}</AppText>
-          {vm.spendDeltaLabel ? <AppText variant="small" color={vm.spendDeltaUp ? 'expense' : 'income'}>{vm.spendDeltaLabel}</AppText> : null}
-          <View style={styles.cols}>
-            <View style={styles.col}>
-              <AppText variant="label" color="textMuted">Ingresos</AppText>
-              <AppText variant="amountMid" color="income" fit>{vm.income}</AppText>
-            </View>
-            <View style={styles.col}>
-              <AppText variant="label" color="textMuted">Balance del mes</AppText>
-              <AppText variant="amountMid" color={vm.netPositive ? 'income' : 'expense'} fit>{vm.net}</AppText>
-            </View>
-          </View>
-          {vm.unvalued > 0 ? <AppText variant="small" color="warning">{vm.unvalued} movimiento(s) en Bs sin tasa no se pudieron valorar.</AppText> : null}
-        </Card>
+        <HumanLine segments={vm.headline} variant="subtitle" />
+        <View style={styles.tiles}>
+          <StatTile label="INGRESOS" value={vm.income} tone="income" />
+          <StatTile label="BALANCE" value={vm.net} tone={vm.netPositive ? 'income' : 'expense'} />
+        </View>
+        {vm.unvalued > 0 ? <AppText variant="small" color="warning">{vm.unvalued} movimiento(s) en Bs sin tasa no se pudieron valorar.</AppText> : null}
 
         {vm.isEmpty ? (
           <AppText variant="small" color="textMuted">No hay movimientos en {vm.monthLabel}. Cambia de mes o registra el primero.</AppText>
         ) : null}
 
+        {vm.donut.arcs.length > 0 ? (
+          <Card style={styles.card}>
+            <AppText variant="label" color="textMuted">GASTO POR CATEGORÍA</AppText>
+            <View style={styles.donutWrap}>
+              <DonutChart arcs={vm.donut.arcs} centerLabel="GASTADO" centerValue={vm.donut.total} />
+            </View>
+            <View style={styles.legend}>
+              {vm.donut.arcs.map((a) => (
+                <View key={a.key} style={styles.legendRow}>
+                  <View style={[styles.swatch, { backgroundColor: a.color ?? theme.colors.textMuted }]} />
+                  <View style={styles.legendLabel}><AppText variant="bodyRegular" numberOfLines={1}>{a.label}</AppText></View>
+                  <AppText variant="caption" color="textMuted">{a.percent} %</AppText>
+                </View>
+              ))}
+            </View>
+          </Card>
+        ) : null}
+
+        {vm.insight ? (
+          <View style={styles.insight}>
+            <AppText variant="subtitle" color="onAccent">{vm.insight.title}</AppText>
+            <AppText variant="bodyRegular" color="onAccent">{vm.insight.detail}</AppText>
+          </View>
+        ) : null}
+
         <Card style={styles.card}>
-          <AppText variant="label" color="textMuted">Ingresos vs gastos · últimos 6 meses</AppText>
+          <AppText variant="label" color="textMuted">GASTOS · ÚLTIMOS 6 MESES</AppText>
           <View style={styles.bars}>
             {vm.flow.map((f) => (
               <View key={f.month} style={styles.barCol}>
                 <View style={styles.pair}>
-                  <View style={{ width: 12, height: Math.max(2, Math.round(f.incomeRatio * BAR_HEIGHT)), borderRadius: 3, backgroundColor: theme.colors.income, opacity: f.selected ? 1 : 0.55 }} />
-                  <View style={{ width: 12, height: Math.max(2, Math.round(f.expenseRatio * BAR_HEIGHT)), borderRadius: 3, backgroundColor: theme.colors.expense, opacity: f.selected ? 1 : 0.55 }} />
+                  <View style={{ width: 12, height: Math.max(2, Math.round(f.incomeRatio * BAR_HEIGHT)), borderRadius: 3, backgroundColor: theme.colors.income, opacity: f.selected ? 1 : 0.4 }} />
+                  <View style={{ width: 12, height: Math.max(2, Math.round(f.expenseRatio * BAR_HEIGHT)), borderRadius: 3, backgroundColor: theme.colors.expense, opacity: f.selected ? 1 : 0.4 }} />
                 </View>
                 <AppText variant="caption" color={f.selected ? 'text' : 'textMuted'}>{f.label}</AppText>
               </View>
             ))}
           </View>
-          <View style={styles.legend}>
+          <View style={styles.barLegend}>
             <View style={styles.legendItem}><View style={[styles.dot, { backgroundColor: theme.colors.income }]} /><AppText variant="caption" color="textMuted">Ingresos</AppText></View>
             <View style={styles.legendItem}><View style={[styles.dot, { backgroundColor: theme.colors.expense }]} /><AppText variant="caption" color="textMuted">Gastos</AppText></View>
           </View>
         </Card>
 
-        <SliceList title="Gasto por categoría" slices={vm.categories} />
         <SliceList title="Gasto por etiqueta" hint="Un movimiento con varias etiquetas cuenta en cada una; por eso no suma el total." slices={vm.tags} />
         <AppText variant="small" color="textMuted">Todo en USD con la tasa de cada movimiento. No incluye transferencias ni categorías marcadas «no cuenta en reportes».</AppText>
       </ScrollView>
