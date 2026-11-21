@@ -1,10 +1,10 @@
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAccountsWithBalance } from '../../hooks/useData';
+import { useCenterAction } from '../../hooks/useCenterAction';
 import { useThemedStyles } from '../../hooks/useTheme';
-import { centerActionRoute, splitTabRoutes } from '../../utils/tabBar';
+import { splitTabRoutes } from '../../utils/tabBar';
 import { AppText } from './AppText';
 import { Icon } from './Icon';
 import { PressableScale } from './PressableScale';
@@ -16,14 +16,13 @@ const TITLES: Record<string, string> = { index: 'Movimientos', cuentas: 'Cuentas
 
 /** Barra inferior: dos pestañas, botón central "+" elevado y dos pestañas más. */
 export function TabBar({ state, navigation }: TabBarProps) {
-  const router = useRouter();
+  const openCenterAction = useCenterAction();
   const insets = useSafeAreaInsets();
-  const hasAccounts = useAccountsWithBalance().length > 0;
   const styles = useThemedStyles((t) => ({
-    bar: { flexDirection: 'row', alignItems: 'center', backgroundColor: t.colors.bg, borderTopWidth: 1, borderTopColor: t.colors.border, paddingTop: t.space[8], paddingHorizontal: t.space[8] },
+    bar: { flexDirection: 'row', alignItems: 'center', backgroundColor: t.colors.bg, borderTopWidth: 1, borderTopColor: t.colors.border, paddingTop: t.space[24], paddingHorizontal: t.space[8] },
     tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: t.space[4], height: 48 },
     slot: { width: 80, alignItems: 'center' },
-    fab: { width: 64, height: 64, borderRadius: t.radius.full, backgroundColor: t.colors.accent, alignItems: 'center', justifyContent: 'center', marginTop: -t.space[32], elevation: 8 },
+    fab: { width: 64, height: 64, borderRadius: t.radius.full, backgroundColor: t.colors.accent, alignItems: 'center', justifyContent: 'center', marginTop: -t.space[32], elevation: 8, shadowColor: t.colors.accent, shadowOpacity: 0.35, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
   }));
 
   const routes = state.routes.filter((r: (typeof state.routes)[number]) => r.name in ICONS);
@@ -38,7 +37,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
       if (!focused && !event.defaultPrevented) navigation.navigate(route.name, route.params);
     };
     return (
-      <PressableScale key={route.key} onPress={onPress} style={styles.tab} accessibilityLabel={title}>
+      <PressableScale key={route.key} onPress={onPress} style={styles.tab} accessibilityRole="tab" accessibilityState={{ selected: focused }} accessibilityLabel={title}>
         <Icon name={ICONS[route.name] ?? 'list'} size={22} color={color} />
         <AppText variant="caption" color={color} numberOfLines={1}>{title}</AppText>
       </PressableScale>
@@ -50,9 +49,10 @@ export function TabBar({ state, navigation }: TabBarProps) {
       {left.map(renderTab)}
       <View style={styles.slot}>
         <PressableScale
-          onPress={() => router.push(centerActionRoute(hasAccounts))}
+          onPress={openCenterAction}
           style={styles.fab}
-          accessibilityLabel={hasAccounts ? 'Nuevo movimiento' : 'Crear cuenta'}
+          accessibilityRole="button"
+          accessibilityLabel="Nuevo movimiento"
         >
           <Icon name="plus" size={30} color="onAccent" />
         </PressableScale>
