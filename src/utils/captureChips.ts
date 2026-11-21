@@ -97,3 +97,8 @@ export function captureSaveLabel(kind: 'expense' | 'income', isEdit: boolean): s
   if (isEdit) return 'Guardar cambios';
   return kind === 'expense' ? 'Guardar gasto' : 'Guardar ingreso';
 }
+
+/** Tipo inicial que llega por parámetro de ruta al cambiar desde transferencia (por defecto, gasto). */
+export function parseKindParam(value: string | string[] | undefined): 'expense' | 'income' {
+  return value === 'income' ? 'income' : 'expense';
+}

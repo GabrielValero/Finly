@@ -6,6 +6,7 @@ import {
   dateChipLabel,
   dateChoice,
   frequentCategoryChips,
+  parseKindParam,
   rateChipLabel,
   tagsChipLabel,
   type ChipCategory,
@@ -102,5 +103,14 @@ describe('textos de la pantalla', () => {
     expect(captureSaveLabel('expense', false)).toBe('Guardar gasto');
     expect(captureSaveLabel('income', false)).toBe('Guardar ingreso');
     expect(captureSaveLabel('expense', true)).toBe('Guardar cambios');
+  });
+});
+
+describe('parseKindParam', () => {
+  it('acepta income y expense; cualquier otra cosa es gasto', () => {
+    expect(parseKindParam('income')).toBe('income');
+    expect(parseKindParam('expense')).toBe('expense');
+    expect(parseKindParam('transfer')).toBe('expense');
+    expect(parseKindParam(undefined)).toBe('expense');
   });
 });

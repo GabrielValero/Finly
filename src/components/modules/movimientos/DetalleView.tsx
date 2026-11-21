@@ -70,7 +70,7 @@ export function DetalleView({ id }: { id: string }) {
               <View key={r.label} style={[styles.chipRow, i === vm.rows.length - 1 ? { borderBottomWidth: 0 } : null]}>
                 <AppText variant="label" color="textMuted">{r.label}</AppText>
                 <View style={styles.chips}>
-                  {r.chips.map((c) => <Chip key={c} shape="tile" label={c} onPress={() => undefined} />)}
+                  {r.chips.map((c) => <Chip key={c} shape="tile" label={c} />)}
                 </View>
               </View>
             ) : (

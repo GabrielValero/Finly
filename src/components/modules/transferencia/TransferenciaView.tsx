@@ -99,9 +99,9 @@ export function TransferenciaView() {
           {vm.rateCard ? <AppText variant="caption" color="textMuted" align="center">{vm.rateCard.note}</AppText> : null}
 
           <View style={styles.wrap}>
-            {vm.sameCurrency ? null : <Chip shape="tile" label={vm.rateChip} onPress={() => vm.setActive('to')} />}
+            {vm.rateChip ? <Chip shape="tile" label={vm.rateChip} /> : null}
             <Chip shape="tile" label={vm.details.dateChip} onPress={() => setDetailsOpen(true)} />
-            <Chip shape="tile" label={concept === '' ? 'Concepto' : concept} onPress={() => setDetailsOpen(true)} />
+            <Chip shape="tile" label={concept === '' ? 'Concepto' : concept} accessibilityLabel={`Concepto: ${concept === '' ? 'sin definir' : concept}`} onPress={() => setDetailsOpen(true)} />
             <Chip shape="tile" label={vm.categoryLabel ?? 'Categoría'} onPress={() => setCategoryOpen(true)} />
           </View>
           {vm.categoryLabel ? <AppText variant="small" color="textMuted">Cuenta como gasto en el presupuesto. Si luego gastas ese dinero con la misma categoría, se contaría dos veces.</AppText> : null}

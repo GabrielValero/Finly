@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useCaptureForm } from '../../../hooks/useCaptureForm';
-import { useKeyboardVisible } from '../../../hooks/useKeyboardVisible';
 import { useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
 import { Button } from '../../shared/Button';
@@ -15,6 +14,7 @@ import { PressableScale } from '../../shared/PressableScale';
 import { Segmented } from '../../shared/Segmented';
 import { SheetModal } from '../../shared/SheetModal';
 import { ScreenTemplate } from '../../template/ScreenTemplate';
+import { parseKindParam } from '../../../utils/captureChips';
 import { CaptureRateSheet } from './CaptureRateSheet';
 import { DetallesModal } from './DetallesModal';
 
@@ -24,14 +24,11 @@ const CURRENCY_OPTIONS = [
 ] as const;
 
 export function CapturaView() {
-  const params = useLocalSearchParams<{ editId?: string; duplicateId?: string }>();
-  const vm = useCaptureForm({ editId: params.editId, duplicateId: params.duplicateId });
+  const params = useLocalSearchParams<{ editId?: string; duplicateId?: string; kind?: string }>();
+  const vm = useCaptureForm({ editId: params.editId, duplicateId: params.duplicateId, kind: parseKindParam(params.kind) });
   const [accountPicker, setAccountPicker] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [categoryPicker, setCategoryPicker] = useState(false);
-  // Con el teclado del sistema abierto (concepto) se oculta el teclado numérico para que quepa la pantalla;
-  // vuelve en cuanto el teclado se cierra (por Atrás, «Listo» o tocando fuera), no solo al perder el foco.
-  const typing = useKeyboardVisible();
   const styles = useThemedStyles((t) => ({
     scroll: { flex: 1 },
     scrollContent: { gap: t.space[12] },
@@ -83,9 +80,9 @@ export function CapturaView() {
             ) : (
               <Chip shape="tile" label="Crear tu primera cuenta" onPress={vm.openNewAccount} />
             )}
-            {vm.rateChip ? <Chip shape="tile" label={vm.rateChip} onPress={vm.openRate} /> : null}
+            {vm.rateChip ? <Chip shape="tile" label={vm.rateChip} onPress={vm.isEdit ? undefined : vm.openRate} /> : null}
             <Chip shape="tile" label={vm.details.dateChip} onPress={() => setDetailsOpen(true)} />
-            <Chip shape="tile" label={concept === '' ? 'Concepto' : concept} onPress={() => setDetailsOpen(true)} />
+            <Chip shape="tile" label={concept === '' ? 'Concepto' : concept} accessibilityLabel={`Concepto: ${concept === '' ? 'sin definir' : concept}`} onPress={() => setDetailsOpen(true)} />
             <Chip shape="tile" label={vm.tagsChip} onPress={() => setDetailsOpen(true)} />
           </View>
 
@@ -93,7 +90,7 @@ export function CapturaView() {
         </ScrollView>
 
         <View style={styles.footer}>
-          {typing ? null : <Keypad onKey={vm.pressKey} operators equals={vm.equalsLabel} compact />}
+          <Keypad onKey={vm.pressKey} operators equals={vm.equalsLabel} compact />
           <Button label={vm.saveLabel} onPress={() => void vm.save()} disabled={!vm.canSave} />
         </View>
       </FormSheet>

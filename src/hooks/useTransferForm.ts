@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { insertTransfer } from '../data/repos/transactions';
 import { usePreferences } from '../store/preferences';
 import { rateChipLabel } from '../utils/captureChips';
@@ -32,7 +32,8 @@ export function useTransferForm() {
   const [toId, setToId] = useState<string | null>(null);
   const [active, setActive] = useState<Side>('from');
   const [error, setError] = useState<string | null>(null);
-  const allowExit = useDiscardGuard(outBuf.buffer !== '' || inBuf.buffer !== '' || details.concept.trim() !== '', {
+  const initialDay = useRef(details.day);
+  const allowExit = useDiscardGuard(outBuf.buffer !== '' || inBuf.buffer !== '' || details.concept.trim() !== '' || categoryId !== null || details.day !== initialDay.current, {
     title: '¿Descartar esta transferencia?',
     message: 'Si sales ahora perderás la transferencia que estás registrando.',
   });
@@ -159,10 +160,11 @@ export function useTransferForm() {
     /** Gasto/Ingreso vuelven a la captura sin avisar de descarte (el cambio de pantalla no pierde nada). */
     selectKind: (value: string) => {
       if (value === 'transfer') return;
-      allowExit();
-      router.replace('/capture');
+      // Sin allowExit(): si hay datos, el aviso de descarte aparece y solo se reemplaza al confirmar.
+      router.replace({ pathname: '/capture', params: { kind: value === 'income' ? 'income' : 'expense' } });
     },
-    rateChip: implied === null ? 'Tasa' : rateChipLabel(implied),
+    /** Chip informativo «Tasa X»: solo cuando hay tasa implícita (monedas distintas y ambos montos). */
+    rateChip: implied === null ? null : rateChipLabel(implied),
     active: effectiveActive,
     setActive,
     sameCurrency,

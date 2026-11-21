@@ -25,9 +25,11 @@ interface Options {
   editId?: string;
   /** Precarga este movimiento como uno nuevo (fecha de ahora, tasa vigente). */
   duplicateId?: string;
+  /** Tipo inicial (p. ej. al venir desde transferencia). */
+  kind?: CaptureKind;
 }
 
-export function useCaptureForm({ editId, duplicateId }: Options = {}) {
+export function useCaptureForm({ editId, duplicateId, kind: initialKind = 'expense' }: Options = {}) {
   const router = useRouter();
   const sourceId = editId ?? duplicateId ?? '';
   const isEdit = editId !== undefined;
@@ -44,7 +46,7 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
   const amount = useAmountBuffer(2, false, true);
   const manualRate = useAmountBuffer(4);
 
-  const [kind, setKindState] = useState<CaptureKind>('expense');
+  const [kind, setKindState] = useState<CaptureKind>(initialKind);
   const [accountId, setAccountId] = useState<string | null>(null);
   const [parentId, setParentId] = useState<string | null>(null);
   const [subId, setSubId] = useState<string | null>(null);
@@ -303,10 +305,9 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
       ...(isEdit ? [] : [{ value: 'transfer', label: 'Transferencia' }]),
     ],
     selectKind: (value: string) => {
-      if (value === 'transfer') {
-        allowExit();
-        router.replace('/transfer');
-      } else setKind(value === 'income' ? 'income' : 'expense');
+      // Sin allowExit(): con datos sin guardar el aviso de descarte aparece y solo se reemplaza al confirmar.
+      if (value === 'transfer') router.replace('/transfer');
+      else setKind(value === 'income' ? 'income' : 'expense');
     },
     /** Monto grande: el resultado si hay una operación en curso; si no, lo tecleado. */
     amountDisplay: amount.operation ? (amount.result === null ? '0' : formatMinor(amount.result)) : amount.display,
