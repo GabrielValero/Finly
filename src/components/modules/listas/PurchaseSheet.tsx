@@ -34,7 +34,7 @@ export function PurchaseSheet({ vm }: { vm: Vm }) {
             {vm.accountChoices.map((a) => {
               const on = a.id === vm.accountId;
               return (
-                <PressableScale key={a.id} onPress={() => vm.setAccountId(a.id)} style={[styles.radioRow, on ? styles.radioRowOn : null]} accessibilityRole="radio" accessibilityState={{ selected: on }} accessibilityLabel={`${a.name}, ${a.balance}`}>
+                <PressableScale key={a.id} onPress={() => vm.setAccountId(a.id)} style={[styles.radioRow, on ? styles.radioRowOn : null]} accessibilityRole="radio" accessibilityState={{ selected: on, checked: on }} accessibilityLabel={`${a.name}, ${a.balance}`}>
                   <View style={[styles.radio, on ? styles.radioOn : null]}>{on ? <View style={styles.dot} /> : null}</View>
                   <View style={styles.texts}>
                     <AppText variant="body" numberOfLines={1}>{a.name}</AppText>

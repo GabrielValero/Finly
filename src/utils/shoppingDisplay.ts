@@ -41,12 +41,14 @@ interface CartRow {
 export interface CartSection<T> {
   rows: T[];
   subtotalMinor: number;
+  /** Hay líneas sin valorar (sin precio o en Bs sin tasa): el subtotal es un mínimo. */
+  incomplete: boolean;
 }
 
 /** Reparte los productos de una lista de mercado: en el carrito, pendientes y ya comprados. */
 export function splitCartSections<T extends CartRow>(rows: readonly T[]): { cart: CartSection<T>; pending: CartSection<T>; purchased: T[] } {
-  const cart: CartSection<T> = { rows: [], subtotalMinor: 0 };
-  const pending: CartSection<T> = { rows: [], subtotalMinor: 0 };
+  const cart: CartSection<T> = { rows: [], subtotalMinor: 0, incomplete: false };
+  const pending: CartSection<T> = { rows: [], subtotalMinor: 0, incomplete: false };
   const purchased: T[] = [];
   for (const r of rows) {
     if (r.purchased) {
@@ -56,6 +58,7 @@ export function splitCartSections<T extends CartRow>(rows: readonly T[]): { cart
     const section = r.checked ? cart : pending;
     section.rows.push(r);
     section.subtotalMinor += r.usdMinor ?? 0;
+    if (r.usdMinor === null) section.incomplete = true;
   }
   return { cart, pending, purchased };
 }
