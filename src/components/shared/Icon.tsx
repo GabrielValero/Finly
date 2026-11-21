@@ -42,6 +42,8 @@ const REGISTRY: Record<string, Glyph> = {
   tag: { lib: 'feather', name: 'tag' },
   chart: { lib: 'feather', name: 'bar-chart-2' },
   download: { lib: 'feather', name: 'download' },
+  upload: { lib: 'feather', name: 'upload' },
+  alert: { lib: 'feather', name: 'alert-triangle' },
   users: { lib: 'feather', name: 'users' },
   folder: { lib: 'feather', name: 'folder' },
   calculator: { lib: 'mci', name: 'calculator-variant-outline' },

@@ -29,7 +29,7 @@ export function useAjustesScreen() {
     categoriesValue: String(categories.length),
     themeValue: seeds.find((s) => s.id === activeId)?.name ?? '',
     backupBanner: backup.hasBackup ? null : backup.text,
-    backupValue: backup.hasBackup ? backup.text.replace('Último respaldo: ', '') : 'Nunca',
+
     lockValue: lock.enabled ? 'Activado' : 'Apagado',
     lockError: lock.error,
     toggleLock: () => void lock.toggle(),
@@ -40,6 +40,7 @@ export function useAjustesScreen() {
     openAccounts: () => router.navigate('/cuentas'),
     openCategories: () => router.push('/categories'),
     iconValue: iconLabel,
+    openRestore: () => router.push('/settings/backup'),
     openAppIcon: () => router.push('/settings/app-icon'),
     openTheme: () => router.push('/settings/theme'),
     openDeleteData: () => router.push('/settings/delete-data'),
