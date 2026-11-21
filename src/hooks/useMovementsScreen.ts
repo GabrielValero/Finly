@@ -23,7 +23,7 @@ import { tagsInUse } from '../utils/tagFilter';
 import { topCategories } from '../utils/topCategories';
 import { collapseTransfers } from '../utils/transfers';
 import {
-  useAccountsWithBalance,
+  useAccountsWithBalanceState,
   useAllCategoryRows,
   useBudgetItems,
   useCategoryRows,
@@ -63,7 +63,7 @@ export function useMovementsScreen() {
   const periodLinks = useRangeTagLinks(fromMonth, toMonth);
   /** Siempre el mes seleccionado: alimenta el balance, la tendencia, el presupuesto y los atajos. */
   const monthRows = useMonthTransactions(month);
-  const accounts = useAccountsWithBalance();
+  const { accounts, loaded: accountsLoaded } = useAccountsWithBalanceState();
   const allTags = useTags();
   const liveCategories = useCategoryRows();
   const allCategories = useAllCategoryRows();
@@ -182,6 +182,7 @@ export function useMovementsScreen() {
 
       groups,
       hasAccounts: accounts.length > 0,
+      accountsLoaded,
       isEmpty: filtered.length === 0,
       hasFilters: countActiveFilters(filters) > 0,
       previousMonthLabel: formatMonthLabel(addMonths(month, -1)),

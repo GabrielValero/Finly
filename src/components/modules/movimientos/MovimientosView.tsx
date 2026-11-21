@@ -18,6 +18,7 @@ import { TrendLine } from '../../shared/TrendLine';
 import { ScreenTemplate } from '../../template/ScreenTemplate';
 import { CalculadoraSheet } from '../calculadora/CalculadoraSheet';
 import { FiltrosSheet } from './FiltrosSheet';
+import { PrimerUso } from './PrimerUso';
 
 /** Lo que tarda en cerrarse la animación de una hoja antes de abrir la siguiente. */
 const MODAL_SWAP_MS = 400;
@@ -174,12 +175,8 @@ export function MovimientosView() {
           </PressableScale>
         ) : null}
 
-        {!vm.hasAccounts ? (
-          <View style={styles.empty}>
-            <AppText variant="heading" align="center">Empieza creando tu primera cuenta</AppText>
-            <AppText variant="small" color="textMuted" align="center">Efectivo, banco, Binance… cada una en su moneda.</AppText>
-            <Button label="Crear cuenta" onPress={vm.openNewAccount} />
-          </View>
+        {!vm.accountsLoaded ? null : !vm.hasAccounts ? (
+          <PrimerUso onCreateAccount={vm.openNewAccount} />
         ) : vm.isEmpty ? (
           <View style={styles.empty}>
             <AppText variant="heading" align="center">{vm.hasFilters ? 'Sin movimientos con estos filtros' : 'Sin movimientos este mes'}</AppText>

@@ -18,13 +18,13 @@ export function TasasAjustesView() {
     action: { alignSelf: 'flex-start' },
   }));
   return (
-    <ScreenTemplate title="TASAS" left="back" onLeft={vm.back} bottomInset>
+    <ScreenTemplate title="Tasas" titleBold left="back" onLeft={vm.back} bottomInset>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Card highlight style={styles.hero}>
           <AppText variant="label" color="textMuted">Tasa de hoy</AppText>
           <AppText variant="display" fit>{vm.hero.value}</AppText>
           <AppText variant="caption" color="textMuted" numberOfLines={2}>{vm.hero.caption}</AppText>
-          <View style={styles.action}><Button label="Actualizar tasa" onPress={vm.update} /></View>
+          <View style={styles.action}><Button label="Actualizar tasa" onPress={vm.update} small /></View>
         </Card>
         <SwitchRow
           label="Actualizar BCV automáticamente"

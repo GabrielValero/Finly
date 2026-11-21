@@ -1,11 +1,13 @@
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { deriveTheme } from '../utils/theme';
+import { useCurrentIconLabel } from './useAppIconSettings';
 import { useThemeList } from './useTheme';
 
 export function useThemeSettings() {
   const router = useRouter();
   const { seeds, activeId, setThemeId } = useThemeList();
+  const iconLabel = useCurrentIconLabel();
   const items = useMemo(
     () =>
       seeds.map((seed) => {
@@ -14,5 +16,5 @@ export function useThemeSettings() {
       }),
     [seeds, activeId],
   );
-  return { items, select: setThemeId, back: () => router.back() };
+  return { items, select: setThemeId, iconValue: iconLabel, openAppIcon: () => router.push('/settings/app-icon'), back: () => router.back() };
 }

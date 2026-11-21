@@ -19,7 +19,7 @@ export function RespaldoView() {
     footer: { paddingHorizontal: t.space[16], paddingBottom: t.space[16] + insets.bottom, gap: t.space[12] },
   }));
   return (
-    <ScreenTemplate title="RESPALDO" left="back" onLeft={vm.back}>
+    <ScreenTemplate title="Respaldo" titleBold left="back" onLeft={vm.back}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Banner text={vm.status.text} action={vm.status.hasBackup ? 'EXPORTAR' : 'RESPALDAR'} onPress={() => void vm.doExport()} />
         <Card style={styles.info}>
@@ -35,8 +35,8 @@ export function RespaldoView() {
       </ScrollView>
       <View style={styles.footer}>
         <AppText variant="small" color="textMuted">Restaurar reemplaza todos los datos actuales por los del archivo.</AppText>
-        <Button label="Restaurar desde archivo" variant="outline" onPress={() => void vm.doRestore()} disabled={vm.busy} />
-        <Button label="Exportar respaldo" onPress={() => void vm.doExport()} disabled={vm.busy} />
+        <Button label="Restaurar desde archivo" variant="secondary" icon="upload" onPress={() => void vm.doRestore()} disabled={vm.busy} />
+        <Button label="Exportar respaldo" icon="download" onPress={() => void vm.doExport()} disabled={vm.busy} />
       </View>
     </ScreenTemplate>
   );

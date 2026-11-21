@@ -9,11 +9,13 @@ interface Props {
   value?: string;
   onPress?: () => void;
   danger?: boolean;
+  /** Etiqueta atenuada (función aún no disponible). */
+  muted?: boolean;
   last?: boolean;
 }
 
 /** Fila de ajustes: etiqueta, valor a la derecha y chevron cuando es navegable. */
-export function SettingsRow({ label, value, onPress, danger, last }: Props) {
+export function SettingsRow({ label, value, onPress, danger, muted, last }: Props) {
   const styles = useThemedStyles((t) => ({
     row: { flexDirection: 'row', alignItems: 'center', gap: t.space[12], minHeight: 49, borderBottomWidth: 1, borderBottomColor: t.colors.border },
     last: { borderBottomWidth: 0 },
@@ -22,7 +24,7 @@ export function SettingsRow({ label, value, onPress, danger, last }: Props) {
   }));
   const content = (
     <>
-      <View style={styles.label}><AppText variant="bodyRegular" color={danger ? 'expense' : 'text'} numberOfLines={1}>{label}</AppText></View>
+      <View style={styles.label}><AppText variant="bodyRegular" color={danger ? 'expense' : muted ? 'textMuted' : 'text'} numberOfLines={1}>{label}</AppText></View>
       {value ? <View style={styles.value}><AppText variant="caption" color="textMuted" numberOfLines={1} align="right">{value}</AppText></View> : null}
       {onPress ? <Icon name="chevronRight" size={18} color="textMuted" /> : null}
     </>

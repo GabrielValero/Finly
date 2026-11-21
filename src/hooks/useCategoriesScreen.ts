@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { buildCategoryTree } from '../utils/categories';
+import { resolveCategoryColor } from '../utils/categoryColor';
 import { useCategoryRows, useCategoryUsage } from './useData';
 
 export type CategoryTab = 'expense' | 'income';
@@ -10,6 +11,8 @@ export interface CategoryRowVm {
   name: string;
   icon: string;
   subtitle: string;
+  excluded: boolean;
+  color: string | null;
   children: { id: string; name: string; count: number }[];
 }
 
@@ -26,7 +29,9 @@ export function useCategoriesScreen() {
       id: t.category.id,
       name: t.category.name,
       icon: t.category.icon,
-      subtitle: t.category.excludeFromReports ? 'NO CUENTA EN REPORTES' : `${t.count} ${t.count === 1 ? 'MOVIMIENTO' : 'MOVIMIENTOS'}`,
+      subtitle: t.category.excludeFromReports ? 'No cuenta en reportes' : `${t.count} ${t.count === 1 ? 'movimiento' : 'movimientos'}`,
+      excluded: t.category.excludeFromReports,
+      color: resolveCategoryColor(t.category.color, t.category.id),
       children: t.children.map((c) => ({ id: c.category.id, name: c.category.name, count: c.count })),
     }));
   }, [rows, usage, tab]);
