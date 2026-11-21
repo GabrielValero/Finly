@@ -5,7 +5,9 @@ import { duplicateList, finalizePurchase, insertItem, reopenList, setItemChecked
 import { usePreferences } from '../store/preferences';
 import { allocateSpending, budgetKind, itemResolver, type BudgetTx } from '../utils/budget';
 import { categoryPath, isExcluded } from '../utils/categories';
-import { dayOf, formatMonthLabel, monthOf, toLocalIso } from '../utils/dates';
+import { resolveCategoryColor } from '../utils/categoryColor';
+import { dayOf, formatDayShort, formatMonthLabel, monthOf, toLocalIso } from '../utils/dates';
+import { listLimitSegments, wishSummarySegments } from '../utils/humanVoice';
 import { formatMoney, formatRate, usdToVes } from '../utils/money';
 import { usdEquivalent } from '../utils/transactions';
 import {
@@ -21,6 +23,8 @@ import {
   sortItems,
   summarizeList,
 } from '../utils/shopping';
+import { notInCartLine, splitCartSections, topWishName } from '../utils/shoppingDisplay';
+import type { StatusTone } from '../utils/budgetDisplay';
 import { useAccountsWithBalance, useAllCategoryRows, useBudgetItems, useMonthTransactions } from './useData';
 import { useRateRows, useShoppingItems, useShoppingList } from './useShopping';
 
@@ -31,8 +35,16 @@ export interface ProductRowVm {
   amount: string;
   checked: boolean;
   purchased: boolean;
+  /** Prioridad (solo deseos pendientes). */
   badge: string | null;
+  badgeTone: StatusTone;
+  /** Valor de la línea en USD (minor) para los subtotales; null si no se puede valorar. */
+  usdMinor: number | null;
+  /** Mercado pendiente sin precio: la fila invita a añadirlo. */
+  needsPrice: boolean;
 }
+
+const PRIORITY_TONE = { high: 'expense', medium: 'warning', low: 'textMuted' } as const;
 
 function magnitude(tx: Parameters<typeof usdEquivalent>[0]): number {
   try {
@@ -62,6 +74,10 @@ export function useListDetail(id: string) {
   const [error, setError] = useState<string | null>(null);
 
   const rate = list ? resolveListRate(list, rates) : null;
+  const colorOf = (categoryId: string | null): string | null => {
+    const c = categories.find((x) => x.id === categoryId);
+    return c ? resolveCategoryColor(c.color ?? categories.find((p) => p.id === c.parentId)?.color ?? null, c.id) : null;
+  };
   const labelOf = (categoryId: string | null): string | null => {
     const c = categories.find((x) => x.id === categoryId);
     return c ? (categoryPath(c.name, categories.find((p) => p.id === c.parentId)?.name ?? null) ?? c.name) : null;
@@ -75,22 +91,29 @@ export function useListDetail(id: string) {
     const rows: ProductRowVm[] = sortItems(items, list.kind).map((i) => {
       const usd = lineUsd(i, rate?.rateScaled ?? null);
       const trivial = i.quantityMilli === 1000 && i.unit === 'und';
+      const isWish = list.kind === 'wish';
       const price =
         i.priceMinor === null
           ? trivial ? 'Sin precio' : `${formatQuantityUnit(i.quantityMilli, i.unit)} · sin precio`
           : describePrice(i.quantityMilli, i.unit, formatMoney(i.priceMinor, i.priceCurrency));
       const own = i.categoryId ? labelOf(i.categoryId) : null;
+      const purchased = i.purchasedAt !== null;
+      const priceText = isWish ? (i.priceMinor === null ? 'Sin precio objetivo' : `Precio objetivo · ${price}`) : price;
       return {
         id: i.id,
         name: i.name,
-        detail: [price, i.taxable ? `+IVA ${IVA_LABEL}` : null, own].filter(Boolean).join(' · '),
+        detail: purchased && i.purchasedAt ? `Comprado · ${formatDayShort(dayOf(toLocalIso(i.purchasedAt)))}` : [priceText, i.taxable ? `+IVA ${IVA_LABEL}` : null, own].filter(Boolean).join(' · '),
         amount: usd === null ? (i.priceMinor === null ? '—' : 'Sin tasa') : formatMoney(usd, 'USD'),
         checked: i.checked,
-        purchased: i.purchasedAt !== null,
-        badge: list.kind === 'wish' && i.priority && i.purchasedAt === null ? PRIORITY_LABEL[i.priority] : null,
+        purchased,
+        badge: isWish && i.priority && !purchased ? PRIORITY_LABEL[i.priority] : null,
+        badgeTone: i.priority ? PRIORITY_TONE[i.priority] : 'textMuted',
+        usdMinor: usd,
+        needsPrice: !isWish && !purchased && i.priceMinor === null,
       };
     });
-    return { totals, limit, rows };
+    const sections = splitCartSections(rows);
+    return { totals, limit, rows, sections };
   }, [list, items, rate, categories]);
 
   // Cuánto queda del presupuesto del mes para la categoría de la lista (si está planificada).
@@ -124,7 +147,9 @@ export function useListDetail(id: string) {
       totalLabel: formatMoney(total, 'USD'),
       skipped,
       blocked: plan.groups.length === 0 || !account || (needsRate && rate === null),
-      groups: plan.groups.map((g) => ({ key: g.categoryId, label: labelOf(g.categoryId) ?? 'Sin categoría', amount: formatMoney(g.usdMinor, 'USD'), count: g.itemIds.length })),
+      groups: plan.groups.map((g) => ({ key: g.categoryId, label: labelOf(g.categoryId) ?? 'Sin categoría', color: colorOf(g.categoryId), amount: formatMoney(g.usdMinor, 'USD'), count: g.itemIds.length })),
+      // Solo en mercado: lo que no se mete al carrito sigue pendiente en la lista.
+      info: list.kind === 'market' ? notInCartLine(items.filter((i) => i.purchasedAt === null && !purchaseIds.includes(i.id)).length) : null,
       inBs: account?.currency === 'VES' && rate ? formatMoney(usdToVes(total, rate.rateScaled), 'VES') : null,
       warnings: [
         plan.skipped.noPrice.length ? `${plan.skipped.noPrice.length} sin precio (quedan pendientes)` : null,
@@ -171,7 +196,7 @@ export function useListDetail(id: string) {
 
   return {
     notFound: list === null,
-    title: list ? list.name.toUpperCase() : '',
+    title: list ? list.name : '',
     kind: list?.kind ?? 'market',
     kindLabel: list ? LIST_KIND_LABEL[list.kind] : '',
     completed: list?.completedAt != null,
@@ -187,11 +212,23 @@ export function useListDetail(id: string) {
     pendingCount: view?.totals.pendingCount ?? 0,
     limit: list?.limitMinor ? { ...view!.limit, label: formatMoney(list.limitMinor, 'USD'), remaining: formatMoney(Math.abs(view!.limit.remainingMinor), 'USD') } : null,
     incomplete: view ? [view.totals.unpricedCount ? `${view.totals.unpricedCount} sin precio` : null, view.totals.unconvertedCount ? `${view.totals.unconvertedCount} en Bs sin tasa` : null].filter((x): x is string => x !== null).join(' · ') : '',
+    rateValue: rate ? `${formatRate(rate.rateScaled)} Bs` : 'Sin tasa',
+    rateSource: rate ? (rate.source === 'bcv' ? 'BCV' : 'Manual') : null,
     rateLabel: rate ? `${formatRate(rate.rateScaled)} Bs · ${rate.source === 'bcv' ? 'BCV' : 'Manual'}` : 'Sin tasa',
     rows: view?.rows ?? [],
+    limitSegments: list?.limitMinor && view ? listLimitSegments({ over: view.limit.state === 'over', amount: formatMoney(Math.abs(view.limit.remainingMinor), 'USD'), limit: formatMoney(list.limitMinor, 'USD') }) : null,
+    cartSection: { rows: view?.sections.cart.rows ?? [], subtotal: formatMoney(view?.sections.cart.subtotalMinor ?? 0, 'USD') },
+    pendingSection: { rows: view?.sections.pending.rows ?? [], subtotal: formatMoney(view?.sections.pending.subtotalMinor ?? 0, 'USD') },
+    purchasedRows: view?.sections.purchased ?? [],
+    wishSummary: list?.kind === 'wish' ? wishSummarySegments({ bought: items.filter((i) => i.purchasedAt !== null).length, total: items.length, topName: topWishName(items) }) : null,
     budgetHint,
     purchase,
-    accountOptions: accounts.map((a) => ({ value: a.id, label: a.name, hint: a.currency === 'USD' ? 'USD' : 'Bs' })),
+    accountChoices: accounts.map((a) => ({
+      id: a.id,
+      name: a.name,
+      balance: formatMoney(a.balanceMinor, a.currency),
+      hint: a.currency === 'VES' ? (rate ? `usa la tasa ${formatRate(rate.rateScaled)}` : 'sin tasa disponible') : null,
+    })),
     accountId,
     setAccountId,
     purchaseOpen: purchaseIds !== null,
