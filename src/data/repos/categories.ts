@@ -35,11 +35,13 @@ export interface CategoryFields {
   kind: 'income' | 'expense';
   parentId: string | null;
   excludeFromReports: boolean;
+  /** Color hex de la categoría (null = el estable por id). */
+  color: string | null;
 }
 
 export async function insertCategory(fields: CategoryFields): Promise<string> {
   const id = newId();
-  await db.insert(categories).values({ ...fields, id, color: null, archivedAt: null, updatedAt: new Date() });
+  await db.insert(categories).values({ ...fields, id, archivedAt: null, updatedAt: new Date() });
   return id;
 }
 
