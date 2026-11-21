@@ -3,8 +3,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { deleteItem, insertItem, undoPurchase, updateItem } from '../data/repos/shopping';
 import { categoryPath } from '../utils/categories';
+import { resolveCategoryColor } from '../utils/categoryColor';
 import { formatMoney, vesToUsd, type Currency } from '../utils/money';
-import { IVA_LABEL, UNIT_LABEL, formatQuantity, lineNative, parseQuantity, resolveListRate, type ShopUnit } from '../utils/shopping';
+import { UNIT_LABEL, formatQuantity, lineNative, parseQuantity, resolveListRate, type ShopUnit } from '../utils/shopping';
+import { lineTotalNote } from '../utils/shoppingDisplay';
 import { useAmountBuffer } from './useAmountBuffer';
 import { useCreatedCategory } from './useCreatedCategory';
 import { useCategoryRows } from './useData';
@@ -52,6 +54,10 @@ export function useItemForm(id: string, listId: string) {
   const labelOf = (cid: string | null) => {
     const c = categories.find((x) => x.id === cid);
     return c ? (categoryPath(c.name, categories.find((p) => p.id === c.parentId)?.name ?? null) ?? c.name) : null;
+  };
+  const colorOf = (cid: string | null) => {
+    const c = categories.find((x) => x.id === cid);
+    return c ? resolveCategoryColor(c.color ?? categories.find((p) => p.id === c.parentId)?.color ?? null, c.id) : null;
   };
   const pickerCategories = useMemo(
     () => categories.filter((c) => c.kind === 'expense').map((c) => ({ id: c.id, name: c.name, icon: c.icon, parentId: c.parentId })),
@@ -124,7 +130,7 @@ export function useItemForm(id: string, listId: string) {
     isNew,
     isPurchased: existing?.purchasedAt != null,
     notFound: !isNew && items.length > 0 && !existing,
-    title: isNew ? 'NUEVO PRODUCTO' : 'EDITAR PRODUCTO',
+    title: isNew ? 'Nuevo producto' : 'Editar producto',
     isWish: list?.kind === 'wish',
     name,
     setName,
@@ -134,14 +140,14 @@ export function useItemForm(id: string, listId: string) {
     setUnit,
     priceTitle: unit === 'und' ? 'Precio por unidad' : `Precio por ${UNIT_LABEL[unit]}`,
     /** Cantidad x precio, para que se vea el multiplicado antes de guardar. */
-    lineLabel: (() => {
+    lineTotal: (() => {
       if (price.minor <= 0) return null;
       try {
         const total = lineNative({ priceMinor: price.minor, quantityMilli: parseQuantity(quantity), taxable });
         if (total === null) return null;
         const rate = list ? resolveListRate(list, rates) : null;
-        const usd = currency === 'VES' && rate ? ` ≈ ${formatMoney(vesToUsd(total, rate.rateScaled), 'USD')}` : '';
-        return `Total del producto${taxable ? ` (con IVA ${IVA_LABEL})` : ''}: ${formatMoney(total, currency)}${usd}`;
+        const usdLabel = currency === 'VES' && rate ? formatMoney(vesToUsd(total, rate.rateScaled), 'USD') : null;
+        return { amount: formatMoney(total, currency), note: lineTotalNote({ taxable, usdLabel }) };
       } catch {
         return null;
       }
@@ -155,6 +161,8 @@ export function useItemForm(id: string, listId: string) {
     categoryId,
     categoryLabel: labelOf(categoryId),
     inheritedLabel: labelOf(list?.categoryId ?? null),
+    categoryIcon: categories.find((c) => c.id === (categoryId ?? list?.categoryId))?.icon ?? 'tag',
+    categoryColor: colorOf(categoryId ?? list?.categoryId ?? null),
     pickerCategories,
     selectCategory: setCategoryId,
     clearCategory: () => setCategoryId(null),

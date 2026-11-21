@@ -10,20 +10,23 @@ interface Props<T extends string> {
   disabled?: boolean;
   /** Sobre una superficie `surface` (hojas): el riel usa surface2 para no confundirse con el fondo. */
   onSurface?: boolean;
+  /** Versión compacta (28 px) para ir dentro de un campo. */
+  small?: boolean;
 }
 
 /** Selector segmentado (Bs | USD, USD | VES). */
-export function Segmented<T extends string>({ options, value, onChange, disabled, onSurface = false }: Props<T>) {
+export function Segmented<T extends string>({ options, value, onChange, disabled, onSurface = false, small = false }: Props<T>) {
   const styles = useThemedStyles((t) => ({
     track: { flexDirection: 'row', backgroundColor: t.colors.surface, borderRadius: t.radius.full, padding: t.space[4] },
     trackOnSurface: { backgroundColor: t.colors.surface2 },
     item: { flex: 1, height: 40, borderRadius: t.radius.full, alignItems: 'center', justifyContent: 'center' },
+    itemSmall: { height: 28, paddingHorizontal: t.space[12] },
     active: { backgroundColor: t.colors.accent },
   }));
   return (
     <View style={[styles.track, onSurface ? styles.trackOnSurface : null]}>
       {options.map((o) => (
-        <PressableScale key={o.value} disabled={disabled} onPress={() => onChange(o.value)} style={[styles.item, o.value === value ? styles.active : null]}>
+        <PressableScale key={o.value} disabled={disabled} onPress={() => onChange(o.value)} style={[styles.item, small ? styles.itemSmall : null, o.value === value ? styles.active : null]}>
           <AppText variant="label" color={o.value === value ? 'onAccent' : 'textMuted'}>
             {o.label}
           </AppText>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { limitCaption, listCardSubtitle, notInCartLine, splitCartSections, topWishName } from '../src/utils/shoppingDisplay';
+import { limitCaption, lineTotalNote, listCardSubtitle, notInCartLine, splitCartSections, topWishName } from '../src/utils/shoppingDisplay';
 
 describe('listCardSubtitle', () => {
   const base = { completed: false, archived: false, pending: 3, checked: 1, total: 5 };
@@ -61,4 +61,11 @@ describe('topWishName', () => {
   it('sin prioridades no hay "más importante"', () => {
     expect(topWishName([w('A', null), w('B', null)])).toBeNull();
   });
+});
+
+describe('lineTotalNote', () => {
+  it('sin IVA ni conversión no hay nota', () => expect(lineTotalNote({ taxable: false, usdLabel: null })).toBeNull());
+  it('con IVA', () => expect(lineTotalNote({ taxable: true, usdLabel: null })).toBe('Con IVA 16 %'));
+  it('con conversión a USD', () => expect(lineTotalNote({ taxable: false, usdLabel: '$ 2,50' })).toBe('≈ $ 2,50'));
+  it('con ambas', () => expect(lineTotalNote({ taxable: true, usdLabel: '$ 2,50' })).toBe('Con IVA 16 % · ≈ $ 2,50'));
 });

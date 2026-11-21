@@ -1,4 +1,4 @@
-import type { LimitState } from './shopping';
+import { IVA_LABEL, type LimitState } from './shopping';
 
 const PRIORITY_RANK = { high: 0, medium: 1, low: 2 } as const;
 
@@ -81,4 +81,10 @@ export function topWishName(items: readonly WishLike[]): string | null {
     .filter((i) => i.purchasedAt === null && i.priority !== null)
     .sort((a, b) => PRIORITY_RANK[a.priority!] - PRIORITY_RANK[b.priority!] || a.sortOrder - b.sortOrder);
   return ranked[0]?.name ?? null;
+}
+
+/** Nota bajo el total de la línea de un producto: "Con IVA 16 % · ≈ $ 2,50"; null si no hay nada que aclarar. */
+export function lineTotalNote({ taxable, usdLabel }: { taxable: boolean; usdLabel: string | null }): string | null {
+  const parts = [taxable ? `Con IVA ${IVA_LABEL}` : null, usdLabel ? `≈ ${usdLabel}` : null].filter((x): x is string => x !== null);
+  return parts.length ? parts.join(' · ') : null;
 }
