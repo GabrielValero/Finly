@@ -98,3 +98,31 @@ export function topCategoryInsight(slices: readonly Slice[]): CategoryInsight | 
     detail: `${Math.round(top.share * 100)} de cada 100 dólares se fueron ahí.`,
   };
 }
+
+export interface ListLimitInput {
+  over: boolean;
+  /** Valor absoluto de lo que queda (o de lo que se pasó), ya formateado. */
+  amount: string;
+  /** Límite de la lista, ya formateado. */
+  limit: string;
+}
+
+/** Frase del límite de una lista de mercado. */
+export function listLimitSegments(i: ListLimitInput): Segment[] {
+  if (i.over) return [t('Te pasas '), { text: i.amount, bold: true, tone: 'expense' }, t(` del límite de ${i.limit}.`)];
+  return [t('Te quedan '), b(i.amount), t(` de tu límite de ${i.limit}.`)];
+}
+
+export interface WishSummaryInput {
+  bought: number;
+  total: number;
+  /** Nombre del deseo pendiente más importante; null si ninguno tiene prioridad. */
+  topName: string | null;
+}
+
+/** "Ya compraste 1 de 4. Lo más importante es X." Sin deseos no hay frase. */
+export function wishSummarySegments(i: WishSummaryInput): Segment[] | null {
+  if (i.total <= 0) return null;
+  const head: Segment[] = [t('Ya compraste '), b(`${i.bought} de ${i.total}`), t('.')];
+  return i.topName ? [...head, t(' Lo más importante es '), b(i.topName), t('.')] : head;
+}
