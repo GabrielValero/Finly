@@ -37,7 +37,7 @@ function AccountCard({ a, onPress }: { a: AccountCardVm; onPress: () => void }) 
 export function CuentasView() {
   const vm = useAccountsScreen();
   const styles = useThemedStyles((t) => ({
-    scroll: { paddingHorizontal: t.space[16], paddingBottom: t.space[32], gap: t.space[12] },
+    scroll: { paddingHorizontal: t.space[16], paddingBottom: 56, gap: t.space[12] },
     group: { paddingTop: t.space[8] },
     empty: { alignItems: 'center', gap: t.space[16], paddingVertical: t.space[32] },
     transfer: { height: 56, borderRadius: t.radius[20], borderWidth: 1, borderColor: t.colors.border, backgroundColor: t.colors.surface, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: t.space[8] },

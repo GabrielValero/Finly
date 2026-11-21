@@ -33,6 +33,8 @@ export function useAjustesScreen() {
     lockValue: lock.enabled ? 'Activado' : 'Apagado',
     lockError: lock.error,
     toggleLock: () => void lock.toggle(),
+    back: () => router.back(),
+    openDebts: () => router.push('/debts'),
     openBackup: () => router.push('/settings/backup'),
     openRates: () => router.push('/settings/rates'),
     openAccounts: () => router.navigate('/cuentas'),

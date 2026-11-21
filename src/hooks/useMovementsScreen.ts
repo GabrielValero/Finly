@@ -93,6 +93,7 @@ export function useMovementsScreen() {
       hasAnyRows: allRows.length > 0,
       setMonth: setSelectedMonth,
       openCapture: () => router.push('/capture'),
+      openSettings: () => router.push('/ajustes'),
       openRate: () => router.push('/rate'),
       openNewAccount: () => router.push('/account/new'),
       openDetail: (id: string) => router.push({ pathname: '/movement/[id]', params: { id } }),
