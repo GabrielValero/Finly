@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 import { useMemo } from 'react';
 import { setTransferCategory, softDeleteTransaction } from '../data/repos/transactions';
 import { categoryPath } from '../utils/categories';
+import { resolveCategoryColor } from '../utils/categoryColor';
 import { formatDateTimeLong } from '../utils/dates';
 import { formatMinor, formatMoney, formatRate } from '../utils/money';
 import { usdEquivalent } from '../utils/transactions';
@@ -44,7 +45,7 @@ export function useTransactionDetail(id: string) {
   // Tarjeta de conversión: solo si hubo moneda/tasa de por medio.
   const rateCard = tx.rateScaled
     ? {
-        listedLabel: isTransfer ? 'SALIÓ' : tx.listedCurrency === 'USD' ? 'PRECIO EN USD' : tx.listedCurrency === 'VES' || tx.accountCurrency === 'VES' ? 'PRECIO EN BS' : 'PRECIO',
+        listedLabel: isTransfer ? 'SALIÓ' : tx.kind === 'income' ? 'MONTO ORIGINAL' : 'PRECIO EN TIENDA',
         listed: transfer
           ? formatMoney(transfer.outMinor, transfer.outCurrency)
           : tx.listedAmountMinor !== null && tx.listedCurrency
@@ -62,8 +63,11 @@ export function useTransactionDetail(id: string) {
     found: true as const,
     isTransfer,
     icon: isTransfer ? 'transfer' : (tx.categoryIcon ?? 'wallet'),
-    title: tx.concept.trim() || (transfer ? `${transfer.fromName} → ${transfer.toName}` : isTransfer ? 'Transferencia' : (tx.categoryName ?? 'Movimiento')),
+    /** Color de la categoría (dato) para teñir el ícono; null en transferencias. */
+    color: isTransfer ? null : resolveCategoryColor(tx.categoryColor ?? null, tx.categoryId),
+    title: isTransfer ? (transfer ? `${transfer.fromName} → ${transfer.toName}` : 'Transferencia') : (tx.categoryName ?? (tx.concept.trim() || 'Movimiento')),
     bigAmount,
+    amountColor: (isTransfer ? 'text' : tx.kind === 'income' ? 'income' : 'expense') as 'text' | 'income' | 'expense',
     dateLabel: formatDateTimeLong(tx.occurredAt),
     rateCard,
     rows: [
@@ -75,9 +79,9 @@ export function useTransactionDetail(id: string) {
         : [{ label: 'CUENTA', value: tx.accountName }]),
       ...(path && !isTransfer ? [{ label: 'CATEGORÍA', value: path }] : []),
       ...(tx.concept.trim() ? [{ label: 'CONCEPTO', value: tx.concept.trim() }] : []),
-      ...(tags.length > 0 ? [{ label: 'ETIQUETAS', value: tags.map((t) => `#${t.name}`).join(' ') }] : []),
+      ...(tags.length > 0 ? [{ label: 'ETIQUETAS', value: tags.map((t) => `#${t.name}`).join(' '), chips: tags.map((t) => `#${t.name}`) }] : []),
       ...(tx.note ? [{ label: 'NOTA', value: tx.note }] : []),
-    ],
+    ] as { label: string; value: string; chips?: string[] }[],
     /** Solo transferencias: la categoría hace que cuenten en el presupuesto (como gasto, por la pata de salida). */
     transferCategory: isTransfer && tx.transferId
       ? {
