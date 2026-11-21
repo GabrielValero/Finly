@@ -1,4 +1,3 @@
-import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { useUi } from '../store/ui';
 import { isExcluded } from '../utils/categories';
@@ -10,7 +9,6 @@ import { useAllCategoryRows, useRangeTagLinks, useRangeTransactions, useTags } f
 const MONTHS_BACK = 6;
 
 export function useReportsScreen() {
-  const router = useRouter();
   const month = useUi((s) => s.selectedMonth);
   const setMonth = useUi((s) => s.setSelectedMonth);
   const fromMonth = addMonths(month, -(MONTHS_BACK - 1));
@@ -70,7 +68,6 @@ export function useReportsScreen() {
         expenseLabel: formatMoney(f.expenseUsdMinor, 'USD'),
         selected: f.month === month,
       })),
-      back: () => router.back(),
     };
-  }, [rows, links, categories, tags, month, currentMonth, setMonth, router]);
+  }, [rows, links, categories, tags, month, currentMonth, setMonth]);
 }

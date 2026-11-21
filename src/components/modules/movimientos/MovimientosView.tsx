@@ -1,15 +1,12 @@
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { useHomeMenu } from '../../../hooks/useHomeMenu';
 import { useMovementsScreen } from '../../../hooks/useMovementsScreen';
 import { useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
 import { Banner } from '../../shared/Banner';
 import { Card } from '../../shared/Card';
 import { Chip } from '../../shared/Chip';
-import { Fab } from '../../shared/Fab';
 import { Icon } from '../../shared/Icon';
-import { MenuDrawer } from '../../shared/MenuDrawer';
 import { OptionList } from '../../shared/OptionList';
 import { PressableScale } from '../../shared/PressableScale';
 import { RowMovimiento } from '../../shared/RowMovimiento';
@@ -21,15 +18,13 @@ import { ScreenTemplate } from '../../template/ScreenTemplate';
 export function MovimientosView() {
   const vm = useMovementsScreen();
   const [monthPicker, setMonthPicker] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [calcOpen, setCalcOpen] = useState(false);
-  const menu = useHomeMenu();
   const styles = useThemedStyles((t) => ({
     scroll: { paddingHorizontal: t.space[16], paddingBottom: 120, gap: t.space[12] },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 36 },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 40 },
     left: { flexDirection: 'row', alignItems: 'center', gap: t.space[12] },
     month: { flexDirection: 'row', alignItems: 'center', gap: t.space[8] },
-    hamburger: { width: 36, height: 36, borderRadius: t.radius.full, backgroundColor: t.colors.surface, alignItems: 'center', justifyContent: 'center' },
+    round: { width: 40, height: 40, borderRadius: t.radius.full, backgroundColor: t.colors.surface, alignItems: 'center', justifyContent: 'center' },
     right: { flexDirection: 'row', alignItems: 'center', gap: t.space[8] },
     pill: { height: 28, paddingHorizontal: t.space[12], borderRadius: t.radius.full, backgroundColor: t.colors.surface, justifyContent: 'center' },
     balance: { gap: t.space[8] },
@@ -46,9 +41,6 @@ export function MovimientosView() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <View style={styles.left}>
-            <PressableScale onPress={() => setMenuOpen(true)} style={styles.hamburger} accessibilityLabel="Abrir menú">
-              <Icon name="menu" size={20} />
-            </PressableScale>
             <PressableScale onPress={() => setMonthPicker(true)} style={styles.month} accessibilityLabel="Cambiar de mes">
               <AppText variant="label">{vm.monthLabel}</AppText>
               <Icon name="chevronDown" size={16} color="textMuted" />
@@ -58,8 +50,11 @@ export function MovimientosView() {
             <PressableScale onPress={vm.openRate} style={styles.pill} accessibilityLabel="Cambiar tasa">
               <AppText variant="caption">{vm.rateLabel}</AppText>
             </PressableScale>
-            <PressableScale onPress={() => setCalcOpen(true)} style={styles.hamburger} accessibilityLabel="Calculadora de divisas">
+            <PressableScale onPress={() => setCalcOpen(true)} style={styles.round} accessibilityLabel="Calculadora de divisas">
               <Icon name="calculator" size={20} />
+            </PressableScale>
+            <PressableScale onPress={vm.openSettings} style={styles.round} accessibilityLabel="Ajustes">
+              <Icon name="settings" size={20} />
             </PressableScale>
           </View>
         </View>
@@ -130,9 +125,6 @@ export function MovimientosView() {
         )}
       </ScrollView>
 
-      {vm.hasAccounts ? <Fab onPress={vm.openCapture} /> : null}
-
-      <MenuDrawer visible={menuOpen} items={menu} onClose={() => setMenuOpen(false)} />
       <CalculadoraSheet visible={calcOpen} onClose={() => setCalcOpen(false)} />
       <SheetModal visible={monthPicker} title="MES" onClose={() => setMonthPicker(false)}>
         <OptionList

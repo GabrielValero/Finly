@@ -15,7 +15,7 @@ export function AjustesView() {
     section: { marginTop: t.space[8] },
   }));
   return (
-    <ScreenTemplate title="Ajustes" titleStyle="large">
+    <ScreenTemplate title="AJUSTES" left="back" onLeft={vm.back} bottomInset>
       <ScrollView contentContainerStyle={styles.scroll}>
         {vm.backupBanner ? <Banner text={vm.backupBanner} action="RESPALDAR" onPress={vm.openBackup} /> : null}
         <AppText variant="label" color="textMuted">Tasas</AppText>
@@ -27,6 +27,7 @@ export function AjustesView() {
         <Card style={styles.card}>
           <SettingsRow label="Cuentas" value={vm.accountsValue} onPress={vm.openAccounts} />
           <SettingsRow label="Categorías" value={vm.categoriesValue} onPress={vm.openCategories} />
+          <SettingsRow label="Deudas y préstamos" onPress={vm.openDebts} />
           <SettingsRow label="Respaldo" value={vm.backupValue} onPress={vm.openBackup} />
           <SettingsRow label="Importar datos" value="Próximamente" />
           <SettingsRow label="Borrar todos los datos" danger onPress={vm.openDeleteData} last />

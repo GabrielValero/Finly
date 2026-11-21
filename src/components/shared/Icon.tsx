@@ -34,6 +34,7 @@ const REGISTRY: Record<string, Glyph> = {
   list: { lib: 'feather', name: 'list' },
   pie: { lib: 'feather', name: 'pie-chart' },
   sliders: { lib: 'feather', name: 'sliders' },
+  settings: { lib: 'feather', name: 'settings' },
   menu: { lib: 'feather', name: 'menu' },
   tag: { lib: 'feather', name: 'tag' },
   chart: { lib: 'feather', name: 'bar-chart-2' },

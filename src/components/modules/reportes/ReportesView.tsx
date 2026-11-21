@@ -47,7 +47,7 @@ export function ReportesView() {
   const theme = useTheme();
   const [monthPicker, setMonthPicker] = useState(false);
   const styles = useThemedStyles((t) => ({
-    scroll: { paddingHorizontal: t.space[16], paddingBottom: t.space[32], gap: t.space[12] },
+    scroll: { paddingHorizontal: t.space[16], paddingBottom: 56, gap: t.space[12] },
     pill: { alignSelf: 'flex-start', height: 32, paddingHorizontal: t.space[12], borderRadius: t.radius.full, backgroundColor: t.colors.surface, flexDirection: 'row', alignItems: 'center', gap: t.space[8] },
     cols: { flexDirection: 'row', paddingTop: t.space[8] },
     col: { flex: 1, gap: t.space[4], minWidth: 0, paddingRight: t.space[8] },
@@ -60,7 +60,7 @@ export function ReportesView() {
     legendItem: { flexDirection: 'row', alignItems: 'center', gap: t.space[4] },
   }));
   return (
-    <ScreenTemplate title="REPORTES" left="back" onLeft={vm.back} bottomInset>
+    <ScreenTemplate title="Reportes" titleStyle="large">
       <ScrollView contentContainerStyle={styles.scroll}>
         <PressableScale onPress={() => setMonthPicker(true)} style={styles.pill} accessibilityLabel="Cambiar de mes">
           <AppText variant="label">{vm.monthLabel}</AppText>
