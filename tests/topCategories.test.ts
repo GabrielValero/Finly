@@ -27,6 +27,18 @@ describe('topCategories', () => {
     const rows = [tx('1', 'a', { kind: 'income' }), tx('2', 'b', { kind: 'transfer' }), tx('3', null), tx('4', 'c')];
     expect(topCategories(rows, 3).map((c) => c.categoryId)).toEqual(['c']);
   });
+  it('agrupa las subcategorías bajo su padre y toma nombre, ícono y color del padre', () => {
+    const child = (id: string, cat: string) =>
+      tx(id, cat, { categoryParentId: 'p', categoryParentName: 'Comida', categoryParentIcon: 'food', categoryParentColor: '#F5B544', categoryName: cat });
+    const rows = [child('1', 'cafe'), child('2', 'almuerzo'), tx('3', 'otra'), tx('4', 'otra')];
+    const top = topCategories(rows, 2);
+    expect(top[0]).toMatchObject({ categoryId: 'p', name: 'Comida', icon: 'food', color: '#F5B544', count: 2 });
+    expect(top[1]).toMatchObject({ categoryId: 'otra', count: 2 });
+  });
+  it('omite las categorías excluidas de reportes', () => {
+    const rows = [tx('1', 'prestamo'), tx('2', 'prestamo'), tx('3', 'comida')];
+    expect(topCategories(rows, 3, new Set(['prestamo'])).map((c) => c.categoryId)).toEqual(['comida']);
+  });
   it('trae nombre, ícono y color', () => {
     expect(topCategories([tx('1', 'a', { categoryName: 'Comida', categoryColor: null })], 1)[0]).toMatchObject({ name: 'Comida', icon: 'tag', color: null, count: 1 });
   });

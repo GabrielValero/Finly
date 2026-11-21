@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useMovementsScreen } from '../../../hooks/useMovementsScreen';
 import { useTheme, useThemedStyles } from '../../../hooks/useTheme';
@@ -18,6 +18,9 @@ import { TrendLine } from '../../shared/TrendLine';
 import { ScreenTemplate } from '../../template/ScreenTemplate';
 import { CalculadoraSheet } from '../calculadora/CalculadoraSheet';
 import { FiltrosSheet } from './FiltrosSheet';
+
+/** Lo que tarda en cerrarse la animación de una hoja antes de abrir la siguiente. */
+const MODAL_SWAP_MS = 400;
 
 export function MovimientosView() {
   const vm = useMovementsScreen();
@@ -53,16 +56,27 @@ export function MovimientosView() {
     swatch: { width: 36, height: 36, borderRadius: t.radius[12], alignItems: 'center', justifyContent: 'center' },
     badge: { position: 'absolute', top: t.space[8], right: t.space[8], minWidth: 18, height: 18, paddingHorizontal: 5, borderRadius: t.radius.full, backgroundColor: t.colors.accent, alignItems: 'center', justifyContent: 'center' },
     day: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: t.space[8] },
+    period: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: t.space[8], height: 34, paddingHorizontal: t.space[12], borderRadius: t.radius[12], backgroundColor: t.colors.surface2 },
     empty: { alignItems: 'center', gap: t.space[16], paddingVertical: t.space[32] },
   }));
 
+  /** Un Modal nuevo no debe abrirse en el mismo tick que se cierra otro (iOS lo descarta): se espera a que termine la animación. */
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  const after = (fn: () => void) => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(fn, MODAL_SWAP_MS);
+  };
   const startRange = () => {
     setFiltersOpen(false);
-    setRangeStep('from');
+    after(() => setRangeStep('from'));
+  };
+  const backToFilters = () => {
+    after(() => setFiltersOpen(true));
   };
   const cancelRange = () => {
     setRangeStep(null);
-    setFiltersOpen(true);
+    backToFilters();
   };
 
   return (
@@ -153,6 +167,13 @@ export function MovimientosView() {
           </View>
         ) : null}
 
+        {vm.periodLabel ? (
+          <PressableScale onPress={vm.clearPeriod} style={styles.period} accessibilityLabel={`Quitar periodo ${vm.periodLabel}`}>
+            <AppText variant="small">{vm.periodLabel}</AppText>
+            <Icon name="close" size={14} color="textMuted" />
+          </PressableScale>
+        ) : null}
+
         {!vm.hasAccounts ? (
           <View style={styles.empty}>
             <AppText variant="heading" align="center">Empieza creando tu primera cuenta</AppText>
@@ -190,13 +211,14 @@ export function MovimientosView() {
         selectedDay={rangeStep === 'to' ? rangeFrom : (vm.filters.date.from ?? today)}
         onSelect={(day) => {
           if (rangeStep === 'from') {
+            // Mismo Modal (CalendarSheet), solo cambia el paso: no hay que esperar.
             setRangeFrom(day);
             setRangeStep('to');
             return;
           }
           vm.setDateRange(rangeFrom, day);
           setRangeStep(null);
-          setFiltersOpen(true);
+          backToFilters();
         }}
         onClose={cancelRange}
       />

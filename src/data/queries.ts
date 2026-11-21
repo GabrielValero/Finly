@@ -26,6 +26,8 @@ export const txColumns = {
   categoryIcon: categories.icon,
   categoryColor: categories.color,
   categoryParentId: categories.parentId,
+  categoryParentIcon: parentCategories.icon,
+  categoryParentColor: parentCategories.color,
   excludeFromReports: categories.excludeFromReports,
   accountName: accounts.name,
 };

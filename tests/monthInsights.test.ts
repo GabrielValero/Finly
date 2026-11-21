@@ -52,6 +52,11 @@ describe('budgetPulse', () => {
     expect(budgetPulse({ plannedMinor: 100, spentMinor: 10, today: '2026-12-05', month: '2026-11' })!.daysLeft).toBe(0);
     expect(budgetPulse({ plannedMinor: 3000, spentMinor: 0, today: '2026-10-05', month: '2026-11' })!.daysLeft).toBe(30);
   });
+  it('marca los meses ya cerrados como pasados', () => {
+    expect(budgetPulse({ plannedMinor: 100, spentMinor: 10, today: '2026-12-05', month: '2026-11' })!.past).toBe(true);
+    expect(budgetPulse({ plannedMinor: 100, spentMinor: 10, today: '2026-11-05', month: '2026-11' })!.past).toBe(false);
+    expect(budgetPulse({ plannedMinor: 100, spentMinor: 10, today: '2026-10-05', month: '2026-11' })!.past).toBe(false);
+  });
   it('el último día cuenta como 1 día restante', () => {
     expect(budgetPulse({ plannedMinor: 3000, spentMinor: 0, today: '2026-11-30', month: '2026-11' })!.daysLeft).toBe(1);
   });

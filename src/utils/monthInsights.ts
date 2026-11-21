@@ -29,6 +29,8 @@ export interface BudgetPulse {
   /** 0..n del plan gastado. */
   pct: number;
   over: boolean;
+  /** El mes ya terminó: la frase va en pasado. */
+  past: boolean;
 }
 
 /** Datos de la frase "Te quedan $X para terminar el mes". null si no hay gasto planificado. */
@@ -47,5 +49,6 @@ export function budgetPulse(args: { plannedMinor: number; spentMinor: number; to
     daysLeft,
     pct: spentMinor / plannedMinor,
     over,
+    past: todayMonth > month,
   };
 }

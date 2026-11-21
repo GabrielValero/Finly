@@ -54,6 +54,8 @@ export function useMovementsScreen() {
   const month = useUi((s) => s.selectedMonth);
   const setSelectedMonth = useUi((s) => s.setSelectedMonth);
   const [filters, setFilters] = useState<MovementFilters>(EMPTY_FILTERS);
+  /** La categoría activa se eligió con un atajo de la pantalla (no en la hoja): no cuenta en la insignia de "Filtros". */
+  const [categoryFromTile, setCategoryFromTile] = useState(false);
 
   const { fromMonth, toMonth } = filterPeriod(filters.date, month);
   /** Movimientos del periodo del filtro de fecha (por defecto, el mes seleccionado). */
@@ -96,8 +98,8 @@ export function useMovementsScreen() {
     const bt = budgetTotals(lite, byItem);
     const pulse = budgetPulse({ plannedMinor: bt.plannedExpense, spentMinor: bt.spentPlanned, today, month });
 
-    const tiles = topCategories(monthRows, QUICK_TILES).map((c) => ({ ...c, color: resolveCategoryColor(c.color, c.categoryId), selected: filters.categoryId === c.categoryId && !filters.subcategoryId }));
-    const quickSelected = tiles.some((t) => t.selected);
+    const tiles = topCategories(monthRows, QUICK_TILES, monthExcluded).map((c) => ({ ...c, color: resolveCategoryColor(c.color, c.categoryId), selected: filters.categoryId === c.categoryId && !filters.subcategoryId }));
+    const quickSelected = categoryFromTile && tiles.some((t) => t.selected);
     const filterBadge = Math.max(countActiveFilters(filters) - (quickSelected ? 1 : 0), 0);
 
     const staleDays = rate ? daysBetween(rate.validFrom, today) : null;
@@ -137,9 +139,9 @@ export function useMovementsScreen() {
       pulse: pulse
         ? {
             over: pulse.over,
-            lead: pulse.over ? 'Te pasaste ' : 'Te quedan ',
+            lead: pulse.past ? `En ${monthName} te ${pulse.over ? 'pasaste ' : 'sobraron '}` : pulse.over ? 'Te pasaste ' : 'Te quedan ',
             amount: formatMoney(Math.abs(pulse.remainingMinor), 'USD'),
-            tail: pulse.over ? ` del plan de ${monthName}.` : ` para terminar ${monthName}.`,
+            tail: pulse.past ? (pulse.over ? ' del plan.' : '.') : pulse.over ? ` del plan de ${monthName}.` : ` para terminar ${monthName}.`,
             progress: Math.min(pulse.pct, 1),
             spentLabel: `Llevas ${formatMoney(bt.spentPlanned, 'USD')}${pulse.over || pulse.daysLeft === 0 ? '' : ` · ${formatMoney(pulse.perDayMinor, 'USD')}/día`}`,
             plannedLabel: `de ${formatMoney(bt.plannedExpense, 'USD')}`,
@@ -150,15 +152,26 @@ export function useMovementsScreen() {
       filterBadge,
       filters,
       activeFilterCount: countActiveFilters(filters),
-      toggleQuickCategory: (id: string) => setFilters((f) => toggleCategoryFilter(f, id)),
-      clearFilters: () => setFilters(EMPTY_FILTERS),
+      toggleQuickCategory: (id: string) => {
+        setCategoryFromTile(true);
+        setFilters((f) => toggleCategoryFilter(f, id));
+      },
+      clearFilters: () => {
+        setCategoryFromTile(false);
+        setFilters(EMPTY_FILTERS);
+      },
+      periodLabel: filters.date.preset === 'prevMonth' ? formatMonthLabel(addMonths(month, -1)) : filters.date.preset === 'range' && filters.date.from && filters.date.to ? rangeLabel : null,
+      clearPeriod: () => update({ date: { preset: 'month' } }),
       setType: (type: TypeFilter) => update({ type }),
       setDatePreset: (preset: DatePreset) => update({ date: { preset } }),
       setDateRange: (from: string, to: string) => update({ date: { preset: 'range', from: from <= to ? from : to, to: from <= to ? to : from } }),
       rangeLabel,
       toggleAccount: (id: string) => update({ accountIds: toggle(filters.accountIds, id) }),
       toggleTag: (id: string) => update({ tagIds: toggle(filters.tagIds, id) }),
-      toggleCategory: (id: string) => setFilters((f) => toggleCategoryFilter(f, id)),
+      toggleCategory: (id: string) => {
+        setCategoryFromTile(false);
+        setFilters((f) => toggleCategoryFilter(f, id));
+      },
       toggleSubcategory: (id: string) => update({ subcategoryId: filters.subcategoryId === id ? undefined : id }),
       accountOptions: accounts.map((a) => ({ id: a.id, name: a.name })),
       categoryOptions: parents.map((c) => ({ id: c.id, name: c.name })),
@@ -177,5 +190,5 @@ export function useMovementsScreen() {
       openNewAccount: () => router.push('/account/new'),
       openDetail: (id: string) => router.push({ pathname: '/movement/[id]', params: { id } }),
     };
-  }, [monthRows, periodRows, periodLinks, filtered, filters, accounts, allTags, liveCategories, allCategories, budgetItems, rate, month, today, currentMonth, setSelectedMonth, update, router]);
+  }, [monthRows, periodRows, periodLinks, filtered, filters, categoryFromTile, accounts, allTags, liveCategories, allCategories, budgetItems, rate, month, today, currentMonth, setSelectedMonth, update, router]);
 }
