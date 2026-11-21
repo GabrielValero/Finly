@@ -37,6 +37,18 @@ describe('splitCartSections', () => {
     expect(s.pending.subtotalMinor).toBe(300);
     expect(s.purchased.map((r) => r.id)).toEqual(['e']);
   });
+  it('marca las secciones con líneas sin valorar', () => {
+    const s = splitCartSections([row('a', true, false, 500), row('b', true, false, null), row('c', false, false, 300)]);
+    expect(s.cart.incomplete).toBe(true);
+    expect(s.pending.incomplete).toBe(false);
+  });
+  it('un producto comprado y marcado solo cuenta como comprado', () => {
+    const s = splitCartSections([row('e', true, true, 900)]);
+    expect(s.purchased.map((r) => r.id)).toEqual(['e']);
+    expect(s.cart.rows).toEqual([]);
+    expect(s.cart.subtotalMinor).toBe(0);
+    expect(s.cart.incomplete).toBe(false);
+  });
   it('vacío', () => {
     const s = splitCartSections([]);
     expect(s.cart.rows).toEqual([]);

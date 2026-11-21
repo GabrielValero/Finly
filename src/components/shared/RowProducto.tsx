@@ -36,19 +36,20 @@ export function RowProducto({ name, detail, amount, checked, purchased, badge, b
     right: { maxWidth: '35%' },
     buy: { flexDirection: 'row', alignItems: 'center', gap: t.space[4], paddingHorizontal: t.space[12], height: 34, borderRadius: t.radius[12], backgroundColor: mix(t.colors.surface, t.colors.accent, 0.16) },
     dim: { opacity: 0.5 },
+    nameWrap: { flexShrink: 1 },
   }));
   const done = purchased || (mode === 'market' && checked);
   return (
     <View style={[styles.row, purchased ? styles.dim : null]}>
       {mode === 'market' ? (
-        <PressableScale onPress={onToggle} disabled={purchased} style={[styles.box, done ? styles.boxOn : null]} accessibilityLabel={checked ? `Quitar ${name} del carrito` : `Meter ${name} al carrito`} accessibilityState={{ checked: done }}>
+        <PressableScale onPress={onToggle} disabled={purchased} style={[styles.box, done ? styles.boxOn : null]} accessibilityRole="checkbox" accessibilityLabel={`En el carrito: ${name}`} accessibilityState={{ checked: done }}>
           {done ? <Icon name="check" size={16} color="onAccent" /> : null}
         </PressableScale>
       ) : null}
       <PressableScale onPress={onPress} style={styles.main}>
         <View style={styles.texts}>
           <View style={styles.nameRow}>
-            <View style={{ flexShrink: 1 }}><AppText variant="body" numberOfLines={1}>{name}</AppText></View>
+            <View style={styles.nameWrap}><AppText variant="body" numberOfLines={1}>{name}</AppText></View>
             {badge ? <StatusBadge label={badge} tone={badgeTone} /> : null}
           </View>
           {needsPrice ? (
