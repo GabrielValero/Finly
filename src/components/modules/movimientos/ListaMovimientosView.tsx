@@ -1,85 +1,97 @@
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { useScopedMovements, type MovementScope } from '../../../hooks/useScopedMovements';
-import { useTheme, useThemedStyles } from '../../../hooks/useTheme';
+import { useScopedMovements, type MovementScope, type ScopeCard } from '../../../hooks/useScopedMovements';
+import { useThemedStyles } from '../../../hooks/useTheme';
 import { AppText } from '../../shared/AppText';
 import { Card } from '../../shared/Card';
-import { Icon } from '../../shared/Icon';
+import { HumanLine } from '../../shared/HumanLine';
 import { IconBadge } from '../../shared/IconBadge';
+import { MonthPill } from '../../shared/MonthPill';
 import { OptionList } from '../../shared/OptionList';
-import { PressableScale } from '../../shared/PressableScale';
+import { ProgressBar } from '../../shared/ProgressBar';
 import { RowMovimiento } from '../../shared/RowMovimiento';
 import { SheetModal } from '../../shared/SheetModal';
+import { StatTile } from '../../shared/StatTile';
+import { StatusBadge } from '../../shared/StatusBadge';
 import { ScreenTemplate } from '../../template/ScreenTemplate';
+
+function ScopeSummary({ card }: { card: ScopeCard }) {
+  const styles = useThemedStyles((t) => ({
+    head: { flexDirection: 'row', alignItems: 'center', gap: t.space[12] },
+    texts: { flex: 1, gap: t.space[8], minWidth: 0 },
+    block: { gap: t.space[4], marginTop: t.space[12] },
+    human: { marginTop: t.space[12] },
+    tiles: { flexDirection: 'row', gap: t.space[12], marginTop: t.space[16] },
+    bar: { marginTop: t.space[12] },
+  }));
+
+  if (card.type === 'account') {
+    return (
+      <Card>
+        <AppText variant="label" color="textMuted">{card.label}</AppText>
+        <View style={styles.block}>
+          <AppText variant="balance" fit>{card.headline}</AppText>
+          {card.equivalent ? <AppText variant="caption" color="textMuted">{card.equivalent}</AppText> : null}
+        </View>
+        <View style={styles.human}><HumanLine segments={card.human} variant="bodyRegular" /></View>
+        <View style={styles.tiles}>
+          {card.stats.map((s) => <StatTile key={s.label} label={s.label} value={s.value} tone={s.tone} />)}
+        </View>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <View style={styles.head}>
+        <IconBadge icon={card.icon} size={48} tint={card.color} />
+        <View style={styles.texts}>
+          <AppText variant="label" color="textMuted" numberOfLines={1}>{card.eyebrow}</AppText>
+          <StatusBadge label={card.badge.label} tone={card.badge.tone} />
+        </View>
+      </View>
+      <View style={styles.block}>
+        <AppText variant="label" color="textMuted">{card.label}</AppText>
+        <AppText variant="amountMid" fit>{card.headline}</AppText>
+      </View>
+      <View style={styles.bar}><ProgressBar value={card.progress.value} color={card.progress.color} /></View>
+      {card.human ? <View style={styles.human}><HumanLine segments={card.human} variant="bodyRegular" /></View> : null}
+    </Card>
+  );
+}
 
 /** Movimientos de una cuenta (por mes) o de una partida del presupuesto. */
 export function ListaMovimientosView({ scope }: { scope: MovementScope }) {
   const vm = useScopedMovements(scope);
-  const theme = useTheme();
   const [monthPicker, setMonthPicker] = useState(false);
   const styles = useThemedStyles((t) => ({
-    scroll: { paddingHorizontal: t.space[16], paddingBottom: t.space[32], gap: t.space[12] },
-    head: { flexDirection: 'row', alignItems: 'center', gap: t.space[16] },
-    texts: { flex: 1, gap: t.space[4], minWidth: 0 },
-    stats: { flexDirection: 'row', gap: t.space[16], marginTop: t.space[8] },
-    stat: { flex: 1, gap: t.space[4], minWidth: 0 },
-    track: { height: 6, borderRadius: 3, backgroundColor: t.colors.surface2, overflow: 'hidden', marginTop: t.space[8] },
-    month: { flexDirection: 'row', alignItems: 'center', gap: t.space[8], alignSelf: 'flex-start' },
+    scroll: { paddingHorizontal: t.space[16], paddingBottom: t.space[32], gap: t.space[16] },
+    sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     day: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: t.space[8] },
     empty: { alignItems: 'center', paddingVertical: t.space[32] },
   }));
 
   if (!vm.found) {
     return (
-      <ScreenTemplate title="MOVIMIENTOS" left="back" onLeft={vm.close}>
+      <ScreenTemplate title="Movimientos" titleBold left="back" onLeft={vm.close}>
         <View style={styles.empty}><AppText variant="body" color="textMuted">Esto ya no existe.</AppText></View>
       </ScreenTemplate>
     );
   }
 
   return (
-    <ScreenTemplate title="MOVIMIENTOS" left="back" onLeft={vm.close} right={{ label: 'EDITAR', onPress: vm.edit }} bottomInset>
+    <ScreenTemplate title={vm.title} titleBold left="back" onLeft={vm.close} right={{ label: 'Editar', onPress: vm.edit }} bottomInset>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Card>
-          <View style={styles.head}>
-            <IconBadge icon={vm.icon} />
-            <View style={styles.texts}>
-              <AppText variant="heading" numberOfLines={1}>{vm.title}</AppText>
-              {vm.subtitle ? <AppText variant="caption" color="textMuted" numberOfLines={1}>{vm.subtitle}</AppText> : null}
-            </View>
-          </View>
-          <View style={styles.stats}>
-            <View style={styles.stat}>
-              <AppText variant="label" color="textMuted">{vm.headlineLabel}</AppText>
-              <AppText variant="amountMid" fit>{vm.headline}</AppText>
-            </View>
-          </View>
-          {vm.stats.length > 0 ? (
-            <View style={styles.stats}>
-              {vm.stats.map((s) => (
-                <View key={s.label} style={styles.stat}>
-                  <AppText variant="label" color="textMuted">{s.label}</AppText>
-                  <AppText variant="amountMid" color={s.tone === 'income' ? 'income' : 'text'} fit>{s.value}</AppText>
-                </View>
-              ))}
-            </View>
-          ) : null}
-          {vm.progress ? (
-            <View style={styles.track}>
-              <View style={{ height: 6, borderRadius: 3, backgroundColor: theme.colors[vm.progress.color], width: `${Math.round(vm.progress.value * 100)}%` }} />
-            </View>
-          ) : null}
-          {vm.status ? <AppText variant="label" color={vm.status.color}>{vm.status.label}</AppText> : null}
-        </Card>
+        {vm.card ? <ScopeSummary card={vm.card} /> : null}
 
-        {vm.months ? (
-          <PressableScale onPress={() => setMonthPicker(true)} style={styles.month} accessibilityLabel="Cambiar de mes">
-            <AppText variant="label">{vm.monthLabel}</AppText>
-            <Icon name="chevronDown" size={16} color="textMuted" />
-          </PressableScale>
-        ) : (
-          <AppText variant="label" color="textMuted">{vm.monthLabel}</AppText>
-        )}
+        <View style={styles.sectionHead}>
+          <AppText variant="label" color="textMuted">MOVIMIENTOS</AppText>
+          {vm.months ? (
+            <MonthPill label={vm.monthLabel} onPress={() => setMonthPicker(true)} />
+          ) : (
+            <AppText variant="label" color="textMuted">{vm.monthLabel}</AppText>
+          )}
+        </View>
 
         {vm.isEmpty ? (
           <View style={styles.empty}><AppText variant="small" color="textMuted" align="center">{vm.emptyText}</AppText></View>

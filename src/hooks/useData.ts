@@ -212,6 +212,8 @@ export function useBudgetItems(month: string) {
           isFixed: budgetItems.isFixed,
           categoryName: categories.name,
           categoryIcon: categories.icon,
+          categoryColor: categories.color,
+          parentColor: budgetParents.color,
           parentName: budgetParents.name,
         })
         .from(budgetItems)
