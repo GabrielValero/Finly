@@ -34,5 +34,5 @@ export function topCategories(rows: readonly TopCategoryTx[], n: number): TopCat
   return [...acc.values()]
     .sort((a, b) => b.count - a.count || b.totalMinor - a.totalMinor || a.name.localeCompare(b.name, 'es'))
     .slice(0, n)
-    .map(({ totalMinor: _total, ...c }) => c);
+    .map((c) => ({ categoryId: c.categoryId, name: c.name, icon: c.icon, color: c.color, count: c.count }));
 }
