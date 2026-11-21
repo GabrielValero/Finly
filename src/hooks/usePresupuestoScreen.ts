@@ -6,14 +6,19 @@ import { useUi } from '../store/ui';
 import { allocateSpending, budgetKind, budgetTotals, itemStatus, progressOf, type BudgetTx } from '../utils/budget';
 import { STATUS_STYLE, statusLabel, type BarTone, type StatusTone } from '../utils/budgetDisplay';
 import { categoryPath, isExcluded } from '../utils/categories';
-import { dayOf, formatMonthLabel, monthOf, recentMonths, toLocalIso } from '../utils/dates';
+import { resolveCategoryColor } from '../utils/categoryColor';
+import { addMonths, dayOf, formatMonthLabel, MONTH_NAMES, monthOf, recentMonths, toLocalIso } from '../utils/dates';
+import { budgetPlanSegments } from '../utils/humanVoice';
 import { formatMoney } from '../utils/money';
+import { budgetPulse } from '../utils/monthInsights';
 import { usdEquivalent } from '../utils/transactions';
 import { useAllCategoryRows, useBudgetItems, useMonthTransactions, type TxRow } from './useData';
 
 export interface BudgetRowVm {
   id: string;
   icon: string;
+  /** Color de la categoría (dato) para teñir el ícono. */
+  color: string | null;
   title: string;
   status: string;
   statusColor: StatusTone;
@@ -49,6 +54,7 @@ export function usePresupuestoScreen() {
     }));
     const { byItem, unplanned } = allocateSpending(lite, budgetTxs, categories);
     const totals = budgetTotals(lite, byItem);
+    const pulse = budgetPulse({ plannedMinor: totals.plannedExpense, spentMinor: totals.spentPlanned, today: dayOf(toLocalIso(new Date())), month });
     const toRow = (i: (typeof items)[number]): BudgetRowVm => {
       const actual = byItem.get(i.id) ?? 0;
       const status = itemStatus(i, actual);
@@ -56,6 +62,7 @@ export function usePresupuestoScreen() {
       return {
         id: i.id,
         icon: i.categoryIcon,
+        color: resolveCategoryColor(i.categoryColor ?? i.parentColor ?? null, i.categoryId),
         title: categoryPath(i.categoryName, i.parentName) ?? i.categoryName,
         status: statusLabel(i.kind, i.isFixed, status, Math.max(i.plannedMinor - actual, 0)),
         statusColor: style.statusColor,
@@ -69,8 +76,10 @@ export function usePresupuestoScreen() {
       variable: items.filter((i) => i.kind === 'expense' && !i.isFixed).map(toRow),
       income: items.filter((i) => i.kind === 'income').map(toRow),
       summary: {
+        human: budgetPlanSegments(formatMoney(totals.spentPlanned, 'USD'), formatMoney(totals.plannedExpense, 'USD')),
         spent: formatMoney(totals.spentPlanned, 'USD'),
         planned: formatMoney(totals.plannedExpense, 'USD'),
+        daysLeftLabel: pulse && !pulse.past ? `Quedan ${pulse.daysLeft} ${pulse.daysLeft === 1 ? 'día' : 'días'}` : null,
         percent: Math.round(totals.percent * 100),
         progress: Math.min(totals.percent, 1),
         over: totals.percent > 1,
@@ -81,7 +90,7 @@ export function usePresupuestoScreen() {
       },
       unplanned: unplanned.expense > 0 ? formatMoney(unplanned.expense, 'USD') : null,
     };
-  }, [items, txs, categories]);
+  }, [items, txs, categories, month]);
 
   const copyPrevious = () => {
     void copyBudgetFromPrevious(month, new Date()).then((n) =>
@@ -95,6 +104,7 @@ export function usePresupuestoScreen() {
     selectedMonth: month,
     setMonth,
     isEmpty: items.length === 0,
+    previousMonthName: MONTH_NAMES[Number(addMonths(month, -1).slice(5, 7)) - 1]!.toLowerCase(),
     ...view,
     copyPrevious,
     openAdd: () => router.push({ pathname: '/budget/[id]', params: { id: 'new', month } }),
