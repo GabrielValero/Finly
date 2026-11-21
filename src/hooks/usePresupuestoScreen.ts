@@ -4,7 +4,7 @@ import { Alert } from 'react-native';
 import { copyBudgetFromPrevious } from '../data/repos/budgets';
 import { useUi } from '../store/ui';
 import { allocateSpending, budgetKind, budgetTotals, itemStatus, progressOf, type BudgetTx } from '../utils/budget';
-import { STATUS_STYLE, statusLabel } from '../utils/budgetDisplay';
+import { STATUS_STYLE, statusLabel, type BarTone, type StatusTone } from '../utils/budgetDisplay';
 import { categoryPath, isExcluded } from '../utils/categories';
 import { dayOf, formatMonthLabel, monthOf, recentMonths, toLocalIso } from '../utils/dates';
 import { formatMoney } from '../utils/money';
@@ -16,10 +16,10 @@ export interface BudgetRowVm {
   icon: string;
   title: string;
   status: string;
-  statusColor: 'income' | 'accent' | 'expense' | 'textMuted';
+  statusColor: StatusTone;
   amounts: string;
   progress: number;
-  barColor: 'income' | 'accent' | 'expense' | 'surface2';
+  barColor: BarTone;
 }
 
 function usdMagnitude(tx: TxRow): number {

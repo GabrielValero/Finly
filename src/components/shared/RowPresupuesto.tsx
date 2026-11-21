@@ -1,5 +1,6 @@
 import { View } from 'react-native';
 import { useTheme, useThemedStyles } from '../../hooks/useTheme';
+import type { BarTone, StatusTone } from '../../utils/budgetDisplay';
 import { AppText } from './AppText';
 import { IconBadge } from './IconBadge';
 import { PressableScale } from './PressableScale';
@@ -8,10 +9,10 @@ export interface RowPresupuestoProps {
   icon: string;
   title: string;
   status: string;
-  statusColor: 'income' | 'accent' | 'expense' | 'textMuted';
+  statusColor: StatusTone;
   amounts: string;
   progress: number;
-  barColor: 'income' | 'accent' | 'expense' | 'surface2';
+  barColor: BarTone;
   onPress: () => void;
 }
 
