@@ -90,7 +90,7 @@ export function useBudgetItemForm({ id, month }: Params) {
   return {
     isNew,
     notFound: !isNew && items.length > 0 && !existing,
-    title: isNew ? 'PLANIFICAR' : 'EDITAR PARTIDA',
+    title: isNew ? 'Planificar categoría' : 'Editar partida',
     monthLabel: formatMonthLabel(month),
     kind,
     changeKind,

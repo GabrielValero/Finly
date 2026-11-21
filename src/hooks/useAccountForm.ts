@@ -102,7 +102,7 @@ export function useAccountForm(id?: string) {
   return {
     isEdit,
     notFound: isEdit && accounts.length > 0 && !existing,
-    title: isEdit ? 'EDITAR CUENTA' : 'NUEVA CUENTA',
+    title: isEdit ? 'Editar cuenta' : 'Nueva cuenta',
     submitLabel: isEdit ? 'Guardar cambios' : 'Crear cuenta',
     name, setName, currency, setCurrency, icon, setIcon, includeInTotal, setIncludeInTotal,
     currencyLocked,

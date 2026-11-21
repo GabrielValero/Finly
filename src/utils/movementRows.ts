@@ -117,11 +117,15 @@ export function buildMovementGroups<T extends MovementTx>(rows: readonly T[], { 
   });
 }
 
-/** Entradas y salidas de una cuenta en el mes (todas las patas, transferencias incluidas): cuadra con el cambio de saldo. */
-export function accountFlow(rows: readonly Pick<MovementTx, 'amountMinor'>[]): { inMinor: number; outMinor: number } {
+/** Entradas y salidas de una cuenta en el mes. Con transferencias (por defecto) cuadra con el cambio de saldo. */
+export function accountFlow(
+  rows: readonly (Pick<MovementTx, 'amountMinor'> & { kind?: MovementTx['kind'] })[],
+  { includeTransfers = true }: { includeTransfers?: boolean } = {},
+): { inMinor: number; outMinor: number } {
   let inMinor = 0;
   let outMinor = 0;
   for (const r of rows) {
+    if (!includeTransfers && r.kind === 'transfer') continue;
     if (r.amountMinor > 0) inMinor += r.amountMinor;
     else outMinor += -r.amountMinor;
   }

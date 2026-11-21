@@ -1,7 +1,9 @@
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { formatMinor, formatMoney, formatRate, usdToVes, vesToUsd } from '../utils/money';
-import { portfolioTotal } from '../utils/portfolio';
+import { portfolioSplit, portfolioTotal } from '../utils/portfolio';
+import { portfolioSegments } from '../utils/humanVoice';
+import { accountKindLabel } from '../utils/accounts';
 import { latestTransfer } from '../utils/transfers';
 import { useAccountsWithBalance, useLatestRate, useRecentTransferLegs, type AccountWithBalance } from './useData';
 
@@ -28,12 +30,17 @@ export function useAccountsScreen() {
           ? `≈ ${formatMoney(usdToVes(a.balanceMinor, rate.rateScaled), 'VES')}`
           : `≈ ${formatMoney(vesToUsd(a.balanceMinor, rate.rateScaled), 'USD')}`;
       }
-      return { id: a.id, name: a.name, icon: a.icon, meta: a.currency, balance: formatMoney(a.balanceMinor, a.currency), equivalent };
+      return { id: a.id, name: a.name, icon: a.icon, meta: [a.currency, accountKindLabel(a.icon)].filter(Boolean).join(' · '), balance: formatMoney(a.balanceMinor, a.currency), equivalent };
     };
     const total = portfolioTotal(accounts, rate?.rateScaled ?? null);
+    const split = portfolioSplit(accounts, rate?.rateScaled ?? null);
     const last = latestTransfer(transferLegs);
     return {
       totalLabel: `$ ${formatMinor(total.usdMinor)}`,
+      totalBsLabel: rate ? `≈ ${formatMoney(usdToVes(total.usdMinor, rate.rateScaled), 'VES')}` : null,
+      humanLine: portfolioSegments(split.usdPer100),
+      usdTile: formatMoney(split.usdMinor, 'USD'),
+      vesTile: formatMoney(split.vesMinor, 'VES'),
       totalNote: total.missingRate ? 'Falta la tasa para valorar tus cuentas en Bs' : null,
       usd: accounts.filter((a) => a.currency === 'USD').map(toCard),
       ves: accounts.filter((a) => a.currency === 'VES').map(toCard),

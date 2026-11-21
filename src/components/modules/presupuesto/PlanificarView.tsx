@@ -31,13 +31,13 @@ export function PlanificarView({ id, month }: { id: string; month: string }) {
   }));
   if (vm.notFound) {
     return (
-      <ScreenTemplate title={vm.title} left="close" onLeft={vm.close}>
+      <ScreenTemplate title={vm.title} titleBold left="close" onLeft={vm.close}>
         <View style={styles.scroll}><AppText variant="small" color="textMuted">Esta partida ya no existe.</AppText></View>
       </ScreenTemplate>
     );
   }
   return (
-    <ScreenTemplate title={vm.title} left="close" onLeft={vm.close}>
+    <ScreenTemplate title={vm.title} titleBold left="close" onLeft={vm.close}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <AppText variant="label" color="textMuted">{vm.monthLabel}</AppText>
         <PressableScale onPress={() => (vm.categoryLocked ? undefined : setPicker(true))} style={styles.box}>
@@ -59,7 +59,7 @@ export function PlanificarView({ id, month }: { id: string; month: string }) {
         <AppText variant="small" color="textMuted">Se presupuesta en USD: no cambia con la tasa.</AppText>
 
         <PressableScale onPress={() => setKeypad(true)} style={styles.box}>
-          <AppText variant="label" color="textMuted">Monto planificado (USD)</AppText>
+          <AppText variant="label" color="textMuted">Monto planificado</AppText>
           <AppText variant="balance" fit>{vm.amountLabel}</AppText>
         </PressableScale>
 
