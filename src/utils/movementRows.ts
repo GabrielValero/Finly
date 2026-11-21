@@ -2,13 +2,16 @@ import { formatMoney, type Currency } from './money';
 import { groupByDay, monthTotals, type SummaryTx } from './summary';
 import { usdEquivalent } from './transactions';
 import { collapseTransfers, type CollapsibleTx } from './transfers';
-import { formatDayLabel } from './dates';
+import { formatDayLabel, timeOf } from './dates';
+import { resolveCategoryColor } from './categoryColor';
 
 /** Lo que necesita una fila de movimiento para pintarse (subconjunto estructural de `TxRow`). */
 export interface MovementTx extends SummaryTx, CollapsibleTx {
   listedCurrency: Currency | null;
   categoryIcon: string | null;
   categoryName: string | null;
+  /** Color guardado de la categoría (si no tiene, se toma uno de la paleta). */
+  categoryColor?: string | null;
   concept: string;
   accountName: string;
 }
@@ -16,6 +19,8 @@ export interface MovementTx extends SummaryTx, CollapsibleTx {
 export interface MovementRowVm {
   id: string;
   icon: string;
+  /** Color de la categoría para teñir el ícono; null = neutro. */
+  color: string | null;
   title: string;
   subtitle: string;
   amount: string;
@@ -62,8 +67,9 @@ export function toRow(tx: MovementTx, mode: RowMode = 'usd'): MovementRowVm {
   return {
     id: tx.id,
     icon: isTransfer ? 'transfer' : (tx.categoryIcon ?? 'wallet'),
+    color: isTransfer ? null : resolveCategoryColor(tx.categoryColor ?? null, tx.categoryId),
     title: tx.concept.trim() || (isTransfer ? 'Transferencia' : (tx.categoryName ?? 'Movimiento')),
-    subtitle: isTransfer ? transferSubtitle(tx.categoryName) : mode === 'native' ? (tx.categoryName ?? 'SIN CATEGORÍA').toUpperCase() : tx.accountName.toUpperCase(),
+    subtitle: isTransfer ? transferSubtitle(tx.categoryName) : mode === 'native' ? (tx.categoryName ?? 'SIN CATEGORÍA').toUpperCase() : `${tx.accountName} · ${timeOf(tx.occurredAt)}`,
     amount,
     tone: tx.kind === 'income' || (isTransfer && tx.amountMinor > 0) ? 'income' : 'default',
     caption: mode === 'usd' && originalInBs ? 'en Bs' : null,
@@ -76,6 +82,7 @@ export function toTransferRow(out: MovementTx, incoming: MovementTx): MovementRo
   return {
     id: out.id,
     icon: 'transfer',
+    color: null,
     title: out.concept.trim() || `${out.accountName} → ${incoming.accountName}`,
     subtitle: transferSubtitle(out.categoryName),
     amount: formatMoney(-out.amountMinor, out.accountCurrency),

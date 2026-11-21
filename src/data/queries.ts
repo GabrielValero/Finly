@@ -24,6 +24,10 @@ export const txColumns = {
   categoryParentName: parentCategories.name,
   parentExcludeFromReports: parentCategories.excludeFromReports,
   categoryIcon: categories.icon,
+  categoryColor: categories.color,
+  categoryParentId: categories.parentId,
+  categoryParentIcon: parentCategories.icon,
+  categoryParentColor: parentCategories.color,
   excludeFromReports: categories.excludeFromReports,
   accountName: accounts.name,
 };

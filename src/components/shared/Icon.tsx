@@ -51,12 +51,14 @@ interface Props {
   name: string;
   size?: number;
   color?: ThemeColorKey;
+  /** Color literal que viene de los datos (categorías); gana sobre `color`. */
+  tint?: string | null;
 }
 
-export function Icon({ name, size = 22, color = 'text' }: Props) {
+export function Icon({ name, size = 22, color = 'text', tint: dataTint }: Props) {
   const t = useTheme();
   const glyph = REGISTRY[name] ?? REGISTRY.wallet!;
-  const tint = t.colors[color];
+  const tint = dataTint ?? t.colors[color];
   return glyph.lib === 'feather' ? (
     <Feather name={glyph.name} size={size} color={tint} />
   ) : (
