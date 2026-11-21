@@ -27,6 +27,7 @@ const REGISTRY: Record<string, Glyph> = {
   search: { lib: 'feather', name: 'search' },
   chevronRight: { lib: 'feather', name: 'chevron-right' },
   chevronLeft: { lib: 'feather', name: 'chevron-left' },
+  copy: { lib: 'feather', name: 'copy' },
   calendar: { lib: 'feather', name: 'calendar' },
   swap: { lib: 'feather', name: 'arrow-down' },
   check: { lib: 'feather', name: 'check' },

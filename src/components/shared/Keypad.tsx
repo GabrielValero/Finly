@@ -1,5 +1,6 @@
 import { View } from 'react-native';
-import { useThemedStyles } from '../../hooks/useTheme';
+import { useTheme, useThemedStyles } from '../../hooks/useTheme';
+import { mix } from '../../utils/color';
 import type { KeypadKey } from '../../utils/keypad';
 import { AppText } from './AppText';
 import { Icon } from './Icon';
@@ -22,15 +23,19 @@ interface KeypadProps {
   operators?: boolean;
   /** Muestra la fila «= resultado» que cierra la operación en curso. */
   equals?: string | null;
+  /** Teclas más bajas (44 en vez de 48) para pantallas con mucho contenido. */
+  compact?: boolean;
 }
 
 const OP_COLUMN: KeypadKey[] = ['÷', '×', '-', '+'];
 
-export function Keypad({ onKey, allowNegative = false, operators = false, equals = null }: KeypadProps) {
+export function Keypad({ onKey, allowNegative = false, operators = false, equals = null, compact = false }: KeypadProps) {
+  const theme = useTheme();
+  const operatorBg = mix(theme.colors.surface2, theme.colors.accent, 0.16);
   const styles = useThemedStyles((t) => ({
     grid: { gap: t.space[8] },
     row: { flexDirection: 'row', gap: t.space[8] },
-    key: { flex: 1, height: 48, borderRadius: t.radius[16], backgroundColor: t.colors.surface, alignItems: 'center', justifyContent: 'center' },
+    key: { flex: 1, height: compact ? 44 : 48, borderRadius: t.radius[16], backgroundColor: t.colors.surface2, alignItems: 'center', justifyContent: 'center' },
   }));
   return (
     <View style={styles.grid}>
@@ -40,7 +45,7 @@ export function Keypad({ onKey, allowNegative = false, operators = false, equals
         return (
         <View key={row.join('')} style={styles.row}>
           {row.map((key) => (
-            <PressableScale key={key} onPress={() => onKey(key)} style={styles.key} accessibilityLabel={ACCESSIBLE[key] ?? key}>
+            <PressableScale key={key} onPress={() => onKey(key)} style={[styles.key, OP_COLUMN.includes(key) ? { backgroundColor: operatorBg } : null]} accessibilityLabel={ACCESSIBLE[key] ?? key}>
               {key === 'back' ? <Icon name="backspace" size={24} /> : <AppText variant="amountMid" color={OP_COLUMN.includes(key) ? 'accent' : 'text'}>{key === 'neg' ? '±' : key === '-' ? '−' : key}</AppText>}
             </PressableScale>
           ))}

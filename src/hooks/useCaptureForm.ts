@@ -7,7 +7,8 @@ import { usePreferences } from '../store/preferences';
 import { categoryPath } from '../utils/categories';
 import { dayOf, toLocalIso } from '../utils/dates';
 import { enteredFromTx, pickCaptureRate, resolveEntry } from '../utils/entry';
-import { formatMoney, formatRate, MoneyError, type Currency } from '../utils/money';
+import { captureSaveLabel, captureTitle, conversionSummary, frequentCategoryChips, rateChipLabel, tagsChipLabel } from '../utils/captureChips';
+import { currencySymbol, formatMinor, formatMoney, formatRate, MoneyError, type Currency } from '../utils/money';
 import { newId } from '../utils/ids';
 import { needsRate, type RateRecord } from '../utils/rates';
 import { signedAmount } from '../utils/transactions';
@@ -15,7 +16,7 @@ import { useAmountBuffer } from './useAmountBuffer';
 import { useCreatedCategory } from './useCreatedCategory';
 import { useDiscardGuard } from './useDiscardGuard';
 import { useMovementDetails } from './useMovementDetails';
-import { useAccountsWithBalance, useAllCategoryRows, useLatestRate, useTags, useTagsOfTransaction, useTransactionById } from './useData';
+import { useAccountsWithBalance, useAllCategoryRows, useCategoryUsage, useLatestRate, useTags, useTagsOfTransaction, useTransactionById } from './useData';
 
 export type CaptureKind = 'expense' | 'income';
 
@@ -36,6 +37,7 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
   const accounts = useAccountsWithBalance();
   const allCategories = useAllCategoryRows();
   const allTags = useTags();
+  const categoryUsage = useCategoryUsage();
   const latestRate = useLatestRate();
   const lastAccountId = usePreferences((s) => s.lastAccountId);
   const setLastAccountId = usePreferences((s) => s.setLastAccountId);
@@ -106,6 +108,26 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
     [activeCategories, kind],
   );
 
+  const categoryChips = useMemo(
+    () =>
+      frequentCategoryChips(
+        activeCategories.map((c) => ({ id: c.id, name: c.name, kind: c.kind, parentId: c.parentId, color: c.color })),
+        categoryUsage,
+        kind,
+        category?.id ?? null,
+        8,
+      ),
+    [activeCategories, categoryUsage, kind, category],
+  );
+  const pickChipCategory = useCallback(
+    (id: string) => {
+      if (parentId === id) return;
+      setParentId(id);
+      setSubId(null);
+    },
+    [parentId],
+  );
+
   const selectAnyCategory = useCallback(
     (id: string) => {
       const picked = activeCategories.find((c) => c.id === id);
@@ -150,25 +172,25 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
   const rateNeeded = account ? needsRate(account.currency, currency === account.currency ? null : currency) : false;
 
   const conversion = useMemo(() => {
-    if (!account || amount.minor <= 0) return { preview: null as string | null, blocked: false };
+    if (!account || amount.minor <= 0) return { blocked: false };
     try {
-      const r = resolveEntry({
+      // Solo valida que la conversión sea posible (tasa presente y sin desborde).
+      resolveEntry({
         enteredMinor: amount.minor,
         enteredCurrency: currency,
         accountCurrency: account.currency,
         rateScaled: rate?.rateScaled ?? null,
         rateSource: rate?.source ?? null,
       });
-      const verb = kind === 'expense' ? 'Saldrán' : 'Entrarán';
-      const target = kind === 'expense' ? 'de tu cuenta' : 'a tu cuenta';
-      const preview = currency !== account.currency ? `${verb} ${formatMoney(r.amountMinor, account.currency)} ${target}` : null;
-      return { preview, blocked: false };
+      return { blocked: false };
     } catch (e) {
-      return { preview: null, blocked: e instanceof MoneyError };
+      return { blocked: e instanceof MoneyError };
     }
-  }, [account, amount.minor, currency, rate, kind]);
+  }, [account, amount.minor, currency, rate]);
 
-  const rateLabel = !rateNeeded ? null : rate ? `Tasa ${rate.source === 'bcv' ? 'BCV' : 'manual'} ${formatRate(rate.rateScaled)}${isEdit ? '' : ' · cambiar'}` : 'Define la tasa del día para continuar';
+  /** Chip «Tasa X»: solo cuando la moneda tecleada difiere de la de la cuenta. */
+  const rateChip = !rateNeeded ? null : rate ? rateChipLabel(rate.rateScaled) : 'Define la tasa';
+  const summary = conversionSummary({ amountMinor: amount.minor, currency, rateScaled: rate?.rateScaled ?? null });
 
   const setManual = manualRate.setRate;
   const openRateSheet = () => {
@@ -268,17 +290,17 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
   const hasTags = tagIds.length > 0;
 
   return {
-    title: isEdit ? 'EDITAR MOVIMIENTO' : null,
+    title: captureTitle(isEdit),
+    saveLabel: captureSaveLabel(kind, isEdit),
     isEdit,
     notFound: sourceId !== '' && !source,
     kind,
     setKind,
-    kindLabel: kind === 'expense' ? 'Gasto' : 'Ingreso',
     kindOptions: [
       { value: 'expense', label: 'Gasto' },
       { value: 'income', label: 'Ingreso' },
       // Editar un movimiento no puede convertirlo en transferencia.
-      ...(isEdit ? [] : [{ value: 'transfer', label: 'Transferencia entre cuentas' }]),
+      ...(isEdit ? [] : [{ value: 'transfer', label: 'Transferencia' }]),
     ],
     selectKind: (value: string) => {
       if (value === 'transfer') {
@@ -286,16 +308,19 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
         router.replace('/transfer');
       } else setKind(value === 'income' ? 'income' : 'expense');
     },
-    amountDisplay: amount.display,
-    /** «= $12,50» mientras haya una operación en curso; null si no la hay. */
-    amountResult: amount.operation ? (amount.result === null ? 'Operación inválida' : `= ${formatMoney(amount.result, currency)}`) : null,
+    /** Monto grande: el resultado si hay una operación en curso; si no, lo tecleado. */
+    amountDisplay: amount.operation ? (amount.result === null ? '0' : formatMinor(amount.result)) : amount.display,
+    /** «500 + 395,23» mientras haya una operación en curso; null si no la hay. */
+    expression: amount.operation ? amount.display : null,
+    invalidOperation: amount.operation && amount.result === null,
+    currencyPrefix: currencySymbol(currency),
     /** Monto para la tecla «=» (solo si el resultado es válido y positivo). */
     equalsLabel: amount.operation && amount.result !== null && amount.result > 0 ? formatMoney(amount.result, currency) : null,
     pressKey: amount.press,
     currency,
     setCurrency: setEnteredCurrency,
-    preview: conversion.preview,
-    rateLabel,
+    summary,
+    rateChip,
     rateMissing: rateNeeded && !rate,
     openRate: openRateSheet,
     rateSheet: {
@@ -323,9 +348,11 @@ export function useCaptureForm({ editId, duplicateId }: Options = {}) {
     openNewCategory: () => router.push({ pathname: '/category/[id]', params: { id: 'new', kind, pick: '1' } }),
     openNewSubcategoryOf: (parentId: string) => router.push({ pathname: '/category/[id]', params: { id: 'new', kind, parentId, pick: '1' } }),
     categoryLabel: category ? (categoryPath(sub?.name ?? null, parent?.name ?? null) ?? category.name) : null,
+    categoryChips,
+    pickChipCategory,
     // Etiquetas (en «Más detalles»)
     hasTags,
-    tagsLabel: hasTags ? tagIds.map((id) => `#${allTags.find((t) => t.id === id)?.name ?? ''}`).join(' · ') : '+ Más detalles (etiquetas)',
+    tagsChip: tagsChipLabel(tagIds.map((id) => allTags.find((t) => t.id === id)?.name ?? '').filter((n) => n !== '')),
     details,
     tags: allTags.map((t) => ({ id: t.id, name: t.name, selected: tagIds.includes(t.id) })),
     toggleTag,

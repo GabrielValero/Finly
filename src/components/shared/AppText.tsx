@@ -4,7 +4,7 @@ import { useTheme } from '../../hooks/useTheme';
 import type { ThemeColorKey } from '../../utils/theme';
 
 export type TextVariant =
-  | 'display' | 'balance' | 'title' | 'heading' | 'body' | 'bodyRegular' | 'small' | 'label' | 'amount' | 'amountMid' | 'caption' | 'button';
+  | 'display' | 'balance' | 'title' | 'subtitle' | 'heading' | 'body' | 'bodyRegular' | 'small' | 'label' | 'amount' | 'amountMid' | 'caption' | 'button';
 
 interface Props {
   variant?: TextVariant;
@@ -24,6 +24,7 @@ export function AppText({ variant = 'body', color = 'text', align, numberOfLines
     display: { fontFamily: mono.bold, fontSize: 52, letterSpacing: -1 },
     balance: { fontFamily: mono.bold, fontSize: 38, letterSpacing: -0.5 },
     title: { fontFamily: sans.bold, fontSize: 28 },
+    subtitle: { fontFamily: sans.bold, fontSize: 20 },
     heading: { fontFamily: sans.medium, fontSize: 17 },
     body: { fontFamily: sans.medium, fontSize: 16 },
     bodyRegular: { fontFamily: sans.regular, fontSize: 15 },
