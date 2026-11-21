@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { deleteList, insertList, updateList } from '../data/repos/shopping';
 import { categoryPath } from '../utils/categories';
+import { resolveCategoryColor } from '../utils/categoryColor';
 import { formatMoney, formatRate } from '../utils/money';
 import { useAmountBuffer } from './useAmountBuffer';
 import { useCreatedCategory } from './useCreatedCategory';
@@ -102,13 +103,15 @@ export function useListForm(id: string) {
 
   return {
     isNew,
-    title: isNew ? 'NUEVA LISTA' : 'EDITAR LISTA',
+    title: isNew ? 'Nueva lista' : 'Editar lista',
     name,
     setName,
     kind,
     setKind,
     kindLocked: !isNew,
     categoryLabel,
+    categoryIcon: selected?.icon ?? 'tag',
+    categoryColor: selected ? resolveCategoryColor(selected.color ?? categories.find((p) => p.id === selected.parentId)?.color ?? null, selected.id) : null,
     categoryId,
     pickerCategories,
     selectCategory: setCategoryId,
